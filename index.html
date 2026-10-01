@@ -18,10 +18,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="preload" href="assets/flight.jpg" as="image" fetchpriority="high">
-  <link rel="stylesheet" href="style.css?v=20261002g">
-  <link rel="stylesheet" href="exchange.css?v=20261002g">
-  <script src="app.js?v=20261002g" defer></script>
-  <script src="exchange.js?v=20261002g" type="module"></script>
+  <link rel="stylesheet" href="style.css?v=20261002h">
+  <link rel="stylesheet" href="exchange.css?v=20261002h">
+  <script src="app.js?v=20261002h" defer></script>
+  <script src="exchange.js?v=20261002h" type="module"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -52,23 +52,17 @@
     <section class="exchanges section-shell" id="exchanges" aria-labelledby="journey-title">
       <span id="the-idea" class="anchor-alias" aria-hidden="true"></span>
       <div class="section-label reveal"><span>01</span> The Flex experience</div>
-      <div class="journey" id="flex-journey" data-stage="offer">
+      <div class="journey" id="flex-journey" data-stage="preferences">
         <div class="journey-editorial">
-          <p class="eyebrow" id="journey-chapter">EARN FLEX CREDITS</p>
-          <h2 id="journey-title">A later flight<br> today.</h2>
-          <p class="journey-description" id="journey-description">When another traveller needs your flight, Flex can offer you credits to leave later.</p>
-          <div class="journey-route" aria-label="Earn credits, then use them on a future trip"><span class="is-current" data-part="earn">Earn credits</span><span class="route-line" aria-hidden="true"></span><span data-part="use">Use on a future trip</span></div>
+          <p class="eyebrow" id="journey-chapter">YOUR FLEXIBILITY</p>
+          <h2 id="journey-title">Your preferences.<br> In your own words.</h2>
+          <p class="journey-description" id="journey-description">Tell Flex where you can be flexible and what matters on different journeys.</p>
+          <nav class="journey-route" aria-label="Flex experience chapters"><button id="journey-beginning" class="is-current" type="button" data-action="restart" disabled aria-label="Return to your preferences and start again" title="Back to your preferences"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 5-7 7 7 7M3 12h18"/></svg>Your flexibility</button><span class="route-line" aria-hidden="true"></span><span data-part="use">Your next trip</span></nav>
         </div>
         <div class="journey-card">
-          <div class="journey-appbar"><span>Flex</span><span id="app-context">Your journey</span></div>
+          <div class="journey-appbar"><span>Flex</span><span id="app-context">Your preferences</span></div>
           <div id="journey-content" class="journey-content">
-            <div class="journey-request"><p>“I can <span>fly later.</span>”</p></div>
-            <div class="journey-offer">
-              <p class="card-overline">AN OFFER FOR YOU</p>
-              <h3 id="card-title" tabindex="-1">Leave 2 hours later.</h3>
-              <p class="offer-reward-line">Earn <strong>600</strong> Flex credits.</p>
-              <button class="journey-action" type="button" data-action="accept">Accept offer <svg aria-hidden="true"><use href="#arrow"/></svg></button>
-            </div>
+            <div class="language-step"><h3 class="sr-only" id="card-title" tabindex="-1">Your seat preferences</h3><div class="journey-request"><p>“On short flights, any seat is fine. On long flights, I’d like an aisle.”</p></div><div class="understood"><p class="card-overline">YOUR WORDS, UNDERSTOOD</p><dl class="preference-rules"><div><dt>Short flights</dt><dd>Any seat</dd></div><div><dt>Long flights</dt><dd>Aisle preferred</dd></div></dl></div><button class="journey-action" type="button" data-action="match-seats">Find a seat match <svg aria-hidden="true"><use href="#arrow"/></svg></button></div>
           </div>
         </div>
       </div>

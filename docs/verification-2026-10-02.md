@@ -1,21 +1,19 @@
 # Website verification
 
-The release uses one traveller and one app surface. Three actions advance from an available flight-change offer to earned credits, a future baggage purchase and a final remaining balance. No reset control, scenario selector, AI badge, timeline or automatic scene changes remain.
+The current experience has six visitor-controlled stages. It begins with conditional seat preferences and ends with a future Tokyo baggage reservation. Both natural-language requests remain visible beside their structured interpretations. A chapter link returns to the beginning.
 
 ## Automated checks
 
-Five Node tests verify the complete earn-and-spend sequence, prevention of spending before acceptance, single credit issuance, single redemption and protection against insufficient balances. JavaScript syntax and whitespace checks pass.
+Eight Node tests cover the short-flight match, preservation of an already-met long-flight aisle preference, soft-preference ranking, same-flight and consent requirements, seat uniqueness, correct journey and service selection, affordability, the complete earning and spending sequence, repeated actions, stage ordering and a fresh restart. JavaScript syntax and whitespace checks pass.
 
 ## Browser checks
 
-The offer, earned-credit confirmation and future-trip purchase were inspected at desktop width. The entire sequence was then exercised at 320 CSS pixels wide. All four states fit within the card without content clipping or horizontal page overflow. Each action moved focus to the new stage heading. The final state confirmed extra baggage for a future trip and 400 remaining credits. The browser reported no JavaScript errors.
+The preference interpretation and seat offer were inspected at desktop width. The traveller's window and Alex's aisle are stated together with the same-flight condition and 300-credit reward.
 
-The 600-credit balance on the spending screen was made larger and darker after independent review. The original request stays visible until acceptance. The final result remains on screen.
+The second natural-language request was inspected at 320 CSS pixels wide. Its three structured rows and action remain inside the fixed-height card. The service result showed Tokyo baggage for 200 credits against a balance of 300. Confirmation left 100 credits.
 
-## Comprehension review
+The chapter link was activated with Enter. It returned focus to the first stage, disabled itself at the beginning and removed the previous balance and reservation. Advancing again produced 300 credits, with no accumulation from the earlier run. Keyboard input is marked for immediate transitions. No horizontal page overflow or browser JavaScript errors were observed.
 
-Two independent agent reviewers assessed the proposed sequence. They asked for clearer offer eligibility and an explicit future-trip context. A further review of the implemented opening correctly identified the action, reward and primary control. A review of the implemented spending screen confirmed the earning-to-spending sequence and requested better balance legibility. These assessments are design reviews and do not constitute human usability testing.
+## Boundaries
 
-## Scope
-
-The request, interpreted offer and bookings are authored illustrations. The website computes credit transitions locally. It does not make live AI calls or change actual airline bookings. All illustrative offers, bookings and credits are handled through Flex.
+The two natural-language sentences and their interpretations are reviewed examples. Matching and credit calculations run locally on illustrative data. The website does not make live AI calls or change real airline bookings. Every offer, booking update and credit is handled through Flex.

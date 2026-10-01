@@ -2,19 +2,19 @@
 
 The public product website for Team Globe's Cathay Hackathon 2026 project, published at https://cathayflex.github.io/.
 
-One traveller accepts a later flight, receives Flex credits and uses some for extra baggage on a future trip. The compact interaction presents one decision at a time. There is no film player or timed scene sequence.
+One traveller describes conditional seat preferences, accepts a compatible seat change and receives Flex credits. A second natural-language request leads to extra baggage on a future Tokyo trip. The compact interaction presents one decision at a time.
 
 ## Maintenance
 
-The site uses plain HTML, CSS and JavaScript. Edit index.html for content, style.css for the site design, exchange.css for the interaction, exchange.js for its UI and offers.mjs for credit state transitions. app.js handles navigation and progressive reveal. No build or dependency installation is required.
+The site uses plain HTML, CSS and JavaScript. Edit index.html for content, style.css for the site design, exchange.css for the interaction, exchange.js for its UI and offers.mjs for matching and credit state transitions. app.js handles navigation and progressive reveal. No build or dependency installation is required.
 
-Preview with Python's HTTP server. Run `npm test` for issuance, stage progression and redemption invariants. The main branch is the GitHub Pages source. No CNAME is used. The previous personal-site introduction redirects here. SlidePoise publishing does not update this repository.
+Preview with Python's HTTP server. Run `npm test` for conditional seat preferences, matching, consent, issuance, stage progression, restart and redemption invariants. The main branch is the GitHub Pages source. No CNAME is used. The previous personal-site introduction redirects here. SlidePoise publishing does not update this repository.
 
 ## Interaction
 
-The traveller's request remains visible above the offer. Each subsequent action reveals one new stage, ending with extra baggage booked and 400 credits remaining. Motion supports those changes without imposing a viewing duration. There are no example tabs, replay controls, AI badges or panels of simultaneous conditions. Reduced-motion preferences suppress the transitions.
+Both requests stay visible alongside their reviewed interpretations. The first separates short-flight flexibility from a long-flight aisle preference. The second identifies a Tokyo trip, extra baggage and payment with credits. The visitor advances through matching, consent and redemption, ending with baggage booked and 100 credits remaining. A small chapter link returns to the original preferences and restarts the experience.
 
-The sequence is an authored product illustration. Credits and redemption are calculated locally. This static website does not make live AI calls, change bookings or issue real credits. Every exchange is coordinated and settled through Flex. No traveller-to-traveller payments are offered.
+The sequence uses authored natural-language interpretations. Seat compatibility, catalogue matching and credit accounting run locally. It does not make live AI calls, change bookings or issue real credits. Every exchange is coordinated and settled through Flex. No traveller-to-traveller payments are offered.
 
 See [interaction-design.md](docs/interaction-design.md) for the sequence, review findings and implementation boundaries.
 
