@@ -1,0 +1,132 @@
+:root {
+  color-scheme: light;
+  --paper: #fff;
+  --ink: #333330;
+  --muted: #706f69;
+  --accent: #356459;
+  --rule: #e6e6e2;
+  font-family: 'PT Serif', Georgia, serif;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --paper: #1c1c1e;
+  --ink: #e7e6e1;
+  --muted: #afafa7;
+  --accent: #a1c6b9;
+  --rule: #3b3b3c;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+a { color: inherit; text-decoration: none; }
+button { color: inherit; font: inherit; }
+a:focus-visible, button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 5px;
+  border-radius: 2px;
+}
+::selection { color: var(--paper); background: var(--accent); }
+
+.skip-link {
+  position: absolute;
+  top: -5rem;
+  left: 1.5rem;
+  z-index: 2;
+  padding: .75rem 1rem;
+  background: var(--paper);
+  font-family: 'Quattrocento Sans', sans-serif;
+}
+.skip-link:focus { top: 1rem; }
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2rem 5%;
+  font-family: 'Quattrocento Sans', sans-serif;
+}
+.identity { font-size: 2rem; line-height: 1; letter-spacing: -.06em; }
+.site-header nav { display: flex; align-items: center; gap: 2rem; }
+.builds-link { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; }
+.builds-link svg { width: 18px; height: 18px; }
+.builds-link:hover { color: var(--accent); }
+.theme-control {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 10px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.theme-control[hidden] { display: none; }
+.theme-control svg { width: 24px; height: 24px; }
+svg { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.theme-control .sun, [data-theme='dark'] .theme-control .moon { display: none; }
+[data-theme='dark'] .theme-control .sun { display: block; }
+
+main, .site-footer { width: min(100% - 5rem, 1120px); margin-inline: auto; }
+main { padding: 4.5rem 0 6rem; }
+main:focus { outline: none; }
+article { display: grid; grid-template-columns: .8fr 1.2fr; gap: 5rem; }
+.eyebrow {
+  margin: 0 0 1.3rem;
+  color: var(--accent);
+  font: .8rem/1.5 'Quattrocento Sans', sans-serif;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+h1 { margin: 0; font-size: clamp(2.9rem, 4.5vw, 4rem); font-weight: 400; line-height: 1.08; letter-spacing: -.055em; }
+.project-subtitle { max-width: 19rem; margin: 1.4rem 0 2.2rem; color: var(--muted); font: 1.05rem/1.55 'Quattrocento Sans', sans-serif; }
+.project-context { display: grid; gap: .4rem; color: var(--muted); font: .9rem/1.5 'Quattrocento Sans', sans-serif; }
+.project-story { padding-top: 2.3rem; }
+p { margin: 0 0 1.3rem; font-size: 1.025rem; line-height: 1.85; }
+.lead { margin-bottom: 1.6rem; font-size: 1.42rem; line-height: 1.65; letter-spacing: -.02em; }
+section { margin-top: 2.6rem; }
+h2 { margin: 0 0 .9rem; font-size: 1.5rem; line-height: 1.35; font-weight: 400; letter-spacing: -.025em; }
+section p:last-child { margin-bottom: 0; }
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.4rem 0 2rem;
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font: .88rem/1.5 'Quattrocento Sans', sans-serif;
+}
+.site-footer a:hover { color: var(--ink); }
+
+@media (max-width: 1000px) {
+  article { gap: 3rem; grid-template-columns: .75fr 1.25fr; }
+  main { padding-top: 3.5rem; }
+}
+
+@media (max-width: 720px) {
+  .site-header { padding: 1.2rem 1.5rem; }
+  .identity { font-size: 1.75rem; }
+  .site-header nav { gap: .75rem; }
+  main, .site-footer { width: calc(100% - 3rem); }
+  main { padding: 2.5rem 0 3.5rem; }
+  article { display: block; }
+  .project-subtitle { max-width: 22rem; margin-bottom: 1.4rem; }
+  .project-story { padding-top: 2.8rem; }
+  .lead { font-size: 1.3rem; }
+  p { font-size: 1rem; line-height: 1.8; }
+  h2 { font-size: 1.4rem; }
+  section { margin-top: 2.2rem; }
+  .site-footer { flex-wrap: wrap; gap: .5rem 1rem; }
+}
+
+@media print {
+  :root { --paper: #fff; --ink: #222; --muted: #555; --accent: #356459; --rule: #ddd; }
+  .theme-control, .skip-link { display: none; }
+  .site-header { padding-top: 0; }
+  main { padding: 2rem 0; }
+  main, .site-footer { width: 100%; }
+  article { gap: 2.5rem; }
+}
