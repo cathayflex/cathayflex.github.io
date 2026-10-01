@@ -18,10 +18,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="preload" href="assets/flight.jpg" as="image" fetchpriority="high">
-  <link rel="stylesheet" href="style.css?v=20261002f">
-  <link rel="stylesheet" href="exchange.css?v=20261002f">
-  <script src="app.js?v=20261002f" defer></script>
-  <script src="exchange.js?v=20261002f" type="module"></script>
+  <link rel="stylesheet" href="style.css?v=20261002g">
+  <link rel="stylesheet" href="exchange.css?v=20261002g">
+  <script src="app.js?v=20261002g" defer></script>
+  <script src="exchange.js?v=20261002g" type="module"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -49,53 +49,31 @@
         <figcaption><span>Every journey holds possibility.</span><span aria-hidden="true">01 / FLEX</span></figcaption>
       </figure>
     </section>
-    <section class="exchanges section-shell" id="exchanges" aria-labelledby="exchange-title">
+    <section class="exchanges section-shell" id="exchanges" aria-labelledby="journey-title">
       <span id="the-idea" class="anchor-alias" aria-hidden="true"></span>
-      <div class="section-label reveal"><span>01</span> Explore Flex</div>
-      <div class="exchange-intro reveal">
-        <h2 id="exchange-title">Tell Flex what works.<br> See what you could gain.</h2>
-        <p>Tell Flex what can change. See an offer, earn credits and choose how to use them.</p>
-      </div>
-      <div class="flex-offer" id="flex-offer" data-state="offered">
-        <div class="offer-toolbar">
-          <span class="offer-wordmark">Your Flex offer</span>
-          <div class="offer-selector" role="group" aria-label="Choose an example">
-            <button type="button" data-offer="flight" aria-pressed="true">Flight time</button>
-            <button type="button" data-offer="seat" aria-pressed="false">Seat</button>
-          </div>
+      <div class="section-label reveal"><span>01</span> The Flex experience</div>
+      <div class="journey" id="flex-journey" data-stage="offer">
+        <div class="journey-editorial">
+          <p class="eyebrow" id="journey-chapter">EARN FLEX CREDITS</p>
+          <h2 id="journey-title">A later flight<br> today.</h2>
+          <p class="journey-description" id="journey-description">When another traveller needs your flight, Flex can offer you credits to leave later.</p>
+          <div class="journey-route" aria-label="Earn credits, then use them on a future trip"><span class="is-current" data-part="earn">Earn credits</span><span class="route-line" aria-hidden="true"></span><span data-part="use">Use on a future trip</span></div>
         </div>
-        <div class="preference-strip">
-          <div class="traveller-request"><span class="request-avatar" aria-hidden="true">Y</span><div><span class="request-label">YOU</span><p id="request-words">“I can leave later. Please keep my aisle seat.”</p></div></div>
-          <div class="ai-interpretation" aria-label="AI interpretation"><span class="ai-label">Flex AI</span><div class="preference-chips" id="preference-chips"><span>Later departure</span><span>Aisle required</span></div></div>
-        </div>
-        <div class="offer-body">
-          <div class="offer-change" id="offer-change">
-            <p class="offer-label">YOU CHANGE</p>
-            <h3 id="offer-name">Take a later flight.</h3>
-            <div class="before-after" aria-label="Proposed booking change">
-              <div><span id="before-caption">Current departure</span><strong id="before-value">10:00</strong></div>
-              <svg class="change-arrow" aria-hidden="true"><use href="#arrow"/></svg>
-              <div><span id="after-caption">New departure</span><strong id="after-value">12:00</strong></div>
-            </div>
-            <div class="kept-detail"><svg aria-hidden="true"><use href="#check"/></svg><span id="kept-detail">Your aisle seat stays.</span></div>
-          </div>
-          <div class="offer-reward" id="credits">
-            <div class="reward-topline"><p class="offer-label" id="reward-label">YOU RECEIVE</p><span class="reward-status" id="reward-status">On confirmation</span></div>
-            <div class="reward-amount"><strong id="credit-amount">+600</strong><span>Flex credits</span></div>
-            <p class="reward-use" id="reward-use">Use them on a future trip.</p>
-            <div class="benefit-options" role="group" aria-label="Use credits on a future trip">
-              <button class="benefit-option" data-benefit="baggage" type="button" disabled><svg viewBox="0 0 36 36" aria-hidden="true"><rect x="9" y="11" width="19" height="20" rx="3"/><path d="M14 11V7a4 4 0 0 1 8 0v4M14 17v8m9-8v8M12 31v2m13-2v2"/></svg><span>Extra baggage<small>200 credits</small></span></button>
-              <button class="benefit-option" data-benefit="seat" type="button" disabled><svg viewBox="0 0 36 36" aria-hidden="true"><path d="M9 4h13l2 17H11L9 4Zm2 17v5h18v-5H11Zm4 5v6m11-6v6M7 15v10m0-7h4"/></svg><span>Preferred seat<small>100 credits</small></span></button>
+        <div class="journey-card">
+          <div class="journey-appbar"><span>Flex</span><span id="app-context">Your journey</span></div>
+          <div id="journey-content" class="journey-content">
+            <div class="journey-request"><p>“I can <span>fly later.</span>”</p></div>
+            <div class="journey-offer">
+              <p class="card-overline">AN OFFER FOR YOU</p>
+              <h3 id="card-title" tabindex="-1">Leave 2 hours later.</h3>
+              <p class="offer-reward-line">Earn <strong>600</strong> Flex credits.</p>
+              <button class="journey-action" type="button" data-action="accept">Accept offer <svg aria-hidden="true"><use href="#arrow"/></svg></button>
             </div>
           </div>
-          <span class="offer-bridge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m4 8 4-4 4 4M8 4v16m12-4-4 4-4-4m4 4V4"/></svg></span>
-        </div>
-        <div class="offer-footer">
-          <div class="offer-feedback" role="status" aria-live="polite" aria-atomic="true"><span class="status-dot" aria-hidden="true"></span><p id="offer-feedback">Your change opens an earlier place for another traveller.</p></div>
-          <button class="offer-action" id="offer-action" type="button"><span>Accept &amp; earn credits</span><svg aria-hidden="true"><use href="#arrow"/></svg></button>
         </div>
       </div>
-      <div class="offer-caption"><p>Illustrative offers. Flex coordinates the bookings and credits.</p><button id="reset-offer" type="button" hidden>Reset example</button></div>
+      <p class="journey-note">Flex coordinates every offer, booking change and credit.</p>
+      <p id="journey-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
     </section>
     <section class="how-it-works section-shell" id="your-choices" aria-labelledby="how-title">
       <div class="section-label reveal"><span>02</span> How it works</div>

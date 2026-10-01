@@ -1,19 +1,26 @@
-# A single traveller's Flex offer
+# One traveller, one decision at a time
 
-The interaction answers three questions at a glance. What can I change, what will I receive and how can I use it later?
+The visual begins with earning and follows the same person into spending on a future trip. There is one app surface and one primary action at each stage. All progress is visitor controlled.
 
-## Information order
+## The four states
 
-The traveller's short request is followed by two AI-interpreted conditions. The proposed change and reward remain visible together. Acceptance changes the reward into a spendable balance. Selecting a future service subtracts its price and confirms the reservation within the illustration.
+1. The traveller says “I can fly later.” A coordinated offer proposes a departure two hours later and a reward of 600 Flex credits. The request stays visible so its relationship to the offer can be read at any pace. Accept offer advances the interaction.
+2. The booking change is confirmed. The card states that departure is two hours later and that 600 Flex credits have been added. Use on a future trip advances to redemption.
+3. The next-trip context is explicit. Extra baggage costs 200 Flex credits, and the available balance is 600. Use 200 credits confirms the choice.
+4. The final state shows extra baggage booked for the next trip and 400 Flex credits remaining. It stays visible.
 
-Two example buttons change the entire request and offer in place. Flight time rewards a later departure while preserving an aisle. Seat rewards accepting a window while preserving the flight. No dialogue, private negotiation or payment between passengers is shown.
+The surrounding copy explains that a reward can be offered when another traveller needs the flight. It does not suggest that every requested flight change earns credits. Every offer, booking change and credit is handled by Flex.
 
-## Movement
+## Movement and hierarchy
 
-On first entry, the AI conditions appear after 180 milliseconds and the offer after 420 milliseconds. The entire reveal completes within 900 milliseconds. Accepting and redeeming use a 380-millisecond balance transition. Each animation responds to an action or first visibility. There is no continuous loop, progress bar, player, camera sequence or requirement to wait for information.
+The visitor's request and resulting offer arrive once, with 280 milliseconds between the two reveals. The original request remains readable. Subsequent clicks replace the single card's contents with a 420-millisecond transition. There is no automatic advancement, playback timeline, scene picker, restart control or separate AI panel.
 
-Reduced-motion mode omits movement. All controls use native buttons. Offer status is announced through a polite live region. Insufficient balances and completed reservations disable the corresponding redemption control. Reset returns to the same example without issuing additional credits.
+The card remains in the same position and keeps a stable height. The single primary action advances exactly one stage. The new heading receives keyboard focus without requesting a scroll. A live region announces the booking and balance outcomes. Reduced-motion preferences suppress movement.
 
-## Presentation boundaries
+## Review
 
-These are illustrative offers with authored dialogue and reviewed AI interpretations. Acceptance represents a platform offer whose other required conditions have been met. In the full product, every affected traveller must agree before settlement. The static website computes credit balances locally and does not claim to run live matching, language models or airline APIs.
+Two independent agent reviews considered the proposed sequence as first-time visitors. They identified the need to establish offer eligibility and distinguish a future trip from the current one. Both points were incorporated. A review of the implemented opening confirmed that its action, reward and next step were understandable, and recommended making the future-trip purpose explicit in the progress label. These are design reviews, not human usability tests.
+
+## Boundaries
+
+The request, offer and interpretation are authored illustrations. The static site calculates credits and redemption locally. It does not call an AI service, alter a real flight or reserve baggage. In the full product, every affected traveller must agree before settlement. The initial card represents an available coordinated offer.

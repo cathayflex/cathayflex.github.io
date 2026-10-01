@@ -1,17 +1,21 @@
 # Website verification
 
-The current release removes the 85-second story and replaces it with a single traveller's compact offer. The main HTML copy decreases from 825 words to 276 words, measured within the main element. Navigation now has three sections.
+The release uses one traveller and one app surface. Three actions advance from an available flight-change offer to earned credits, a future baggage purchase and a final remaining balance. No reset control, scenario selector, AI badge, timeline or automatic scene changes remain.
 
 ## Automated checks
 
-Five Node tests verify that credits require acceptance, repeat acceptance cannot issue additional credits, redemption debits once, insufficient balances prevent redemption and switching examples starts an independent illustrative booking. JavaScript syntax checks and whitespace checks pass.
+Five Node tests verify the complete earn-and-spend sequence, prevention of spending before acceptance, single credit issuance, single redemption and protection against insufficient balances. JavaScript syntax and whitespace checks pass.
 
 ## Browser checks
 
-The flight example was accepted in the browser, adding 600 credits. Redeeming extra baggage left 400 credits. The seat example added 100 credits. Its 200-credit baggage option stayed disabled, and redeeming a preferred seat reduced the balance to zero. The zero-balance copy changes to Credits used. Reset restored the unaccepted offer.
+The offer, earned-credit confirmation and future-trip purchase were inspected at desktop width. The entire sequence was then exercised at 320 CSS pixels wide. All four states fit within the card without content clipping or horizontal page overflow. Each action moved focus to the new stage heading. The final state confirmed extra baggage for a future trip and 400 remaining credits. The browser reported no JavaScript errors.
 
-Both desktop and a 320 CSS pixel mobile viewport were inspected. The narrow offer measures approximately 732 pixels high and has no horizontal page overflow. Menu navigation closes after selecting a section. All three navigation anchors exist, logo and photography load, and no JavaScript errors were reported. Temporary viewport settings were reset.
+The 600-credit balance on the spending screen was made larger and darker after independent review. The original request stays visible until acceptance. The final result remains on screen.
+
+## Comprehension review
+
+Two independent agent reviewers assessed the proposed sequence. They asked for clearer offer eligibility and an explicit future-trip context. A further review of the implemented opening correctly identified the action, reward and primary control. A review of the implemented spending screen confirmed the earning-to-spending sequence and requested better balance legibility. These assessments are design reviews and do not constitute human usability testing.
 
 ## Scope
 
-Dialogue and AI interpretation are authored illustrations. The public website computes acceptance and credit arithmetic locally. It has no live language-model calls or airline integration. All illustrative bookings and credits are handled through Flex.
+The request, interpreted offer and bookings are authored illustrations. The website computes credit transitions locally. It does not make live AI calls or change actual airline bookings. All illustrative offers, bookings and credits are handled through Flex.
