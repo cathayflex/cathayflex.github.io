@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#006564">
   <title>Cathay Flex | A little flexibility. A world of possibility.</title>
-  <meta name="description" content="Turn the travel choices you can change into the experiences you value. Cathay Flex connects voluntary exchanges across seats, services and journeys.">
+  <meta name="description" content="Exchange flight times, seats and services, or earn Flex credits to use on a future journey. Cathay Flex connects travellers with different priorities.">
   <link rel="canonical" href="https://cathayflex.github.io/">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Cathay Flex | Flexibility, rewarded">
@@ -13,37 +13,36 @@
   <meta property="og:url" content="https://cathayflex.github.io/">
   <meta property="og:image" content="https://cathayflex.github.io/assets/flight.jpg">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/cathay-brushwing.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="preload" href="assets/flight.jpg" as="image" fetchpriority="high">
-  <link rel="stylesheet" href="style.css?v=20261002a">
-  <script src="app.js?v=20261002a" defer></script>
+  <link rel="stylesheet" href="style.css?v=20261002e">
+  <link rel="stylesheet" href="story.css?v=20261002e">
+  <script src="app.js?v=20261002e" defer></script>
+  <script src="story.mjs?v=20261002e" type="module"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
   <svg class="symbol-library" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
     <symbol id="arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></symbol>
     <symbol id="check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
-    <symbol id="flex-mark" viewBox="0 0 64 48"><path d="M4 35C23 32 42 20 60 5 43 26 28 39 4 35Z" fill="currentColor"/><path d="M9 43C27 41 40 33 53 22" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
   </svg>
   <header class="site-header">
-    <a class="brand" href="#top" aria-label="Cathay Flex home"><svg aria-hidden="true"><use href="#flex-mark"/></svg><span class="brand-name">CATHAY <span>FLEX</span></span></a>
+    <div class="brand-lockup"><a class="brand" href="#top" aria-label="Cathay Flex home"><img class="brand-logo" src="assets/cathay-logo.svg" width="496" height="120" alt="Cathay"><span class="brand-name">FLEX</span></a><span class="brand-note">For the Cathay Hackathon demo only</span></div>
     <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav"><span>Menu</span><span class="menu-lines" aria-hidden="true"></span></button>
     <nav id="site-nav" aria-label="Main navigation">
-      <a href="#possibilities">Possibilities</a><a href="#how-it-works">How it works</a><a href="#for-cathay">For Cathay</a>
-      <a class="nav-link" href="#the-idea">Discover Flex <svg aria-hidden="true"><use href="#arrow"/></svg></a>
+      <a href="#the-idea">What is Flex</a><a href="#exchanges">Exchanges</a><a href="#credits">Flex credits</a><a href="#your-choices">Your choices</a><a href="#for-cathay">For Cathay</a>
     </nav>
   </header>
   <main id="main" tabindex="-1">
     <section class="hero" id="top" aria-labelledby="hero-title">
       <div class="hero-copy">
         <p class="eyebrow hero-enter">FLEXIBILITY, REWARDED</p>
-        <h1 id="hero-title" class="hero-enter">A little flexibility.<br>A world of<br><span>possibility.</span></h1>
-        <p class="hero-description hero-enter">Turn the travel choices you can change into the experiences you value. Across seats, services and journeys.</p>
-        <a class="text-link hero-enter" href="#possibilities">Explore the possibilities <svg aria-hidden="true"><use href="#arrow"/></svg></a>
-        <div class="hero-note hero-enter"><span class="note-line"></span><span>Good for your journey.<br>Better for the journey ahead.</span></div>
+        <h1 id="hero-title" class="hero-enter">A little flexibility.<br> A world of<br> <span>possibility.</span></h1>
+        <p class="hero-description hero-enter">Cathay Flex is a marketplace for exchanging flight times, seats and services. Offer a change that works for you. Receive a better fit or Flex credits to use on this trip or the next.</p>
+        <div class="hero-note hero-enter"><span class="note-line"></span><span>Choose what can change.<br> Keep what matters to you.</span></div>
       </div>
       <figure class="hero-visual">
         <img class="hero-image" src="assets/flight.jpg" width="1784" height="1492" alt="A Cathay Pacific wing above sunlit clouds" fetchpriority="high">
@@ -51,79 +50,88 @@
       </figure>
     </section>
     <section class="introduction section-shell" id="the-idea" aria-labelledby="idea-title">
-      <div class="section-label reveal"><span>01</span> A different way to travel</div>
+      <div class="section-label reveal"><span>01</span> What is Flex</div>
       <div class="intro-grid">
-        <h2 class="reveal" id="idea-title">What matters to you<br>can make room<br>for someone else.</h2>
-        <div class="intro-copy reveal"><p>An earlier arrival. An aisle seat. More room for the journey home. Every traveller values something different.</p><p>Cathay Flex connects those differences through voluntary exchanges. Share flexibility when it suits you, receive value in return, and use it for something that matters more.</p></div>
+        <h2 class="reveal" id="idea-title">Different travellers.<br> Different priorities.</h2>
+        <div class="intro-copy reveal"><p>Exchange what you can change for what matters more to you, on this journey or the next.</p><p>One traveller needs an earlier flight. Another can leave later, but would value extra baggage on a future trip. Their priorities differ, and both can benefit from a change.</p><p>Flex finds these opportunities across travellers and airline services. It brings the changes into one offer that everyone involved can review and accept.</p></div>
       </div>
     </section>
-    <section class="possibilities section-shell" id="possibilities" aria-labelledby="possibilities-title">
-      <div class="section-label reveal"><span>02</span> The possibilities</div>
-      <div class="section-heading reveal"><h2 id="possibilities-title">One choice.<br>Many ways forward.</h2><p>Exchange within a journey.<br> Carry value into the next.</p></div>
-      <div class="story-tabs" role="tablist" aria-label="Ways to use flexibility">
-        <button id="story-tab-0" role="tab" aria-selected="true" aria-controls="story-panel" tabindex="0" data-story="0"><span class="tab-number">01</span> Time for more room</button>
-        <button id="story-tab-1" role="tab" aria-selected="false" aria-controls="story-panel" tabindex="-1" data-story="1"><span class="tab-number">02</span> A better seat for both</button>
-        <button id="story-tab-2" role="tab" aria-selected="false" aria-controls="story-panel" tabindex="-1" data-story="2"><span class="tab-number">03</span> A choice that travels</button>
+    <section class="exchanges section-shell" id="exchanges" aria-labelledby="exchange-title">
+      <div class="section-label reveal"><span>02</span> Exchanges</div>
+      <div class="exchange-intro reveal">
+        <h2 id="exchange-title">Three travellers.<br> One better arrangement.</h2>
+        <p>A connection changes. A simple swap will not work. Follow the people, the matching and the choices that make a complete exchange possible.</p>
       </div>
-      <div class="story-panel" id="story-panel" role="tabpanel" aria-labelledby="story-tab-0" tabindex="0">
-        <div class="story-editorial">
-          <p class="eyebrow" id="story-kind">FLIGHT TIMING TO BAGGAGE</p>
-          <h3 id="story-title">A little later today.<br>A little more next time.</h3>
-          <p id="story-description">When a later flight works for you, that flexibility can free a place for someone who needs it. Earn Flex, then put it towards extra baggage on another journey.</p>
-          <p class="story-footnote" id="story-footnote">Different resources. Different journeys. Connected by Flex.</p>
+      <div class="story-player" id="story-player" aria-label="An illustrated Cathay Flex exchange">
+        <div class="story-heading">
+          <div><p class="eyebrow" id="scene-number">SCENE 01 / 10</p><h3 id="scene-title">A connection changes.</h3></div>
+          <div class="story-actions"><button class="story-expand" id="story-expand" type="button" aria-haspopup="dialog" aria-label="View larger"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4"/></svg><span>View larger</span></button><button class="story-close" id="story-close" type="button" aria-label="Close expanded story"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg><span>Close</span></button><button class="story-play" id="story-play" type="button" aria-label="Play the exchange story"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 10 7-10 7Z"/></svg><span>Play story</span></button></div>
         </div>
-        <div class="exchange-art" aria-label="Flight flexibility earns Flex credits, which can be used for baggage on a future journey">
-          <div class="exchange-topline"><span id="exchange-label">YOUR FLEXIBILITY, CARRIED FORWARD</span><svg aria-hidden="true"><use href="#flex-mark"/></svg></div>
-          <div class="exchange-ticket give">
-            <div class="ticket-tag" id="give-time">THIS JOURNEY</div>
-            <div class="ticket-content"><span class="ticket-icon" id="give-icon" aria-hidden="true"></span><div><span class="ticket-label" id="give-label">Your flight timing</span><strong id="give-title">A later departure</strong></div></div>
-            <div class="ticket-detail" id="give-detail">Same day. Same cabin. On your terms.</div>
+        <div class="film-screen" id="film-screen" data-shot="alex">
+          <div class="film-surface">
+            <div class="film-copy"><p class="film-kicker" id="shot-kicker">ALEX · A CHANGE OF PLANS</p><h3 id="shot-title">Alex needs an<br> earlier arrival.</h3><p class="film-description" id="shot-description">His flight reaches Taipei at 13:40.<br> He now needs to arrive before 13:00.</p><div id="shot-detail"></div></div>
+            <div class="film-camera" id="film-camera">
+              <div class="film-platform" id="film-platform"></div>
+              <svg class="film-wires" viewBox="0 0 1200 600" aria-hidden="true"><path data-wire="maya" d="M600 215V250H230V305"/><path data-wire="alex" d="M600 215V305"/><path data-wire="sam" d="M600 215V250H970V305"/></svg>
+              <article class="film-phone" data-person="maya" aria-label="Maya’s phone"></article>
+              <article class="film-phone" data-person="alex" aria-label="Alex’s phone"></article>
+              <article class="film-phone" data-person="sam" aria-label="Sam’s phone"></article>
+            </div>
+            <div class="film-summary" id="film-summary"></div>
           </div>
-          <div class="exchange-bridge" aria-hidden="true"><span class="bridge-line"></span><span class="flex-token">Flex</span><span class="bridge-line"></span></div>
-          <div class="exchange-ticket receive">
-            <div class="ticket-tag" id="receive-time">YOUR NEXT JOURNEY</div>
-            <div class="ticket-content"><span class="ticket-icon" id="receive-icon" aria-hidden="true"></span><div><span class="ticket-label" id="receive-label">Your travel extras</span><strong id="receive-title">Room for one more bag</strong></div></div>
-            <div class="ticket-detail" id="receive-detail">Use the value you earned when you need it.</div>
-          </div>
-          <span class="exchange-bottomline" id="exchange-bottomline">Value moves with you.</span>
+        </div>
+        <div class="story-transport">
+          <button class="transport-button" id="story-previous" type="button" aria-label="Previous scene"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg></button>
+          <label class="story-scrubber"><span class="sr-only">Story progress</span><input id="story-progress" type="range" min="0" max="85" step="0.1" value="0" aria-valuetext="Scene 1 of 10, A connection changes."></label>
+          <span class="story-time" id="story-time">0:00 / 1:25</span>
+          <button class="transport-button" id="story-next" type="button" aria-label="Next scene"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+        </div>
+        <p class="story-context">Illustrative journeys and credit amounts. Play, pause or move through the story at your own pace.</p>
+        <noscript><p class="story-noscript">Maya accepts a later flight with Sam’s aisle seat. Alex takes Maya’s earlier flight, and Sam takes Alex’s window seat. Everyone agrees before the bookings change. Cathay awards 600 credits to Maya and 100 to Sam. On future trips, Maya uses 200 for extra baggage and Sam uses 100 for a preferred seat.</p></noscript>
+      </div>
+      <div class="other-exchanges">
+        <h3 class="reveal">The same marketplace.<br> Other ways to exchange.</h3>
+        <div class="other-exchange-grid">
+          <article class="other-exchange reveal"><p class="eyebrow">SEAT FOR SEAT</p><h4>Let Flex find a seat<br> exchange that suits you.</h4><p>You have a window seat and prefer the aisle. Another traveller wants the reverse. Flex offers a coordinated seat change that gives both of you a better fit. The platform handles the offer, consent and booking updates, including exchanges across several travellers.</p><p class="exchange-outcome"><strong>What each person gets</strong>A preferred seat. Any credit adjustment is shown in the platform’s offer and settled by Flex.</p></article>
+          <article class="other-exchange reveal"><p class="eyebrow">A MEAL CHOICE FOR FUTURE VALUE</p><h4>Make an early choice.<br> Use the reward later.</h4><p>Already planning to eat before you fly? If Cathay offers a reward for skipping an onboard meal, you can accept before the catering deadline. The confirmed change helps Cathay plan what to prepare.</p><p class="exchange-outcome"><strong>What you receive</strong>Flex credits you can use towards an available seat or service, including on a future trip.</p></article>
         </div>
       </div>
     </section>
-    <section class="credits" aria-labelledby="credits-title">
+    <section class="credits" id="credits" aria-labelledby="credits-title">
       <div class="credits-inner section-shell">
-        <div class="credits-copy reveal"><p class="eyebrow">FLEX CREDITS</p><h2 id="credits-title">The value stays<br>with you.</h2><p>What you give and what you receive do not have to happen at the same time. Flex credits connect an exchange today to an eligible travel extra tomorrow.</p><a class="text-link" href="#how-it-works">See how it works <svg aria-hidden="true"><use href="#arrow"/></svg></a></div>
-        <div class="value-journey reveal" aria-label="Offer flexibility, receive Flex credits, choose what matters">
-          <div class="value-line" aria-hidden="true"></div>
-          <div class="value-stage"><span class="value-dot"></span><span>When you can</span><strong>Offer flexibility</strong><small>A choice that works for you.</small></div>
-          <div class="value-stage central"><span class="value-dot"></span><span>Value to carry forward</span><strong class="value-wordmark">Flex</strong><small>Earned through completed exchanges.</small></div>
-          <div class="value-stage"><span class="value-dot"></span><span>When it matters</span><strong>Choose your next extra</strong><small>For this trip or a future journey.</small></div>
-        </div>
+        <div class="credits-copy reveal"><p class="eyebrow">03 · FLEX CREDITS</p><h2 id="credits-title">Give on one trip.<br> Receive on another.</h2><p>Flex can coordinate an exchange within one journey. Credits let you accept a change now and choose a different benefit later, through the same platform.</p><p>Cathay funds rewards for changes that have value to the airline. Flex manages each offer and settles the agreed credits through the platform. You use your balance to book available seats and services through Flex.</p></div>
+        <ol class="value-journey reveal" aria-label="How Flex credits work">
+          <li class="value-stage"><span class="value-dot" aria-hidden="true"></span><span>Earn</span><strong>Complete an agreed exchange</strong><p>The offer states your reward. Credits become available once the full exchange is completed.</p></li>
+          <li class="value-stage"><span class="value-dot" aria-hidden="true"></span><span>Keep</span><strong>Carry value in your Flex balance</strong><p>You can give up one service now and use the reward for a different service later.</p></li>
+          <li class="value-stage"><span class="value-dot" aria-hidden="true"></span><span>Use</span><strong>Choose something you need</strong><p>See the seats and services available for your trip, check their credit prices and choose what to book.</p></li>
+        </ol>
       </div>
     </section>
-    <section class="how-it-works section-shell" id="how-it-works" aria-labelledby="how-title">
-      <div class="section-label reveal"><span>03</span> Made personal</div>
-      <h2 class="reveal" id="how-title">Your priorities.<br>Your possibilities.</h2>
+    <section class="how-it-works section-shell" id="your-choices" aria-labelledby="how-title">
+      <div class="section-label reveal"><span>04</span> Your choices</div>
+      <h2 class="reveal" id="how-title">Your priorities stay<br> part of every offer.</h2>
       <div class="steps">
-        <article class="step reveal"><span class="step-number">01</span><h3>Say what matters.</h3><p>Describe what can change and what must stay. AI helps turn your own words into clear preferences for you to confirm.</p><blockquote>“Later is fine.<br>Staying together matters.”</blockquote></article>
-        <article class="step reveal"><span class="step-number">02</span><h3>Find a better fit.</h3><p>Flex brings passenger preferences and available airline capacity together. Review the full exchange, including what you receive.</p><div class="step-signature"><svg aria-hidden="true"><use href="#check"/></svg> A clear offer. A choice to accept.</div></article>
-        <article class="step reveal"><span class="step-number">03</span><h3>Make the value yours.</h3><p>Once an exchange is completed, its value is yours to use. Choose an eligible seat or travel extra on the journey where it matters most.</p><div class="step-signature"><svg aria-hidden="true"><use href="#arrow"/></svg> Beyond one flight. Beyond one trip.</div></article>
+        <article class="step reveal"><span class="step-number">01</span><h3>Set your preferences.</h3><p>Describe what can change and what must stay. AI turns your words into preferences, such as a later departure or seats together, for you to check.</p><blockquote>“Later is fine.<br> Staying together matters.”</blockquote></article>
+        <article class="step reveal"><span class="step-number">02</span><h3>See the whole exchange.</h3><p>Each offer shows the new arrangements and any credits you earn or spend. When several changes depend on each other, you review them together.</p><div class="step-signature"><svg aria-hidden="true"><use href="#check"/></svg> Your flight, seat and reward in one offer.</div></article>
+        <article class="step reveal"><span class="step-number">03</span><h3>Decide for yourself.</h3><p>You choose whether to accept. Every affected traveller must agree, and the full exchange must be completed before its reward becomes available.</p><div class="step-signature"><svg aria-hidden="true"><use href="#arrow"/></svg> Keep your booking if the offer does not suit you.</div></article>
       </div>
-      <div class="choice-note reveal"><svg aria-hidden="true"><use href="#check"/></svg><div><h3>Every exchange starts with your agreement.</h3><p>Connections, companions and existing entitlements are built into the conditions of an exchange. The details stay visible, and the choice stays yours.</p></div></div>
+      <div class="choice-note reveal"><svg aria-hidden="true"><use href="#check"/></svg><div><h3>Every exchange starts with your agreement.</h3><p>Flex checks connection times, travelling companions and the benefits included in your booking. You review the proposed changes before accepting. You can always keep your current arrangements.</p></div></div>
     </section>
     <section class="airline" id="for-cathay" aria-labelledby="airline-title">
       <div class="airline-inner section-shell">
         <div class="network-art reveal" aria-hidden="true">
           <svg class="network-lines" viewBox="0 0 480 500" fill="none"><path d="M75 82C75 222 242 160 242 250S402 275 402 416"/><path d="M398 88C398 194 242 183 242 250S76 324 76 416"/><path d="M242 42V457" class="network-centre"/><circle cx="75" cy="82" r="5"/><circle cx="398" cy="88" r="5"/><circle cx="402" cy="416" r="5"/><circle cx="76" cy="416" r="5"/></svg>
-          <span class="network-label n-one">A little more time</span><span class="network-label n-two">A seat that suits</span><span class="network-label n-three">Room for more</span><span class="network-label n-four">A future journey</span><span class="network-core">Flex</span><span class="network-caption">Different needs. A shared possibility.</span>
+          <span class="network-label n-one">A later flight</span><span class="network-label n-two">An aisle seat</span><span class="network-label n-three">Extra baggage</span><span class="network-label n-four">A future journey</span><span class="network-core">Flex</span><span class="network-caption">Connect choices across travellers and trips.</span>
         </div>
-        <div class="airline-copy reveal"><p class="eyebrow">FOR CATHAY</p><h2 id="airline-title">More choice for people.<br>More possibility<br>for the network.</h2><p>Passenger flexibility becomes something the airline can understand and act on. Each exchange connects a willing traveller with a real need.</p><ul class="airline-benefits"><li>Match available capacity to changing demand.</li><li>Connect preferences across separate bookings.</li><li>Reward flexibility when it creates value.</li></ul></div>
+        <div class="airline-copy reveal"><p class="eyebrow">05 · FOR CATHAY</p><h2 id="airline-title">Put passenger<br> flexibility to work.</h2><p>In the exchange above, Alex reaches his connection, Maya receives an aisle seat and a reward, and Sam is compensated for a seat change he accepts. Cathay resolves the travel need using the places already available. Flex makes these opportunities visible across bookings and services.</p><ul class="airline-benefits"><li>Free up places where demand is higher.</li><li>Match passenger preferences to available seats and services.</li><li>Fund rewards only when the expected benefit covers the cost.</li></ul></div>
       </div>
     </section>
-    <section class="closing section-shell" aria-labelledby="closing-title"><p class="eyebrow reveal">CATHAY FLEX</p><h2 id="closing-title" class="reveal">Let your flexibility<br>take you further.</h2><a class="text-link reveal" href="#possibilities">Find your possibilities <svg aria-hidden="true"><use href="#arrow"/></svg></a></section>
+    <section class="closing section-shell" aria-labelledby="closing-title"><p class="eyebrow reveal">CATHAY FLEX</p><h2 id="closing-title" class="reveal">Let your flexibility<br> take you further.</h2><p class="closing-description reveal">Exchange what you can change.<br> Choose what matters more to you.</p></section>
   </main>
   <footer class="site-footer">
-    <div class="footer-main"><a class="brand" href="#top" aria-label="Cathay Flex home"><svg aria-hidden="true"><use href="#flex-mark"/></svg><span class="brand-name">CATHAY <span>FLEX</span></span></a><p>Team Globe · Cathay Hackathon 2026</p><a href="#top" class="back-top">Back to top <svg aria-hidden="true"><use href="#arrow"/></svg></a></div>
+    <div class="footer-main"><div class="brand-lockup"><a class="brand" href="#top" aria-label="Cathay Flex home"><img class="brand-logo" src="assets/cathay-logo.svg" width="496" height="120" alt="Cathay"><span class="brand-name">FLEX</span></a><span class="brand-note">For the Cathay Hackathon demo only</span></div><p>Team Globe · Cathay Hackathon 2026</p><a href="#top" class="back-top">Back to top <svg aria-hidden="true"><use href="#arrow"/></svg></a></div>
     <div class="footer-detail"><span>A marketplace for passenger flexibility.</span><a href="https://news.cathaypacific.com/let-s-move-beyond-362353" target="_blank" rel="noopener">Photography © Cathay Pacific</a></div>
   </footer>
+  <dialog id="story-dialog" aria-label="Cathay Flex exchange story"></dialog>
 </body>
 </html>
