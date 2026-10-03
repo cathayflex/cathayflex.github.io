@@ -2,15 +2,15 @@
 
 The public page separates the traveller experience from the explanation of AI interpretation and matching. The experience shows what a traveller says, chooses and receives. The technology section explains how the system works with the same synthetic bookings and example data.
 
-The product heading remains static. Cities, dates, seats and amounts belong inside the illustration. Six visitor-controlled moments share a persistent booking scene, wallet and navigation. Each moment has one primary action.
+The product heading remains static. Cities, dates, seats and amounts belong inside the illustration. Six visitor-controlled moments share a scene, persistent wallet and navigation. The scene begins with profile configuration and introduces journey details when an offer arrives. Each moment has one primary action.
 
 ## Earning credits
 
-The opening contains a prepared flexibility statement, the traveller’s current aisle seat and a zero credit balance.
+The opening shows a standing preference configuration under Your profile, with a prepared flexibility statement and a zero credit balance. It has no flight, date, seat assignment or booking diagram. A short scope note explains that these preferences are saved across journeys and remain editable.
 
 > On flights up to four hours, any seat is fine. On longer flights, I need an aisle.
 
-**Save flexibility** reveals a seat offer. The current aisle seat 22C and proposed window seat 22A stay in the same diagram. Another traveller has an active request for the aisle. The proposed seat satisfies the saved short-flight condition. The flight and cabin remain unchanged.
+**Save flexibility** advances to an illustrated offer for the Taipei journey. The AN OFFER FOR YOUR JOURNEY status separates this from profile configuration. The flight, current aisle seat 22C and proposed window seat 22A appear here for the first time. Another traveller has an active request for the aisle. The proposed seat satisfies the saved short-flight condition. The flight and cabin remain unchanged.
 
 **Accept seat change** moves the traveller indicator to 22A. A credit transfer links the 400-credit reward to the wallet. The balance becomes 400 and the receipt remains visible on desktop. **Use credits** continues to the later Tokyo journey while keeping the same wallet.
 
@@ -50,6 +50,16 @@ Keyboard navigation places reading focus on the new heading. Pointer navigation 
 
 The separate technology section links phrases to their resolved meaning. “For Tokyo” identifies the account flight. “Us” identifies You, Mia and Jamie on that booking. “Sit together” becomes consecutive seats within one row and seat block. The bag becomes a specific airline product with one piece and a 23 kg limit.
 
-The platform quote appears separately from AI interpretation. Expandable details expose entity identifiers, structured conditions and the checks performed by the deterministic matcher. They do not imply that the traveller must write or inspect JSON.
+The platform quote appears separately from AI interpretation. The homepage links to `/technology/` for entity identifiers, structured conditions, solver evidence and transaction checks. The homepage no longer embeds “See structured rules and checks”.
 
-The public page uses authored language interpretations and computed matches over synthetic fixtures. It calls no live language model or airline service and connects to no real wallet. The production algorithm proposal is documented separately in the platform repository.
+The public page uses authored language interpretations and computed matches over synthetic fixtures. It calls no live language model or airline service and connects to no real wallet. The dedicated technical page runs the platform domain engine locally on synthetic data. It distinguishes implemented behavior, bounded search guarantees and proposed research. The original experience illustration remains an authored teaching sequence.
+
+## Technical explorer
+
+The detailed page uses a stable three-stage reading structure and a desktop chapter index. Rule, optimization, consent and evidence details expand on demand. The central example computes arrangements before displaying them. An availability selection recomputes immediately. Settlement removes its action button and updates the reserved balance to zero. The recovery example starts a separate synthetic branch with a lost acknowledgement, then requires an explicit reconciliation action. None of these controls mutate an account or call an airline.
+
+The mobile layout stacks interpretation fields, the seat arrangement and the quote without horizontal page scrolling. Code and benchmark tables scroll inside their own containers. Reduced motion and keyboard interactions skip movement.
+
+The market-model chapter explains the abstraction from booked rights and conditional needs to complete candidate contracts and constrained selection. A live request-book projection accompanies the matching example. It distinguishes Lin's firm request from Daniel's indicative flexibility and follows the actual settled state after acceptance. Source revisions, fixed prices and reservation amounts remain inspectable. Display order confers no trading priority.
+
+The research references include public exchange engineering and reliability testing practices. The page explains their application without suggesting affiliation or importing a dynamic bidding model. Local synthetic performance, generation limits and deployment boundaries stay visible in the evidence disclosures.

@@ -105,3 +105,14 @@
   #seat-change-note { display:none; }
   .scene-bottom { margin-top:8px;min-height:53px; }
 }
+
+/* Standing preferences have their own profile view, before any journey offer. */
+.journey[data-stage="flexibility"] .journey-scene { display:flex;flex-direction:column; }
+.journey[data-stage="flexibility"] .scene-copy { flex:1;min-height:0;padding-block:28px; }
+.journey[data-stage="flexibility"] .journey-words { margin-top:22px;padding:20px 22px;border:1px solid #e2e9e1;border-radius:6px;background:#f8faf7;font-size:20px;line-height:1.5;max-width:560px; }
+.flexibility-note { margin-top:16px;color:#62796d;font-size:12px;line-height:1.6;max-width:430px; }
+@media(max-width:480px) {
+  .journey[data-stage="flexibility"] .scene-copy { padding-block:20px; }
+  .journey[data-stage="flexibility"] .journey-words { font-size:17px;padding:16px;margin-top:18px; }
+  .flexibility-note { font-size:11px; }
+}

@@ -1,0 +1,58 @@
+{
+  "generatedAt": "2026-10-03T18:30:04.409Z",
+  "platformBaseCommit": "3c792c47304ef6a3717ecd4e6c2735207e0363d2",
+  "sourceTreeDigest": "72ea6cfcbcc259e78479b856e4081df4781ce928e10d12762b66954580bb9148",
+  "files": [
+    {
+      "file": "engine.ts",
+      "sha256": "451e25f5df475d5356f7d28000fbe428a0c5428be9156aa8754123002b440c82"
+    },
+    {
+      "file": "generic-market.ts",
+      "sha256": "1b04061338779338ab7ceb157d783a31e5834d849f45d8bc0ab5d57aa9562717"
+    },
+    {
+      "file": "intent.ts",
+      "sha256": "7c116b263e61823281dcb6c791c24d44d95000116b4ffd0ebd418065a06b92bd"
+    },
+    {
+      "file": "order-book.ts",
+      "sha256": "8ac17a46a3dd743ca2a5953ead1e406de4a86ccce6b750f19b89a57bb071e839"
+    },
+    {
+      "file": "predicates.ts",
+      "sha256": "c90754957a0d2fda90ca10558996988cea0d1f9a346b0458c0ad22d03a553e57"
+    },
+    {
+      "file": "request-quote-schema.ts",
+      "sha256": "daf626cb7b95aadd1290daad9b39ec1ffc9054a19a7e4200f6cc5a4359af9b3a"
+    },
+    {
+      "file": "request-quote.ts",
+      "sha256": "9929a267ea45f812484d06f79fbcb0ddd4f2892b6dcce6b95414610488099a90"
+    },
+    {
+      "file": "seed.ts",
+      "sha256": "e65ed94c0f7661d32b02ccb5b519d84a40f1c4a829b3d3d1ee9e2446d21e7f79"
+    },
+    {
+      "file": "selection.ts",
+      "sha256": "4f922b081628304179834984fe88859a020bea5abc99930f8f6bc7d3ae6fbefe"
+    },
+    {
+      "file": "story.ts",
+      "sha256": "e458f26dfbde1a854d5d9cdab8751748508f7d01fef46605ded8b3a8b9f94c84"
+    },
+    {
+      "file": "time.ts",
+      "sha256": "dd7370317b029126a1baa3a5d2d5572721075f8e9e7763c32f4f0514ce779b2b"
+    },
+    {
+      "file": "types.ts",
+      "sha256": "b678ded4f0e23270a42a969a67fdbbbed83d198d1335722348b5714e0af20692"
+    }
+  ],
+  "engineBytes": 187880,
+  "engineSha256": "ae302d3de40722243de2b82a85c96de342fef8d652b0e138dd084b63064e5f42",
+  "runtime": "Browser JavaScript. Same pure domain functions as the platform. Synthetic bookings. No live AI or airline connection."
+}

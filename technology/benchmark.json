@@ -1,0 +1,399 @@
+{
+  "measuredAt": "2026-10-03T18:09:45.250Z",
+  "node": "v23.1.0",
+  "platform": "darwin",
+  "arch": "x64",
+  "scope": "Synthetic independently reservable candidate selection. Exactness is restricted to supplied candidates. No production latency or unrestricted market optimum is claimed.",
+  "rows": [
+    {
+      "seed": 20261012,
+      "suppliedCandidates": 8,
+      "admittedCandidates": 8,
+      "nodeLimit": 1,
+      "visited": 1,
+      "selected": 3,
+      "elapsedMs": 1.874,
+      "complete": false,
+      "objective": [
+        9,
+        -200,
+        -7
+      ],
+      "upperBound": [
+        10,
+        1000,
+        -3
+      ],
+      "exhaustiveOracle": [
+        9,
+        300,
+        -8
+      ]
+    },
+    {
+      "seed": 20261012,
+      "suppliedCandidates": 8,
+      "admittedCandidates": 8,
+      "nodeLimit": 20000,
+      "visited": 20,
+      "selected": 4,
+      "elapsedMs": 9.71,
+      "complete": true,
+      "objective": [
+        9,
+        300,
+        -8
+      ],
+      "upperBound": [
+        9,
+        300,
+        -8
+      ],
+      "exhaustiveOracle": [
+        9,
+        300,
+        -8
+      ]
+    },
+    {
+      "seed": 20261016,
+      "suppliedCandidates": 12,
+      "admittedCandidates": 12,
+      "nodeLimit": 1,
+      "visited": 1,
+      "selected": 5,
+      "elapsedMs": 0.665,
+      "complete": false,
+      "objective": [
+        12,
+        800,
+        -2
+      ],
+      "upperBound": [
+        12,
+        3400,
+        0
+      ],
+      "exhaustiveOracle": [
+        12,
+        800,
+        -2
+      ]
+    },
+    {
+      "seed": 20261016,
+      "suppliedCandidates": 12,
+      "admittedCandidates": 12,
+      "nodeLimit": 20000,
+      "visited": 6,
+      "selected": 5,
+      "elapsedMs": 0.42,
+      "complete": true,
+      "objective": [
+        12,
+        800,
+        -2
+      ],
+      "upperBound": [
+        12,
+        800,
+        -2
+      ],
+      "exhaustiveOracle": [
+        12,
+        800,
+        -2
+      ]
+    },
+    {
+      "seed": 20261028,
+      "suppliedCandidates": 24,
+      "admittedCandidates": 24,
+      "nodeLimit": 1,
+      "visited": 1,
+      "selected": 11,
+      "elapsedMs": 0.779,
+      "complete": false,
+      "objective": [
+        23,
+        2900,
+        -16
+      ],
+      "upperBound": [
+        23,
+        4200,
+        -4
+      ],
+      "exhaustiveOracle": null
+    },
+    {
+      "seed": 20261028,
+      "suppliedCandidates": 24,
+      "admittedCandidates": 24,
+      "nodeLimit": 20000,
+      "visited": 15,
+      "selected": 11,
+      "elapsedMs": 1.018,
+      "complete": true,
+      "objective": [
+        23,
+        2900,
+        -16
+      ],
+      "upperBound": [
+        23,
+        2900,
+        -16
+      ],
+      "exhaustiveOracle": null
+    },
+    {
+      "seed": 20261052,
+      "suppliedCandidates": 48,
+      "admittedCandidates": 45,
+      "nodeLimit": 1,
+      "visited": 1,
+      "selected": 16,
+      "elapsedMs": 2.41,
+      "complete": false,
+      "objective": [
+        37,
+        5000,
+        -12
+      ],
+      "upperBound": [
+        43,
+        10400,
+        0
+      ],
+      "exhaustiveOracle": null
+    },
+    {
+      "seed": 20261052,
+      "suppliedCandidates": 48,
+      "admittedCandidates": 45,
+      "nodeLimit": 20000,
+      "visited": 593,
+      "selected": 17,
+      "elapsedMs": 14.416,
+      "complete": true,
+      "objective": [
+        38,
+        5200,
+        -16
+      ],
+      "upperBound": [
+        38,
+        5200,
+        -16
+      ],
+      "exhaustiveOracle": null
+    },
+    {
+      "seed": 20261100,
+      "suppliedCandidates": 96,
+      "admittedCandidates": 96,
+      "nodeLimit": 1,
+      "visited": 1,
+      "selected": 47,
+      "elapsedMs": 8.094,
+      "complete": false,
+      "objective": [
+        100,
+        17500,
+        -55
+      ],
+      "upperBound": [
+        105,
+        28300,
+        0
+      ],
+      "exhaustiveOracle": null
+    },
+    {
+      "seed": 20261100,
+      "suppliedCandidates": 96,
+      "admittedCandidates": 96,
+      "nodeLimit": 20000,
+      "visited": 1103,
+      "selected": 47,
+      "elapsedMs": 35.705,
+      "complete": true,
+      "objective": [
+        101,
+        17600,
+        -55
+      ],
+      "upperBound": [
+        101,
+        17600,
+        -55
+      ],
+      "exhaustiveOracle": null
+    },
+    {
+      "seed": 20261196,
+      "suppliedCandidates": 192,
+      "admittedCandidates": 188,
+      "nodeLimit": 1,
+      "visited": 1,
+      "selected": 68,
+      "elapsedMs": 9.416,
+      "complete": false,
+      "objective": [
+        147,
+        25200,
+        -67
+      ],
+      "upperBound": [
+        159,
+        35800,
+        0
+      ],
+      "exhaustiveOracle": null
+    },
+    {
+      "seed": 20261196,
+      "suppliedCandidates": 192,
+      "admittedCandidates": 188,
+      "nodeLimit": 20000,
+      "visited": 20000,
+      "selected": 68,
+      "elapsedMs": 334.701,
+      "complete": false,
+      "objective": [
+        147,
+        25200,
+        -67
+      ],
+      "upperBound": [
+        159,
+        35800,
+        -7
+      ],
+      "exhaustiveOracle": null
+    }
+  ],
+  "generatedMarkets": [
+    {
+      "passengers": 8,
+      "seed": 20261012,
+      "elapsedMs": 114.542,
+      "generation": {
+        "complete": false,
+        "reason": "candidate_limit",
+        "candidateCount": 144,
+        "candidateLimit": 192,
+        "seatCandidateLimit": 144,
+        "workLimit": 20000,
+        "visited": 957,
+        "bundleAttempts": 0,
+        "jointAttempts": 0,
+        "domain": {
+          "maxSeatCycleLength": 4,
+          "maxSeatChainLength": 4,
+          "maxBundleParts": 3
+        }
+      },
+      "suppliedValidCandidates": 144,
+      "search": {
+        "complete": true,
+        "nodeLimit": 20000,
+        "visited": 509
+      },
+      "selected": 2,
+      "objective": [
+        7,
+        0,
+        0
+      ],
+      "upperBound": [
+        7,
+        0,
+        0
+      ],
+      "status": "BOUNDED_RECOMMENDATION",
+      "boundScope": "supplied_validated_candidates_only"
+    },
+    {
+      "passengers": 24,
+      "seed": 20261028,
+      "elapsedMs": 168.454,
+      "generation": {
+        "complete": false,
+        "reason": "candidate_limit",
+        "candidateCount": 168,
+        "candidateLimit": 192,
+        "seatCandidateLimit": 144,
+        "workLimit": 20000,
+        "visited": 5151,
+        "bundleAttempts": 0,
+        "jointAttempts": 0,
+        "domain": {
+          "maxSeatCycleLength": 4,
+          "maxSeatChainLength": 4,
+          "maxBundleParts": 3
+        }
+      },
+      "suppliedValidCandidates": 168,
+      "search": {
+        "complete": false,
+        "nodeLimit": 20000,
+        "visited": 20000
+      },
+      "selected": 9,
+      "objective": [
+        21,
+        0,
+        0
+      ],
+      "upperBound": [
+        44,
+        0,
+        0
+      ],
+      "status": "BOUNDED_RECOMMENDATION",
+      "boundScope": "supplied_validated_candidates_only"
+    },
+    {
+      "passengers": 120,
+      "seed": 20261124,
+      "elapsedMs": 208.413,
+      "generation": {
+        "complete": false,
+        "reason": "work_limit",
+        "candidateCount": 192,
+        "candidateLimit": 192,
+        "seatCandidateLimit": 144,
+        "workLimit": 20000,
+        "visited": 18251,
+        "bundleAttempts": 0,
+        "jointAttempts": 0,
+        "domain": {
+          "maxSeatCycleLength": 4,
+          "maxSeatChainLength": 4,
+          "maxBundleParts": 3
+        }
+      },
+      "suppliedValidCandidates": 192,
+      "search": {
+        "complete": true,
+        "nodeLimit": 20000,
+        "visited": 1
+      },
+      "selected": 12,
+      "objective": [
+        22,
+        0,
+        0
+      ],
+      "upperBound": [
+        22,
+        0,
+        0
+      ],
+      "status": "BOUNDED_RECOMMENDATION",
+      "boundScope": "supplied_validated_candidates_only"
+    }
+  ]
+}

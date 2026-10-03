@@ -47,21 +47,6 @@ function terms(example) {
   return `<aside class="technology-terms" aria-label="Platform quote and publication terms"><p>Platform quote, shown before you publish</p><strong>${example.quote.quotedCredits} Flex credits</strong><span>${example.terms.allowPartial ? 'Changes may be arranged separately' : 'Both changes together'}</span><span>Valid until ${escape(expiryLabel(example.terms.validUntil))}</span></aside>`;
 }
 
-function structuredCode(value, label) {
-  return `<pre class="technology-code" tabindex="0" aria-label="${escape(label)}"><code>${escape(JSON.stringify(value, null, 2))}</code></pre>`;
-}
-
-function details(example, key) {
-  const content = key === 'flexibility'
-    ? `<div><h4>Structured preference</h4>${structuredCode(example.structured, 'Illustrated seat preference rules')}</div>
-       <div><h4>A condition the matcher can evaluate</h4><p>Flight duration selects the applicable rule. At 105 minutes, window, middle and aisle seats are permitted. Above 240 minutes, only an aisle seat qualifies.</p></div>
-       <div><h4>Deterministic validation</h4><p>The matcher requires a different seat on the same flight, an active request for your current seat type, a permitted replacement and an open change window. An eligible result still needs your acceptance.</p></div>`
-    : `<div><h4>Resolved booking</h4>${structuredCode(example.structured.entities, 'Resolved journey and traveller identifiers')}</div>
-       <div><h4>Machine-readable conditions</h4>${structuredCode(example.structured.conditions, 'Exact seating and baggage conditions')}<p>Adjacent means consecutive seats in one row and one seat block.</p></div>
-       <div><h4>Deterministic validation</h4><p>The matcher verifies all three booked travellers, seat adjacency, supplier confirmation and the exact baggage product.</p><p>Each service must match the fixed quote. The quote and request must be valid, the balance must cover 360 credits and both changes must be available together.</p><p class="technology-detail-note">AI resolves the request for your review. The matcher checks the resolved fields against the booking and available services.</p></div>`;
-  return `<details class="technology-details"><summary><span>See structured rules and checks</span><span class="technology-plus" aria-hidden="true"></span></summary><div class="technology-detail-content">${content}</div></details>`;
-}
-
 function panel(example, key, selected) {
   return `<div class="technology-panel" id="technology-panel-${key}" role="tabpanel" aria-labelledby="technology-tab-${key}" tabindex="0"${selected ? '' : ' hidden'}>
     <div class="technology-flow">
@@ -70,7 +55,6 @@ function panel(example, key, selected) {
       <section class="technology-region technology-result" aria-labelledby="technology-${key}-result-title"><h3 id="technology-${key}-result-title">Matcher validates</h3>${key === 'flexibility' ? seatResult(example) : requestResult(example)}</section>
     </div>
     ${key === 'request' ? terms(example) : ''}
-    ${details(example, key)}
   </div>`;
 }
 

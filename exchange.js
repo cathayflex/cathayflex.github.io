@@ -5,8 +5,8 @@ const root = document.getElementById('flex-journey');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const $ = id => document.getElementById(id);
 const descriptions = {
-  flexibility: {status: 'YOUR FLEXIBILITY', title: 'Save what can change for you.', action: 'Save flexibility', progress: 'Save your flexibility', bottom: 'Save once. Review each offer before accepting.'},
-  offer: {status: 'FLEXIBILITY SAVED', title: 'A seat change offer for you.', action: 'Accept seat change', progress: 'Review your offer', explanation: 'Another traveller needs your aisle seat. This window seat fits your saved flexibility.', bottom: 'Same flight. Same cabin. You decide.'},
+  flexibility: {status: 'YOUR FLEXIBILITY', title: 'Set your travel preferences.', action: 'Save flexibility', progress: 'Save your flexibility', bottom: 'You choose which offers to accept.'},
+  offer: {status: 'AN OFFER FOR YOUR JOURNEY', title: 'A seat change offer for you.', action: 'Accept seat change', progress: 'Review your offer', explanation: 'On your Taipei flight, another traveller needs your aisle seat. This window seat fits your saved preferences.', bottom: 'Same flight. Same cabin. You decide.'},
   earned: {status: 'SEAT CHANGE CONFIRMED', title: 'Your flexibility earned 400 credits.', action: 'Use credits', progress: 'Credits added to your balance', explanation: 'Your window seat is confirmed. Your credits are ready whenever you need them.', bottom: '22A · Window seat confirmed'},
   need: {status: 'YOUR NEXT JOURNEY', title: 'What would make this trip better?', action: 'Review request', progress: 'Request what you need', bottom: 'Use your balance for the changes that matter to you.'},
   review: {status: 'REVIEW YOUR REQUEST', title: 'Two changes for 360 credits.', action: 'Publish request', progress: 'Approve your request', explanation: 'Flex found your Tokyo booking. Confirm the price and we’ll look for both changes together.', bottom: 'Complete both by 1 Nov, 9 am HKT.', amount: 'Fixed price · 360 credits'},
@@ -33,10 +33,13 @@ function animate(node, frames, options = {}) {
 }
 function render() {
   const {screen, state} = current, copy = descriptions[screen];
+  const configuring = screen === 'flexibility';
   const future = index >= 3, earned = index >= 2, completed = index === 5;
   root.dataset.stage = screen;
   text('experience-counter', `0${index + 1} / 06`);
-  text('app-context', future ? 'Hong Kong to Tokyo' : 'Hong Kong to Taipei');
+  text('app-context', configuring ? 'Your profile' : future ? 'Hong Kong to Tokyo' : 'Hong Kong to Taipei');
+  $('journey-date').hidden = configuring;
+  $('flexibility-note').hidden = !configuring;
   text('journey-date', future ? 'CX520 · 2 Nov' : '7 Oct · 1 h 45 min');
   text('scene-status', copy.status);
   text('card-title', copy.title);
@@ -49,7 +52,7 @@ function render() {
   text('journey-words', `“${future ? needWords : preferenceWords}”`);
   $('scene-explanation').hidden = naturalLanguage;
   text('scene-explanation', copy.explanation || '');
-  $('taipei-booking').hidden = future;
+  $('taipei-booking').hidden = configuring || future;
   $('tokyo-booking').hidden = !future;
   const seatMap = root.querySelector('.seat-map');
   seatMap.classList.toggle('seat-moved', earned);
@@ -153,7 +156,7 @@ function go(next, keyboard) {
   render();
   if (!quiet) {
     animate(root.querySelector('.scene-copy'),[{opacity:.35,transform:`translateY(${backward?-4:6}px)`},{opacity:1,transform:'translateY(0)'}]);
-    if (index === 1) animate(root.querySelector('.seat-offer-detail'),[{opacity:0,transform:'translateX(18px) scale(.98)'},{opacity:1,transform:'translateX(0) scale(1)'}],{duration:280});
+    if (index === 1) animate($('taipei-booking'),[{opacity:0,transform:'translateX(18px) scale(.98)'},{opacity:1,transform:'translateX(0) scale(1)'}],{duration:280});
     if (index === 3) animate($('tokyo-booking'),[{opacity:0,transform:'translateX(18px)'},{opacity:1,transform:'translateX(0)'}],{duration:280});
     if (index === 5) root.querySelectorAll('.service-visual').forEach((node,i)=>animate(node,[{opacity:.5,transform:'translateY(5px)'},{opacity:1,transform:'translateY(0)'}],{delay:i*60}));
     animateBalance(previous.state.balance,current.state.balance,index>=3?$('scene-amount'):$('credit-award'),backward);

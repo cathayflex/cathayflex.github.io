@@ -195,3 +195,5 @@
 @media (prefers-reduced-motion: reduce) {
   .technology *, .technology *::before, .technology *::after { transition: none !important; animation: none !important; }
 }
+
+.technology-more{margin-top:24px;padding-top:25px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:25px}.technology-more p{font-size:15px;color:var(--muted)}.technology-more .text-link{font-size:15px;flex-shrink:0}@media(max-width:600px){.technology-more{align-items:flex-start;flex-direction:column;gap:14px}}
