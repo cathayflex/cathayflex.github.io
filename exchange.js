@@ -7,10 +7,10 @@ const arrow = '<svg aria-hidden="true"><use href="#arrow"/></svg>';
 const check = '<svg aria-hidden="true"><use href="#check"/></svg>';
 const bag = '<svg viewBox="0 0 32 36" aria-hidden="true"><rect x="5" y="9" width="22" height="24" rx="3"/><path d="M11 9V5a5 5 0 0 1 10 0v4M11 16v10m10-10v10"/></svg>';
 const copy = {
-  offer: {chapter: 'TAIPEI · THIS JOURNEY', title: 'A small change.<br> A useful reward.', description: 'An aisle matters to another traveller. A window works for you on this short flight.', context: 'Taipei · 7 Oct'},
-  earned: {chapter: 'VALUE YOU KEEP', title: 'The same flight.<br> Something for later.', description: 'Your seat change earns 400 Flex credits. They stay with you when your travel needs change.', context: 'Taipei · Confirmed'},
-  request: {chapter: 'TOKYO · THE NEXT JOURNEY', title: 'Different trip.<br> Different priorities.', description: 'This time, you are travelling with family. Ask for seats together and an extra bag, using the credits you earned.', context: 'Tokyo · 2 Nov'},
-  complete: {chapter: 'FLEXIBILITY, PUT TO USE', title: 'One seat changed.<br> A better trip ahead.', description: 'Your family sits together, the extra bag is confirmed, and you still have 40 Flex credits for another time.', context: 'Tokyo · Confirmed'},
+  offer: {context: 'Taipei · 7 Oct', announcement: 'Earn credits. A window seat fits your saved flexibility. Accepting this seat change earns 400 Flex credits.'},
+  earned: {context: 'Taipei · Confirmed', announcement: 'Window seat 22A confirmed. 400 Flex credits earned.'},
+  request: {context: 'Tokyo · 2 Nov', announcement: 'Use credits. Review seats together and an extra bag for Tokyo within one 360-credit limit.'},
+  complete: {context: 'Tokyo · Confirmed', announcement: 'Tokyo confirmed. Seats 32A, 32B and 32C together, one extra checked bag, 360 credits used and 40 remaining.'},
 };
 let state = initialState(), animations = [], publication = null;
 const wallet = document.createElement('span');
@@ -42,29 +42,34 @@ function render() {
   root.dataset.stage = state.stage;
   root.removeAttribute('data-publishing');
   content.removeAttribute('aria-busy');
-  document.getElementById('journey-chapter').textContent = current.chapter;
-  document.getElementById('journey-title').innerHTML = current.title;
-  document.getElementById('journey-description').textContent = current.description;
   document.getElementById('app-context').textContent = current.context;
   wallet.innerHTML = `<strong>${state.balance}</strong><span>Flex credits</span>`;
   const future = ['request', 'complete'].includes(state.stage);
   const beginning = document.getElementById('journey-beginning');
+  const use = root.querySelector('[data-part="use"]');
   beginning.disabled = state.stage === 'offer';
   beginning.classList.toggle('is-current', !future);
-  beginning.setAttribute('aria-label', 'Return to the Taipei journey and start again');
-  beginning.title = 'Return to the Taipei journey';
-  root.querySelector('[data-part="use"]').classList.toggle('is-current', future);
+  beginning.setAttribute('aria-label', state.stage === 'offer' ? 'Earn credits' : 'Return to earning credits');
+  beginning.title = 'Back to earning credits';
+  use.classList.toggle('is-current', future);
+  if (future) {
+    beginning.removeAttribute('aria-current');
+    use.setAttribute('aria-current', 'step');
+  } else {
+    beginning.setAttribute('aria-current', 'step');
+    use.removeAttribute('aria-current');
+  }
 
   if (state.stage === 'offer') {
     content.innerHTML = `<div class="journey-offer">
       ${language(preferenceWords, 'YOUR SAVED FLEXIBILITY')}
       <dl class="understood-rules" aria-label="Your words, understood"><div><dt>Up to 4 hours</dt><dd>Any seat</dd></div><div><dt>Over 4 hours</dt><dd>Aisle</dd></div></dl>
-      <div class="seat-change"><h3 id="card-title" tabindex="-1">A window for you.</h3><div class="seat-pair"><div><strong>22C</strong><span>Current aisle seat</span></div><span class="seat-arrow">${arrow}</span><div class="seat-destination"><strong>22A</strong><span>New window seat</span></div></div><p class="card-detail">Same flight. Another traveller gets the aisle.</p></div>
+      <div class="seat-change"><h3 id="card-title" tabindex="-1">Switch seats. Earn credits.</h3><div class="seat-pair"><div><strong>22C</strong><span>Current aisle seat</span></div><span class="seat-arrow">${arrow}</span><div class="seat-destination"><strong>22A</strong><span>New window seat</span></div></div><p class="card-detail">Same flight. Another traveller gets the aisle.</p></div>
       <div class="offer-reward"><span>You earn</span><strong>400 <small>Flex credits</small></strong></div>
       ${action('accept', 'Accept seat change')}
     </div>`;
   } else if (state.stage === 'earned') {
-    content.innerHTML = `<div class="journey-earned"><p class="confirmation-line">${check}<span>Window seat 22A confirmed</span></p><h3 id="card-title" class="earned-number" tabindex="-1">400</h3><p class="earned-caption">Flex credits earned</p><p class="earned-explanation">Ready for a different need<br>on a later journey.</p><div class="next-journey"><span>Your next trip</span><strong>Tokyo <span>2 Nov</span></strong></div>${action('request', 'Continue to Tokyo')}</div>`;
+    content.innerHTML = `<div class="journey-earned"><p class="confirmation-line">${check}<span>Window seat 22A confirmed</span></p><h3 id="card-title" class="earned-number" tabindex="-1">400</h3><p class="earned-caption">Flex credits earned</p><p class="earned-explanation">Available for this journey<br>or a future one.</p><div class="next-journey"><span>Your next trip</span><strong>Tokyo <span>2 Nov</span></strong></div>${action('request', 'Use credits')}</div>`;
   } else if (state.stage === 'request') {
     content.innerHTML = `<div class="journey-request">
       ${language(needWords, 'YOUR NEXT REQUEST')}
@@ -111,9 +116,7 @@ function show(next, keyboard = false) {
   }
   document.getElementById('card-title').focus({preventScroll: true});
   keepJourneyContextVisible(keyboard);
-  announce(state.stage === 'complete'
-    ? 'Tokyo confirmed. Seats 32A, 32B and 32C together, one extra checked bag, 360 credits used and 40 remaining.'
-    : state.stage === 'earned' ? 'Your window seat is confirmed. 400 Flex credits earned.' : copy[state.stage].description);
+  announce(copy[state.stage].announcement);
 }
 function finishPublication(keyboard = false) {
   if (!publication) return;

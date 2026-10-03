@@ -4,9 +4,11 @@ The public product website for Team Globe’s Cathay Hackathon 2026 project, pub
 
 ## Narrative
 
-The page follows one useful change across two journeys. A voluntary Taipei seat change earns 400 Flex credits. On the later Tokyo trip, a single bounded request uses 360 credits for seats together and one extra checked bag, leaving 40. The complete cause and outcome are visible without completing the illustration.
+The page introduces the product through three connected ideas. Different passenger priorities make useful voluntary changes possible. Flex credits carry their value across flights, seats, travel services and journeys. Travellers control the offers they accept and the terms of requests they publish.
 
-The surrounding story shows who benefits, then broadens the idea to different resources and future journeys. There is no separate explanation tutorial or generic airline dashboard section. The compact authored illustration shows natural-language preferences, their reviewed meaning, a voluntary offer and a later authorized request.
+The hero and section headings describe this broad proposition. A compact interaction provides one example of earning credits through a seat change and using them for seats together and an extra checked bag. Its destinations, dates and credit amounts stay inside the illustration. Advancing the example does not change the product headings or surrounding explanation.
+
+Navigation follows the same structure through The idea, Flex credits and Your choices. The pale network illustration connects resource types and future journeys. The page closes with the original centred line, “Let your flexibility take you further.”
 
 ## Maintenance
 

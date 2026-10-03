@@ -1,90 +1,30 @@
-/* The page follows one exchange across two journeys. */
-.hero { min-height: 710px; }
-.hero-copy { padding-top: 70px; padding-bottom: 54px; }
-.hero-copy h1 { font-size: clamp(48px, 4.65vw, 76px); white-space: normal; line-height: 1.04; }
-.hero-description { max-width: 355px; margin-top: 29px; }
-.hero .text-link { margin-top: 30px; }
-.hero-visual { min-height: 710px; }
-.hero-visual figcaption { font-size: 12px; }
-.story-preview { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-block: 32px; border-bottom: 1px solid var(--line); }
-.story-preview > p { max-width: 190px; color: var(--muted); font-size: 13px; line-height: 1.45; }
-.story-preview ol { display: flex; align-items: center; gap: 30px; list-style: none; padding: 0; margin: 0; }
-.story-preview li { display: flex; align-items: center; gap: 30px; font-size: 17px; line-height: 1.3; }
-.story-preview li:not(:last-child)::after { content: '→'; color: #7b9b90; font-size: 21px; font-weight: 300; }
-.story-preview strong { font-weight: 500; color: var(--jade); }
-.exchanges { padding-block: 76px 84px; scroll-margin-top: 100px; }
-.exchanges > .section-label { margin-bottom: 30px; text-transform: uppercase; font-size: 11px; letter-spacing: .1em; }
-.exchanges > .section-label span { letter-spacing: .02em; }
-.story-outcomes { padding-block: 90px 96px; border-top: 1px solid var(--line); }
-.outcome-heading { display: grid; grid-template-columns: 1.15fr 1fr; gap: 12%; align-items: end; }
-.outcome-heading .eyebrow { margin-bottom: 22px; }
-.outcome-heading > p { max-width: 385px; padding-bottom: 3px; font-size: 19px; color: var(--muted); }
-.outcome-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5.5%; margin-top: 53px; }
-.outcome-list article { border-top: 1px solid var(--line); padding-top: 20px; }
-.outcome-place { font-size: 11px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
-.outcome-list h3 { margin-top: 19px; font-size: 29px; line-height: 1.15; }
-.outcome-list article > p:last-child { color: var(--muted); margin-top: 18px; font-size: 16px; max-width: 290px; }
-.further { background: var(--deep); color: #f7faf5; }
-.further-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 13%; padding-block: 84px 90px; }
-.further .eyebrow { color: #b9d4c8; margin-bottom: 24px; }
-.further h2 { max-width: 450px; }
-.further-copy > p { color: #ccddd4; font-size: 19px; max-width: 455px; }
-.further-copy > p + p { margin-top: 21px; }
-.scope-line { display: flex; flex-wrap: wrap; gap: 12px 23px; padding-top: 27px; margin-top: 33px; border-top: 1px solid #446a61; list-style: none; font-size: 14px; color: #dcebe3; }
-.scope-line li { display: flex; align-items: center; gap: 9px; }
-.scope-line li::before { content: ''; width: 4px; height: 4px; background: #aecbba; border-radius: 50%; }
-.closing { text-align: left; display: grid; grid-template-columns: 1fr 1fr; gap: 13%; padding-block: 90px; align-items: end; }
-.closing .eyebrow { margin-bottom: 24px; }
-.closing h2 { margin: 0; font-size: clamp(38px, 4vw, 60px); }
-.closing > p { color: var(--muted); max-width: 400px; font-size: 18px; }
-.journey-note { max-width: 650px; margin: 19px auto 0; line-height: 1.5; }
+/* Product meaning leads. The interactive example provides supporting evidence. */
+.exchanges { padding-block: 112px 95px; }
+.hero-description { max-width: 370px; }
+.product-credits { position: relative; }
+.product-credits .airline-copy h2 { max-width: 490px; }
+.product-credits .airline-copy > p:not(.eyebrow) { max-width: 440px; }
+.product-credits .airline-copy > .product-value-note { padding-top: 24px; margin-top: 27px; border-top: 1px solid #d1dcd3; font-size: 15px; line-height: 1.6; }
+.product-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 11%; align-items: center; padding-block: 86px; border-bottom: 1px solid var(--line); }
+.product-choices .eyebrow { margin-bottom: 24px; }
+.product-choices h2 { font-size: clamp(34px, 3.35vw, 50px); max-width: 460px; }
+.product-choices > p { max-width: 440px; color: var(--muted); font-size: 18px; line-height: 1.6; }
 @media (max-width: 1100px) {
-  .hero, .hero-visual { min-height: 650px; }
-  .hero-copy { padding-top: 55px; }
-  .hero-copy h1 { font-size: 5.2vw; }
-  .story-preview ol, .story-preview li { gap: 20px; }
-  .story-preview li { font-size: 15px; }
-  .outcome-heading { gap: 7%; }
-  .outcome-list h3 { font-size: 25px; }
+  .exchanges { padding-block: 86px; }
+  .product-choices { gap: 8%; padding-block: 72px; }
 }
 @media (max-width: 800px) {
-  .hero { min-height: 0; }
-  .hero-copy { padding: 47px 32px 43px; }
-  .hero-copy h1 { font-size: clamp(48px, 8vw, 70px); }
-  .hero-copy h1 br { display: block; }
-  .hero-copy h1 > span::before { content: none; }
-  .hero-visual { min-height: 330px; height: 50vw; }
-  .story-preview { align-items: flex-start; flex-direction: column; gap: 18px; padding-block: 26px; }
-  .story-preview > p { max-width: none; }
-  .story-preview ol { width: 100%; justify-content: space-between; gap: 12px; }
-  .story-preview li { gap: 12px; font-size: 14px; }
-  .story-outcomes { padding-block: 66px 70px; }
-  .outcome-heading { grid-template-columns: 1fr; gap: 26px; }
-  .outcome-heading > p { max-width: 490px; font-size: 18px; }
-  .outcome-list { grid-template-columns: 1fr; gap: 30px; margin-top: 38px; }
-  .outcome-list article { display: grid; grid-template-columns: 150px 1fr; column-gap: 26px; padding-top: 22px; }
-  .outcome-place { grid-row: 1 / 3; padding-top: 3px; }
-  .outcome-list h3 { margin-top: 0; }
-  .outcome-list article > p:last-child { max-width: 420px; margin-top: 12px; }
-  .further-inner, .closing { grid-template-columns: 1fr; gap: 33px; padding-block: 66px; }
-  .further h2, .closing h2 { max-width: 480px; }
-  .further-copy > p, .closing > p { max-width: 530px; font-size: 18px; }
-  .exchanges { padding-block: 55px 60px; }
+  .exchanges { padding-block: 70px; }
+  .product-choices { grid-template-columns: 1fr; gap: 26px; padding-block: 68px; }
+  .product-choices h2 { font-size: 42px; max-width: 550px; }
+  .product-choices > p { max-width: 550px; font-size: 17px; }
+  .product-credits .airline-copy > p:not(.eyebrow) { max-width: 550px; }
 }
 @media (max-width: 440px) {
-  .hero-copy { padding: 37px 24px 36px; }
-  .hero-copy h1 { font-size: 47px; }
-  .hero-description { font-size: 17px; margin-top: 24px; }
-  .hero-visual { height: 305px; min-height: 305px; }
-  .hero .text-link { font-size: 15px; margin-top: 24px; }
-  .story-preview li { display: block; max-width: 30%; font-size: 13px; position: relative; padding-right: 7px; }
-  .story-preview li:not(:last-child)::after { position: absolute; right: -13px; top: 6px; font-size: 17px; }
-  .outcome-list article { grid-template-columns: 1fr; gap: 0; }
-  .outcome-place { grid-row: auto; margin-bottom: 15px; }
-  .outcome-list h3 { font-size: 28px; }
-  .outcome-list article > p:last-child { max-width: none; font-size: 16px; }
-  .further-copy > p, .closing > p { font-size: 17px; }
-  .scope-line { column-gap: 19px; font-size: 13px; }
-  .exchanges > .section-label { font-size: 10px; gap: 15px; }
+  .exchanges { padding-block: 62px; }
+  .product-choices { padding-block: 58px; }
+  .product-choices h2 { font-size: 35px; }
+  .product-choices .eyebrow { margin-bottom: 20px; }
+  .product-choices > p { font-size: 16px; }
+  .product-credits .airline-copy > .product-value-note { padding-top: 20px; margin-top: 22px; font-size: 14px; }
 }
-.hero-copy h1 br:nth-of-type(2) { display: block; }
