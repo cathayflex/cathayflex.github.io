@@ -1,5 +1,6 @@
 /* Product meaning leads. The interactive example provides supporting evidence. */
 .exchanges { padding-block: 112px 95px; }
+.journey-editorial { max-width: 500px; }
 .hero-description { max-width: 400px; }
 .closing h2 { font-size: clamp(32px, 4vw, 58px); text-wrap: balance; }
 .product-credits { position: relative; }
