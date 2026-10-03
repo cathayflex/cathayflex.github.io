@@ -4,7 +4,7 @@ import { resolve, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { buildSourceReaders } from './build-source-readers.mjs';
+import { buildSourceRedirects } from './build-source-readers.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 if (!process.argv[2]) throw new Error('Pass the absolute Cathay Flex platform directory.');
@@ -47,12 +47,18 @@ await writeFile(resolve(root,'technology/manifest.json'),JSON.stringify(manifest
 const digest = value => createHash('sha256').update(value).digest('hex').slice(0,12);
 const revision = manifest.engineSha256.slice(0,12);
 const lab = resolve(root,'technology/lab.mjs');
-await writeFile(lab,(await readFile(lab,'utf8')).replace(/from '\.\/engine\.mjs(?:\?v=[^']*)?'/,`from './engine.mjs?v=${revision}'`));
-const view = resolve(root,'technology/system.js');
-await writeFile(view,(await readFile(view,'utf8')).replace(/from '\.\/lab\.mjs(?:\?v=[^']*)?'/,`from './lab.mjs?v=${digest(await readFile(lab))}'`));
+await writeFile(lab,(await readFile(lab,'utf8')).replace(/(from\s*['"]\.\/engine\.mjs)(?:\?v=[^'"]*)?(['"])/g,`$1?v=${revision}$2`));
+const labRevision = digest(await readFile(lab));
+for (const script of ['system.js','match.js']) {
+  const path = resolve(root,'technology',script);
+  await writeFile(path,(await readFile(path,'utf8')).replace(/(from\s*['"]\.\/lab\.mjs)(?:\?v=[^'"]*)?(['"])/g,`$1?v=${labRevision}$2`));
+}
 const html = resolve(root,'technology/index.html');
-await writeFile(html,(await readFile(html,'utf8'))
-  .replace(/system\.js\?v=[^"']+/,`system.js?v=${digest(await readFile(view))}`)
-  .replace(/system\.css\?v=[^"']+/,`system.css?v=${digest(await readFile(resolve(root,'technology/system.css')))}`));
-await buildSourceReaders(root);
+let page = await readFile(html,'utf8');
+for (const asset of ['system.js','system.css','match.js','match.css']) {
+  const pattern = new RegExp(`((?:src|href)=["'](?:\\./)?${asset.replace('.','\\.')})(?:\\?v=[^"']*)?(["'])`,'g');
+  page = page.replace(pattern,`$1?v=${digest(await readFile(resolve(root,'technology',asset)))}$2`);
+}
+await writeFile(html,page);
+await buildSourceRedirects(root);
 console.log(JSON.stringify({sourceFiles:files.length,engineBytes:manifest.engineBytes,digest:manifest.sourceTreeDigest}));
