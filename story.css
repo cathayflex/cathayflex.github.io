@@ -1,25 +1,34 @@
 /* Product meaning leads. The interactive example provides supporting evidence. */
 .exchanges { padding-block: 112px 95px; }
-.journey-editorial { max-width: 500px; }
+.journey-editorial { max-width: 540px; }
+.journey-editorial h2 { text-wrap: balance; }
 .hero-description { max-width: 400px; }
-.closing h2 { font-size: clamp(32px, 4vw, 58px); text-wrap: balance; }
+
 .product-credits { position: relative; }
 .product-credits .airline-copy h2 { max-width: none; text-wrap: balance; }
 .product-credits .airline-copy > p:not(.eyebrow) { max-width: 440px; }
+.credit-principles { margin: 24px 0 0; display: grid; gap: 20px; max-width: 440px; }
+.credit-principles > div { padding-left: 16px; border-left: 1px solid #adc8b8; }
+.credit-principles dt { font-size: 16px; color: var(--ink); }
+.credit-principles dd { margin: 5px 0 0; color: var(--muted); font-size: 15px; line-height: 1.5; }
 .product-credits .airline-copy > .product-value-note { padding-top: 24px; margin-top: 27px; border-top: 1px solid #d1dcd3; font-size: 15px; line-height: 1.6; }
 .product-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 11%; align-items: center; padding-block: 86px; border-bottom: 1px solid var(--line); }
 .product-choices .eyebrow { margin-bottom: 24px; }
-.product-choices h2 { font-size: clamp(34px, 3.35vw, 50px); max-width: 460px; }
-.product-choices > p { max-width: 440px; color: var(--muted); font-size: 18px; line-height: 1.6; }
+.product-choices h2 { font-size: clamp(34px, 3.35vw, 50px); max-width: 500px; text-wrap: balance; }
+.choices-detail { max-width: 440px; color: var(--muted); }
+.choices-detail p { font-size: 17px; line-height: 1.6; }
+.choices-detail p + p { margin-top: 20px; }
 @media (max-width: 1100px) {
   .exchanges { padding-block: 86px; }
+  .journey-editorial h2 br { display: none; }
   .product-choices { gap: 8%; padding-block: 72px; }
 }
 @media (max-width: 800px) {
   .exchanges { padding-block: 70px; }
   .product-choices { grid-template-columns: 1fr; gap: 26px; padding-block: 68px; }
   .product-choices h2 { font-size: 42px; max-width: 550px; }
-  .product-choices > p { max-width: 550px; font-size: 17px; }
+  .choices-detail { max-width: 550px; }
+  .product-credits .airline-copy h2 br { display: none; }
   .product-credits .airline-copy > p:not(.eyebrow) { max-width: 550px; }
 }
 @media (max-width: 440px) {
@@ -27,7 +36,7 @@
   .product-choices { padding-block: 58px; }
   .product-choices h2 { font-size: 35px; }
   .product-choices .eyebrow { margin-bottom: 20px; }
-  .product-choices > p { font-size: 16px; }
+  .choices-detail p { font-size: 16px; }
   .product-credits .airline-copy > .product-value-note { padding-top: 20px; margin-top: 22px; font-size: 14px; }
 }
 
