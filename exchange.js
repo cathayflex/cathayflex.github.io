@@ -1,162 +1,179 @@
-import { preferenceWords, needWords, initialState, accept, openRequest, publishRequest } from './offers.mjs?v=20261003-story';
+import { preferenceWords, needWords, publishRequest } from './offers.mjs?v=20261004-fixed2';
+import { snapshotAt, nextIndex, previousIndex } from './experience.mjs?v=20261004-flow3';
 
 const root = document.getElementById('flex-journey');
-const content = document.getElementById('journey-content');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-const arrow = '<svg aria-hidden="true"><use href="#arrow"/></svg>';
-const check = '<svg aria-hidden="true"><use href="#check"/></svg>';
-const bag = '<svg viewBox="0 0 32 36" aria-hidden="true"><rect x="5" y="9" width="22" height="24" rx="3"/><path d="M11 9V5a5 5 0 0 1 10 0v4M11 16v10m10-10v10"/></svg>';
-const copy = {
-  flexibility: {context: 'Your preferences', announcement: 'Your flexibility. Save the example preferences to see a suitable offer.'},
-  offer: {context: 'Taipei · 7 Oct', announcement: 'Earn credits. A window seat fits your saved flexibility. Accepting this seat change earns 400 Flex credits.'},
-  earned: {context: 'Taipei · Confirmed', announcement: 'Window seat 22A confirmed. 400 Flex credits earned.'},
-  need: {context: 'Tokyo · 2 Nov', announcement: 'Your next request. Seats together and one extra bag for Tokyo, using up to 360 Flex credits.'},
-  review: {context: 'Tokyo · 2 Nov', announcement: 'Review both changes, the total credit limit and expiry before publishing your request.'},
-  complete: {context: 'Tokyo · Confirmed', announcement: 'Tokyo confirmed. Seats 32A, 32B and 32C together, one extra checked bag, 360 credits used and 40 remaining.'},
+const $ = id => document.getElementById(id);
+const descriptions = {
+  flexibility: {status: 'YOUR FLEXIBILITY', title: 'Save what can change for you.', action: 'Save flexibility', progress: 'Save your flexibility', bottom: 'Save once. Review each offer before accepting.'},
+  offer: {status: 'FLEXIBILITY SAVED', title: 'A seat change offer for you.', action: 'Accept seat change', progress: 'Review your offer', explanation: 'Another traveller needs your aisle seat. This window seat fits your saved flexibility.', bottom: 'Same flight. Same cabin. You decide.'},
+  earned: {status: 'SEAT CHANGE CONFIRMED', title: 'Your flexibility earned 400 credits.', action: 'Use credits', progress: 'Credits added to your balance', explanation: 'Your window seat is confirmed. Your credits are ready whenever you need them.', bottom: '22A · Window seat confirmed'},
+  need: {status: 'YOUR NEXT JOURNEY', title: 'What would make this trip better?', action: 'Review request', progress: 'Request what you need', bottom: 'Use your balance for the changes that matter to you.'},
+  review: {status: 'REVIEW YOUR REQUEST', title: 'Two changes for 360 credits.', action: 'Publish request', progress: 'Approve your request', explanation: 'Flex found your Tokyo booking. Confirm the price and we’ll look for both changes together.', bottom: 'Complete both by 1 Nov, 9 am HKT.', amount: 'Fixed price · 360 credits'},
+  complete: {status: 'REQUEST FULFILLED', title: 'Your family trip, confirmed.', action: 'Start again', progress: '400 earned · 360 used · 40 remaining', explanation: 'Your family is seated together, with room for the extra bag.', bottom: 'Both changes confirmed within your approved terms.', amount: '360 credits used'},
 };
-let state = initialState(), screen = 'flexibility', animations = [];
-const wallet = document.createElement('span');
-wallet.id = 'journey-wallet';
-wallet.className = 'journey-wallet';
-root.querySelector('.journey-appbar').append(wallet);
-root.querySelector('.journey-route').innerHTML = `<span data-part="earn">Earn credits</span><span class="route-line" aria-hidden="true"></span><span data-part="use">Use credits</span><button id="journey-beginning" class="journey-restart" type="button" data-action="restart" aria-label="Start the experience again" title="Start again"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1.7 7M4 4v6h6"/></svg></button>`;
-
-function quietMotion(keyboard = false) {
-  return keyboard || reducedMotion.matches || document.documentElement.dataset.keyboard === 'true';
-}
-function clearMotion() {
+let index = 0, current = snapshotAt(0), animations = [], epoch = 0, pendingMatch = null;
+const text = (id, value) => { $(id).textContent = value; };
+function quietMotion(keyboard) { return keyboard || reducedMotion.matches || document.documentElement.dataset.keyboard === 'true'; }
+function cancelMotion() {
+  epoch++;
+  clearTimeout(pendingMatch);
+  pendingMatch = null;
+  root.removeAttribute('aria-busy');
   animations.forEach(animation => animation.cancel());
   animations = [];
+  root.querySelectorAll('.credit-flight').forEach(node => node.remove());
 }
-function animate(element, frames, options = {}) {
-  if (!element?.animate) return;
-  const animation = element.animate(frames, {duration: 240, easing: 'cubic-bezier(.23,1,.32,1)', ...options});
+function animate(node, frames, options = {}) {
+  if (!node?.animate) return null;
+  const animation = node.animate(frames, {duration: 230, easing: 'cubic-bezier(.23,1,.32,1)', ...options});
   animations.push(animation);
   animation.finished.catch(() => {});
-}
-function action(name, label) {
-  return `<button class="journey-action" type="button" data-action="${name}"><span>${label}</span>${arrow}</button>`;
-}
-function controls(name, label, back = false) {
-  return `<div class="journey-controls">${action(name, label)}${back ? '<button class="journey-back" type="button" data-action="back">Back</button>' : ''}</div>`;
-}
-function language(words) {
-  return `<blockquote class="journey-words">“${words}”</blockquote>`;
+  return animation;
 }
 function render() {
-  const current = copy[screen];
+  const {screen, state} = current, copy = descriptions[screen];
+  const future = index >= 3, earned = index >= 2, completed = index === 5;
   root.dataset.stage = screen;
-  document.getElementById('app-context').textContent = current.context;
-  wallet.hidden = ['flexibility', 'offer'].includes(screen);
-  wallet.innerHTML = `<strong>${state.balance}</strong><span>Flex credits</span>`;
-  const future = ['need', 'review', 'complete'].includes(screen);
-  const beginning = document.getElementById('journey-beginning');
-  const earn = root.querySelector('[data-part="earn"]');
-  const use = root.querySelector('[data-part="use"]');
-  beginning.hidden = screen === 'flexibility';
-  earn.classList.toggle('is-current', !future);
-  use.classList.toggle('is-current', future);
-  if (future) {
-    earn.removeAttribute('aria-current');
-    use.setAttribute('aria-current', 'step');
-  } else {
-    earn.setAttribute('aria-current', 'step');
-    use.removeAttribute('aria-current');
+  text('experience-counter', `0${index + 1} / 06`);
+  text('app-context', future ? 'Hong Kong to Tokyo' : 'Hong Kong to Taipei');
+  text('journey-date', future ? 'CX520 · 2 Nov' : '7 Oct · 1 h 45 min');
+  text('scene-status', copy.status);
+  text('card-title', copy.title);
+  text('experience-progress', copy.progress);
+  text('scene-bottom-copy', copy.bottom);
+  text('scene-amount', copy.amount || '');
+  $('scene-amount').hidden = !copy.amount;
+  const naturalLanguage = screen === 'flexibility' || screen === 'need';
+  $('journey-words').hidden = !naturalLanguage;
+  text('journey-words', `“${future ? needWords : preferenceWords}”`);
+  $('scene-explanation').hidden = naturalLanguage;
+  text('scene-explanation', copy.explanation || '');
+  $('taipei-booking').hidden = future;
+  $('tokyo-booking').hidden = !future;
+  const seatMap = root.querySelector('.seat-map');
+  seatMap.classList.toggle('seat-moved', earned);
+  seatMap.setAttribute('aria-label', `Your seat is ${earned ? '22A, by the window' : '22C, on the aisle'}`);
+  text('seat-change-label', screen === 'offer' ? 'Your offered change' : earned ? 'Your confirmed seat' : 'Your current seat');
+  text('seat-change-value', screen === 'offer' ? '22C → 22A' : earned ? '22A · Window' : '22C · Aisle');
+  $('credit-award').hidden = index === 0;
+  text('credit-award', earned ? '+400 earned' : '+400 credits');
+  text('seat-change-note', screen === 'offer' ? 'Aisle to window' : earned ? 'Your flight and cabin stay the same.' : 'Your booking stays unchanged until you accept.');
+  root.querySelectorAll('.service-state').forEach(node => { node.textContent = completed ? 'Confirmed' : index === 4 ? 'Included' : 'Requested'; });
+  root.querySelectorAll('.assigned-seat').forEach(node => { node.hidden = !completed; });
+  root.querySelectorAll('.seat-person').forEach(node => { node.hidden = completed; });
+  $('tokyo-booking').classList.toggle('is-confirmed', completed);
+  $('journey-wallet').setAttribute('aria-label', `${state.balance} Flex credits available`);
+  text('wallet-number', state.balance);
+  $('wallet-earned').hidden = !earned;
+  $('wallet-spent').hidden = !completed;
+  text('wallet-note', completed ? '40 credits stay in your balance.' : earned ? 'Earned on one journey. Ready for another.' : 'The credits you earn stay with you.');
+  const back = root.querySelector('[data-action="back"]');
+  back.disabled = index === 0;
+  const forward = root.querySelector('[data-action="forward"]');
+  forward.disabled = false;
+  forward.querySelector('span').textContent = copy.action;
+  forward.setAttribute('aria-label', copy.action);
+  for (const part of ['earn','use']) {
+    const node = root.querySelector(`[data-part="${part}"]`);
+    if ((part === 'use') === future) node.setAttribute('aria-current', 'step');
+    else node.removeAttribute('aria-current');
   }
-
-  if (screen === 'flexibility') {
-    content.innerHTML = `<div class="journey-screen journey-language-screen"><div class="journey-screen-main"><h3 id="card-title" tabindex="-1">Your flexibility</h3>${language(preferenceWords)}</div>${controls('save-flexibility', 'Save flexibility')}</div>`;
-  } else if (screen === 'offer') {
-    content.innerHTML = `<div class="journey-screen journey-offer"><div class="journey-screen-main">
-      <h3 id="card-title" tabindex="-1">Your seat change offer</h3>
-      <div class="seat-pair"><div><strong>22C</strong><span>Current aisle seat</span></div><span class="seat-arrow">${arrow}</span><div class="seat-destination"><strong>22A</strong><span>New window seat</span></div></div>
-      <p class="offer-reason">Another traveller needs an aisle. This window seat fits your flexibility.</p>
-      <p class="card-detail">Same flight · Taipei, 7 Oct</p>
-      <div class="offer-reward"><span>You earn</span><strong>400 <small>Flex credits</small></strong></div></div>
-      ${controls('accept', 'Accept seat change', true)}
-    </div>`;
-  } else if (screen === 'earned') {
-    content.innerHTML = `<div class="journey-screen journey-earned"><div class="journey-screen-main"><p class="confirmation-line">${check}<span>Window seat 22A confirmed</span></p><h3 id="card-title" class="earned-number" tabindex="-1">400</h3><p class="earned-caption">Flex credits earned</p><p class="earned-explanation">Use them on this journey or a future one.</p></div>${controls('request', 'Use credits')}</div>`;
-  } else if (screen === 'need') {
-    content.innerHTML = `<div class="journey-screen journey-language-screen"><div class="journey-screen-main"><h3 id="card-title" tabindex="-1">Your request</h3>${language(needWords)}</div>${controls('review', 'Review request', true)}</div>`;
-  } else if (screen === 'review') {
-    content.innerHTML = `<div class="journey-screen journey-request"><div class="journey-screen-main">
-      <h3 id="card-title" tabindex="-1">Review your request</h3>
-      <dl class="request-review"><div><dt>Seats</dt><dd>Together with your family</dd></div><div><dt>Baggage</dt><dd>1 extra checked bag</dd></div><div class="request-cap"><dt>Total credit limit</dt><dd>360 <span>Flex credits</span></dd></div></dl>
-      <p class="request-terms">Arrange both together by <strong>1 Nov, 9 am HKT</strong>.</p>
-      <p class="authorization-note">Publishing allows Flex to confirm both changes within these terms.</p></div>
-      ${controls('publish', 'Publish request', true)}
-    </div>`;
-  } else {
-    content.innerHTML = `<div class="journey-screen journey-complete"><div class="journey-screen-main"><p class="confirmation-line">${check}<span>Both changes confirmed</span></p><h3 id="card-title" tabindex="-1">Ready for Tokyo.</h3><div class="family-outcome"><p class="card-overline">YOUR FAMILY, TOGETHER</p><div class="family-seats"><div><strong>32A</strong><span>Mia</span></div><div><strong>32B</strong><span>Jamie</span></div><div class="your-seat"><strong>32C</strong><span>You</span></div></div></div><div class="bag-outcome">${bag}<div><strong>1 extra checked bag</strong><span>Up to 23 kg · Confirmed</span></div>${check}</div><dl class="credit-receipt"><div><dt>Flex credits used</dt><dd>360</dd></div><div><dt>Credits remaining</dt><dd><strong>40</strong> Flex credits</dd></div></dl></div></div>`;
-  }
 }
-function announce(message) {
-  document.getElementById('journey-announcement').textContent = message;
+function animateBalance(before, after, source, reverse = false) {
+  if (before === after) return;
+  const number = $('wallet-number');
+  const from = source.getBoundingClientRect(), to = number.getBoundingClientRect();
+  const board = root.querySelector('.experience').getBoundingClientRect();
+  const pill = document.createElement('span');
+  pill.className = 'credit-flight';
+  pill.setAttribute('aria-hidden', 'true');
+  pill.textContent = after > before ? '+400' : '−360';
+  const start = after > before ? from : to, end = after > before ? to : from;
+  pill.style.left = `${start.left - board.left + start.width / 2}px`;
+  pill.style.top = `${start.top - board.top + start.height / 2}px`;
+  root.querySelector('.experience').append(pill);
+  // This short explanatory transfer links the booking change to its balance.
+  // Back navigation uses a direct balance transition, without replaying payment.
+  if (reverse) { pill.remove(); animate(number,[{opacity:.4},{opacity:1}]); return; }
+  const dx = end.left + end.width / 2 - start.left - start.width / 2;
+  const dy = end.top + end.height / 2 - start.top - start.height / 2;
+  const transfer = animate(pill, [
+    {opacity:0,transform:'translate(-50%, -50%) scale(.94)',offset:0},
+    {opacity:1,transform:'translate(-50%, -50%) scale(1)',offset:.15},
+    {opacity:1,transform:`translate(calc(-50% + ${dx * .6}px), calc(-50% + ${dy * .6 - 28}px))`,offset:.65},
+    {opacity:0,transform:`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(.94)`,offset:1},
+  ],{duration:620,easing:'cubic-bezier(.22,.68,.2,1)'});
+  transfer?.finished.then(()=>pill.remove()).catch(()=>{});
+  number.innerHTML = `<span class="balance-old">${before}</span><span class="balance-new">${after}</span>`;
+  animate(number.querySelector('.balance-old'),[{transform:'translateY(0)',opacity:1},{transform:'translateY(-90%)',opacity:0}],{delay:390,duration:240,fill:'both'});
+  animate(number.querySelector('.balance-new'),[{transform:'translateY(90%)',opacity:0},{transform:'translateY(0)',opacity:1}],{delay:390,duration:240,fill:'both'});
+  const version = epoch;
+  const last = animations.at(-1);
+  last?.finished.then(()=>{ if(version===epoch) text('wallet-number',after); }).catch(()=>{});
 }
-function keepJourneyContextVisible(keyboard) {
-  const card = root.querySelector('.journey-card');
-  const cardBounds = card.getBoundingClientRect();
-  const headerBottom = Math.max(0, document.querySelector('.site-header')?.getBoundingClientRect().bottom || 0);
-  const comfortableTop = headerBottom + 18;
-  const comfortableBottom = window.innerHeight - 24;
-  // Keep a visitor's scroll position when the date, balance and opening of the
-  // new state are already readable. A long mobile card always starts at its top.
-  if (cardBounds.top >= comfortableTop - 8
-      && cardBounds.top + Math.min(160, cardBounds.height) <= comfortableBottom) return;
-  const journeyBounds = root.getBoundingClientRect();
-  const showWholeJourney = window.innerWidth > 800
-    && journeyBounds.height <= comfortableBottom - comfortableTop;
-  const targetTop = showWholeJourney ? journeyBounds.top : cardBounds.top;
-  window.scrollTo({
-    top: Math.max(0, window.scrollY + targetTop - comfortableTop),
-    behavior: quietMotion(keyboard) ? 'instant' : 'smooth',
-  });
+function showMatch(keyboard) {
+  if (pendingMatch) return;
+  cancelMotion();
+  const published = publishRequest(current.state);
+  if (published.stage !== 'published') return;
+  current = {screen: current.screen, state: published};
+  root.setAttribute('aria-busy', 'true');
+  text('scene-status', 'REQUEST PUBLISHED');
+  text('card-title', 'Finding your changes.');
+  text('scene-explanation', 'Your request is active. Flex checks seats, baggage and each traveller’s agreement.');
+  text('experience-progress', 'Looking for both changes together');
+  text('wallet-note', `${published.creditHold} credits reserved for this request.`);
+  $('journey-wallet').setAttribute('aria-label', `${published.balance} Flex credits, including ${published.creditHold} reserved for this request`);
+  text('scene-bottom-copy', 'Your booking stays unchanged until both changes are confirmed.');
+  const forward = root.querySelector('[data-action="forward"]');
+  forward.disabled = true;
+  forward.querySelector('span').textContent = 'Matching';
+  forward.setAttribute('aria-label', 'Matching');
+  text('journey-announcement', 'Request published. Finding both changes at the confirmed price.');
+  // A brief authored passage connects publication to the later matching result.
+  // Back cancels it immediately. Keyboard and reduced-motion users skip it.
+  if (quietMotion(keyboard)) { go(5, keyboard); return; }
+  root.querySelectorAll('.service-state').forEach(node => { node.textContent = 'Matching'; });
+  animate($('tokyo-booking'), [{opacity:1},{opacity:.5},{opacity:1}], {duration:700});
+  pendingMatch = setTimeout(() => go(5, false), 850);
 }
-function show(nextScreen, nextState = state, keyboard = false) {
-  const previousBalance = state.balance;
-  clearMotion();
-  state = nextState;
-  screen = nextScreen;
+function keepInView(keyboard) {
+  const frame = root.querySelector('.experience'), box = frame.getBoundingClientRect();
+  const header = document.querySelector('.site-header').getBoundingClientRect().bottom;
+  if (box.top < header || box.top > innerHeight - 180) window.scrollTo({top:scrollY+box.top-header-14,behavior:quietMotion(keyboard)?'instant':'smooth'});
+}
+function go(next, keyboard) {
+  const previous = current, backward = next < index;
+  cancelMotion();
+  index = next;
+  current = snapshotAt(index);
+  const quiet = quietMotion(keyboard);
+  root.classList.toggle('quiet-motion', quiet);
   render();
-  if (!quietMotion(keyboard)) {
-    animate(content, [{opacity: 0, transform: 'translateY(5px)'}, {opacity: 1, transform: 'translateY(0)'}]);
-    if (previousBalance !== state.balance) animate(wallet, [{opacity: .45, transform: 'translateY(3px)'}, {opacity: 1, transform: 'translateY(0)'}]);
+  if (!quiet) {
+    animate(root.querySelector('.scene-copy'),[{opacity:.35,transform:`translateY(${backward?-4:6}px)`},{opacity:1,transform:'translateY(0)'}]);
+    if (index === 1) animate(root.querySelector('.seat-offer-detail'),[{opacity:0,transform:'translateX(18px) scale(.98)'},{opacity:1,transform:'translateX(0) scale(1)'}],{duration:280});
+    if (index === 3) animate($('tokyo-booking'),[{opacity:0,transform:'translateX(18px)'},{opacity:1,transform:'translateX(0)'}],{duration:280});
+    if (index === 5) root.querySelectorAll('.service-visual').forEach((node,i)=>animate(node,[{opacity:.5,transform:'translateY(5px)'},{opacity:1,transform:'translateY(0)'}],{delay:i*60}));
+    animateBalance(previous.state.balance,current.state.balance,index>=3?$('scene-amount'):$('credit-award'),backward);
   }
-  document.getElementById('card-title').focus({preventScroll: true});
-  keepJourneyContextVisible(keyboard);
-  announce(copy[screen].announcement);
+  if (keyboard) $('card-title').focus({preventScroll:true});
+  keepInView(keyboard);
+  text('journey-announcement',`${descriptions[current.screen].title} ${current.state.balance} Flex credits available. Step ${index+1} of 6.`);
 }
-root.addEventListener('click', event => {
+root.addEventListener('click',event=>{
   const button = event.target.closest('[data-action]');
   if (!button || button.disabled) return;
-  const keyboard = event.detail === 0;
-  const name = button.dataset.action;
-  if (name === 'restart') {
-    show('flexibility', initialState(), keyboard);
-    return;
-  }
-  if (name === 'back') {
-    const previous = {offer: 'flexibility', need: 'earned', review: 'need'}[screen];
-    if (previous) show(previous, state, keyboard);
-    return;
-  }
-  if (name === 'save-flexibility' && screen === 'flexibility' && state.offer) {
-    show('offer', state, keyboard);
-  } else if (name === 'accept' && screen === 'offer') {
-    const next = accept(state);
-    if (next !== state) show('earned', next, keyboard);
-  } else if (name === 'request' && screen === 'earned') {
-    const next = state.stage === 'earned' ? openRequest(state) : state;
-    if (next.stage === 'request') show('need', next, keyboard);
-  } else if (name === 'review' && screen === 'need') {
-    show('review', state, keyboard);
-  } else if (name === 'publish' && screen === 'review') {
-    const next = publishRequest(state);
-    if (next !== state) show('complete', next, keyboard);
-  }
+  if (index === 4 && button.dataset.action === 'forward') { showMatch(event.detail === 0); return; }
+  const next = button.dataset.action === 'back' ? previousIndex(index) : index===5 ? 0 : nextIndex(index);
+  go(next,event.detail===0);
 });
-reducedMotion.addEventListener('change', () => {
-  if (reducedMotion.matches) clearMotion();
+reducedMotion.addEventListener('change',()=>{
+  if (pendingMatch !== null) { go(5, true); return; }
+  cancelMotion();
+  root.classList.toggle('quiet-motion',reducedMotion.matches);
+  render();
 });
+root.classList.toggle('quiet-motion',reducedMotion.matches);
 render();

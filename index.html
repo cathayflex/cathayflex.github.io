@@ -20,12 +20,12 @@
   <link rel="stylesheet" href="/fonts.css?v=20261003-cathay">
   <link rel="preload" href="assets/flight.jpg" as="image" fetchpriority="high">
   <link rel="stylesheet" href="style.css?v=20261003-clear-headings">
-  <link rel="stylesheet" href="exchange.css?v=20261003-experience">
+  <link rel="stylesheet" href="exchange.css?v=20261004-release1">
   <link rel="stylesheet" href="story.css?v=20261003-value-loop">
-  <link rel="stylesheet" href="technology.css?v=20261003-clear-headings">
+  <link rel="stylesheet" href="technology.css?v=20261004-fixed2">
   <script src="app.js?v=20261003-product" defer></script>
-  <script src="exchange.js?v=20261003-experience" type="module"></script>
-  <script src="technology.js?v=20261003-experience" type="module"></script>
+  <script src="exchange.js?v=20261004-release1" type="module"></script>
+  <script src="technology.js?v=20261004-fixed2" type="module"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -56,22 +56,43 @@
       <span id="the-idea" class="anchor-alias" aria-hidden="true"></span>
       <div class="journey" id="flex-journey" data-stage="flexibility">
         <div class="journey-editorial">
-          <p class="eyebrow" id="journey-chapter">THE IDEA</p>
-          <h2 id="journey-title">Turn your flexibility into<br> the changes you need.</h2>
+          <div><p class="eyebrow" id="journey-chapter">THE IDEA</p><h2 id="journey-title">Turn your flexibility into<br> the changes you need.</h2></div>
           <p class="journey-description" id="journey-description">Flex connects travellers who need a change with people willing to make one. Agree to a suitable change, earn credits, then use them to request a flight time, seat or service that matters to you.</p>
-          <nav class="journey-route" aria-label="Illustrative experience stages"><button id="journey-beginning" class="is-current" type="button" data-action="restart" disabled aria-label="Return to earning credits and start again" title="Back to earning credits"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 5-7 7 7 7M3 12h18"/></svg>Earn credits</button><span class="route-line" aria-hidden="true"></span><span data-part="use">Use credits</span></nav>
         </div>
-        <div class="journey-card">
-          <div class="journey-appbar"><span>Flex</span><span id="app-context">Your preferences</span></div>
-          <div id="journey-content" class="journey-content">
-            <p class="card-overline">EARN CREDITS</p>
-            <h3 id="card-title" tabindex="-1">What can change for you?</h3>
-            <p class="journey-words">“On flights up to four hours, any seat is fine. On longer flights, I need an aisle.”</p>
-            <p class="card-detail">Save your flexibility. Decide on each offer when it arrives.</p>
+        <div class="experience" aria-label="An illustrated Flex journey">
+          <div class="experience-topline">
+            <ol class="journey-route" aria-label="Experience chapters"><li data-part="earn" aria-current="step">Earn credits</li><li class="route-line" aria-hidden="true"></li><li data-part="use">Use credits</li></ol>
+            <span class="experience-counter" id="experience-counter">01 / 06</span>
           </div>
+          <div class="experience-grid">
+            <div class="journey-scene" id="journey-content">
+              <div class="journey-context"><span id="app-context">Hong Kong to Taipei</span><span id="journey-date">7 Oct · 1 h 45 min</span></div>
+              <div class="scene-copy"><p class="scene-status" id="scene-status">YOUR FLEXIBILITY</p><h3 id="card-title" tabindex="-1">Save what can change for you.</h3><blockquote id="journey-words" class="journey-words">“On flights up to four hours, any seat is fine. On longer flights, I need an aisle.”</blockquote><p id="scene-explanation" class="scene-explanation" hidden></p></div>
+              <div class="booking-visual" id="taipei-booking">
+                <div class="seat-map" aria-label="Your seat is 22C, on the aisle">
+                  <span class="seat-window-label">Window</span><span class="seat-aisle-label">Aisle</span>
+                  <div class="seat-row"><div class="seat-object" data-seat="window"><span>22A</span></div><div class="seat-object seat-unavailable"><span>22B</span></div><div class="seat-object" data-seat="aisle"><span>22C</span></div><span class="seat-you">You</span></div>
+                </div>
+                <div class="seat-offer-detail"><p id="seat-change-label">Your current seat</p><strong id="seat-change-value">22C · Aisle</strong><span class="credit-award" id="credit-award" hidden>+400 credits</span><span id="seat-change-note">Your booking stays unchanged until you accept.</span></div>
+              </div>
+              <div class="tokyo-booking" id="tokyo-booking" hidden>
+                <div class="service-visual" id="family-service"><div class="service-title"><span>Seats together</span><span class="service-state">Requested</span></div><div class="family-seats"><div><strong><span class="assigned-seat">32A</span><svg class="seat-person" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><path d="M5 21v-3a7 7 0 0 1 14 0v3"/></svg></strong><span>Mia</span></div><div><strong><span class="assigned-seat">32B</span><svg class="seat-person" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><path d="M5 21v-3a7 7 0 0 1 14 0v3"/></svg></strong><span>Jamie</span></div><div class="your-seat"><strong><span class="assigned-seat">32C</span><svg class="seat-person" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><path d="M5 21v-3a7 7 0 0 1 14 0v3"/></svg></strong><span>You</span></div></div></div>
+                <div class="service-visual bag-service" id="bag-service"><div class="service-title"><span>Extra baggage</span><span class="service-state">Requested</span></div><div class="bag-drawing"><svg viewBox="0 0 40 46" aria-hidden="true"><path d="M14 12V7a6 6 0 0 1 12 0v5M13 21v15m14-15v15M12 43v2m16-2v2"/><rect x="6" y="12" width="28" height="30" rx="5"/></svg><p><strong>1 checked bag</strong><span>Up to 23 kg</span></p></div></div>
+              </div>
+              <div class="scene-bottom"><p id="scene-bottom-copy">Save once. Review each offer before accepting.</p><span id="scene-amount" hidden></span></div>
+            </div>
+            <aside class="journey-wallet" id="journey-wallet" aria-label="0 Flex credits available">
+              <div class="wallet-top"><span>Flex credits</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5H6a3 3 0 0 0 0 6h14v9H6a3 3 0 0 1-3-3V8m0 0V5a2 2 0 0 1 2-2h13v8m-3 4h5"/></svg></div>
+              <div class="wallet-balance"><span id="wallet-number" aria-hidden="true">0</span><span>Credit balance</span></div>
+              <div class="wallet-entry" id="wallet-earned" hidden><svg aria-hidden="true"><use href="#check"/></svg><div><span>Seat change</span><small>Taipei · 7 Oct</small></div><strong>+400</strong></div>
+              <div class="wallet-entry" id="wallet-spent" hidden><svg aria-hidden="true"><use href="#check"/></svg><div><span>Seats &amp; baggage</span><small>Tokyo · 2 Nov</small></div><strong>−360</strong></div>
+              <p id="wallet-note">The credits you earn stay with you.</p>
+            </aside>
+          </div>
+          <div class="experience-controls"><button class="journey-back" type="button" data-action="back" disabled><svg aria-hidden="true"><use href="#arrow"/></svg><span>Back</span></button><p id="experience-progress">Save your flexibility</p><button class="journey-action" type="button" data-action="forward"><span>Save flexibility</span><svg aria-hidden="true"><use href="#arrow"/></svg></button></div>
         </div>
       </div>
-      <p class="journey-note">An illustrated journey. Offers and credit amounts vary by arrangement.</p>
+      <p class="journey-note">An illustrated journey. Back revisits an earlier moment. The match and elapsed time are illustrated.</p>
       <p id="journey-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
     </section>
     <section id="intelligence" class="technology section-shell" aria-labelledby="technology-title">
@@ -81,7 +102,7 @@
         <p>AI turns your preferences and requests into clear conditions for you to review. The matching algorithm checks available options against everyone’s agreed terms.</p>
       </div>
       <div id="technology-visual"></div>
-      <noscript><p>Flex interprets travel preferences, then checks compatible bookings, credit limits and each traveller’s agreement before presenting an arrangement.</p></noscript>
+      <noscript><p>Flex interprets travel preferences, then checks compatible bookings, quoted prices and each traveller’s agreement before presenting an arrangement.</p></noscript>
     </section>
     <section class="airline product-credits" id="credits" aria-labelledby="credits-title">
       <span id="for-cathay" class="anchor-alias" aria-hidden="true"></span>
@@ -97,7 +118,7 @@
           <h2 id="credits-title">Credits make more<br> exchanges possible.</h2>
           <p>The traveller you help doesn’t need to offer what you need in return. Flex credits connect separate exchanges through one balance.</p>
           <dl class="credit-principles">
-            <div><dt>One shared unit</dt><dd>Combine different eligible changes within a single credit budget.</dd></div>
+            <div><dt>One shared unit</dt><dd>Bring different eligible changes together through one credit balance.</dd></div>
             <div><dt>Value carried forward</dt><dd>Earning and using credits can happen at different times, as your travel needs change.</dd></div>
           </dl>
           <p class="product-value-note">For Cathay, this creates more ways to meet passenger needs using the capacity already available.</p>
@@ -110,8 +131,8 @@
         <h2 id="choices-title">Clear terms.<br> You stay in control.</h2>
       </div>
       <div class="choices-detail reveal">
-        <p>See the proposed booking changes, credit reward or spending limit before you agree.</p>
-        <p>Saving your flexibility never authorizes a booking change. You choose which offers to accept. For a request, approve the outcome, credit limit and expiry in advance. Flex can act only within those terms.</p>
+        <p>See the proposed booking changes, credit reward or fixed price before you agree.</p>
+        <p>Saving your flexibility never authorizes a booking change. You choose which offers to accept. For a request, approve the outcome, quoted price and expiry in advance. Flex can act only within those terms.</p>
       </div>
     </section>
     <section class="closing section-shell" aria-labelledby="closing-title">

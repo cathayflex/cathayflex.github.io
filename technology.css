@@ -78,6 +78,7 @@
 }
 .technology-clause.is-highlighted { color: var(--jade); text-decoration-color: var(--jade); }
 .technology-clause:focus-visible { outline-offset: 3px; }
+.technology-source-note { margin-top: 20px; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .technology-rules { display: grid; gap: 15px; margin: 0; }
 .technology-rules > div { position: relative; isolation: isolate; border-left: 2px solid var(--line); padding: 0 0 0 14px; }
 .technology-rules > div.is-highlighted { border-left-color: var(--jade); }
@@ -93,6 +94,7 @@
 .technology-rules > div.is-highlighted::before { opacity: 1; }
 .technology-rules dt { font-size: 12px; color: var(--muted); margin-bottom: 3px; }
 .technology-rules dd { margin: 0; font-size: 18px; line-height: 1.35; }
+.technology-rules dd small { display: block; margin-top: 5px; font-size: 12px; line-height: 1.5; color: var(--muted); }
 .technology-interpretation-note { font-size: 12px; color: var(--muted); margin-top: 24px; }
 .technology-match-context { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; line-height: 1.45; color: var(--muted); }
 .technology-match-context > span { white-space: nowrap; }
@@ -113,12 +115,13 @@
 .technology-family-row > span { border: 1px solid var(--line); border-radius: 10px 10px 3px 3px; min-width: 53px; padding: 15px 8px 11px; text-align: center; font-size: 16px; }
 .technology-family-row .is-yours { background: var(--mist); border-color: var(--jade); color: var(--jade); }
 .technology-service-line { display: flex; align-items: center; gap: 11px; font-size: 13px; }
-.technology-service-line > strong { margin-left: auto; font-weight: 400; font-variant-numeric: tabular-nums; }
+.technology-service-line > strong { margin-left: auto; font-weight: 400; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .technology-baggage { padding-top: 18px; }
 .technology-baggage > svg { width: 26px; height: 29px; color: var(--jade); flex: 0 0 auto; }
 .technology-baggage small { display: block; color: var(--muted); font-size: 11px; margin-top: 4px; }
 .technology-terms { display: flex; flex-wrap: wrap; column-gap: 18px; row-gap: 5px; margin-top: 30px; padding: 15px 0; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
 .technology-terms > p { flex: 1 0 100%; font-size: 12px; color: var(--ink); margin-bottom: 2px; }
+.technology-terms > strong { color: var(--jade); font-weight: 500; }
 .technology-terms > span + span::before { content: "·"; margin-right: 18px; color: var(--muted); }
 .technology-details { margin-top: 34px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .technology-terms + .technology-details { margin-top: 12px; }
@@ -130,8 +133,15 @@
 .technology-plus::after { transform: rotate(90deg); transition: transform 160ms var(--ease); }
 .technology-details[open] .technology-plus::after { transform: rotate(0); }
 .technology-detail-content { display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; padding: 3px 0 25px; }
+.technology-detail-content > div { min-width: 0; }
 .technology-detail-content h4 { font-size: 13px; font-weight: 500; margin: 0 0 7px; }
 .technology-detail-content p { font-size: 13px; line-height: 1.6; color: var(--muted); }
+.technology-detail-content p + p { margin-top: 12px; }
+.technology-code { margin: 12px 0 0; padding: 14px; border: 1px solid var(--line); background: var(--paper); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: auto; font-size: 11px; line-height: 1.65; color: var(--ink); tab-size: 2; }
+.technology-code code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.technology-code:focus-visible { outline: 2px solid var(--jade); outline-offset: 3px; }
+.technology-code + p { margin-top: 12px; }
+.technology-detail-content .technology-detail-note { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 12px; font-size: 12px; }
 .technology-disclosure { margin-top: 14px; font-size: 11px; line-height: 1.5; color: var(--muted); }
 .technology-no-match h4 { margin: 0 0 15px; font-size: 22px; font-weight: 300; }
 .technology-no-match p { font-size: 14px; color: var(--muted); }
@@ -168,6 +178,7 @@
   .technology-family-row > span { min-width: 65px; }
   .technology-service-line { max-width: 340px; }
   .technology-detail-content { grid-template-columns: 1fr; gap: 19px; padding-top: 7px; max-width: 530px; }
+  .technology-code { font-size: 12px; }
 }
 @media (max-width: 440px) {
   .technology { padding-block: 64px; }
