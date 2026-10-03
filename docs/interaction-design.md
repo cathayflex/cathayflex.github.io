@@ -1,31 +1,47 @@
-# One traveller, two natural-language requests
+# One change, value for another journey
 
-The experience follows a traveller from flexible seat preferences to a reward, then from a new travel need to a service paid for with that reward. Each screen has one primary action. Progress is visitor controlled.
+The public illustration follows one traveller across two journeys. Its first screen already shows a useful seat offer and its reward. Four stable states carry the complete story, with three primary actions and a quiet return to the opening chapter.
 
-## Preferences and earning
+## A seat that can change
 
-The opening sentence distinguishes short and long flights. It is displayed alongside two reviewed interpretations, Any seat for short flights and Aisle preferred for long flights. A short reveal connects the sentence to the structured rows. The words remain visible for reading and checking.
+The traveller’s saved words state an exact boundary.
 
-Find a seat match evaluates the current short flight, the traveller's preferences and Alex's request for an aisle. The offer proposes a window for the traveller and an aisle for Alex on the same flight. Alex has already agreed within the illustration. The traveller accepts the complete offer before 300 Flex credits are issued.
+> On flights up to four hours, any seat is fine. On longer flights, I need an aisle.
 
-The long-flight preference is preserved. Seat preferences are scored separately from seat eligibility. A candidate is offered only if it preserves or improves the preference satisfaction of the existing booking. The same swap on a long flight is rejected because it would give up an already-held, preferred aisle seat. Other seat types remain eligible when that preference is not already met.
+Two compact interpretations retain that boundary. The current Taipei flight lasts 105 minutes, so window 22A is compatible. Another traveller has an active, no-charge request for aisle 22C. The offer shows both seat positions, the unchanged flight and a 400-credit airline-funded reward. The only primary action is **Accept seat change**.
 
-## A new request and spending
+No profile setup or preliminary search click is needed to understand this opening. The saved preference is context for a specific voluntary choice. It remains distinct from a later request to spend credits.
 
-Use credits on your next trip opens a second sentence asking for extra baggage on a Tokyo trip next month, using credits. The interpretation identifies the journey, service and payment preference. Find options checks a small service catalogue against the request and available balance. It excludes a cheaper baggage item for the wrong journey and a seat item for the right journey.
+## Value that stays with the traveller
 
-The result is extra baggage for Tokyo at 200 Flex credits. Confirmation leaves 100 credits. The final state stays visible.
+Acceptance confirms window 22A and adds 400 credits once. The app header keeps the balance visible throughout the remaining story. The main reward view links this value to a later need, with **Continue to Tokyo** as its one action.
 
-## Returning to the beginning
+The Taipei flight is unchanged. No Tokyo seat or baggage allocation changes at this stage.
 
-The existing chapter trail contains a quiet back link labelled Your flexibility. It becomes available after the first screen and remains present on desktop and mobile. Returning through this link starts the illustration from the original preferences and a zero balance. It clears the previous offer and reservation state. It has an explicit accessible name and a native tooltip. There is no separate replay or reset panel.
+## Different priorities on another journey
+
+The next statement concerns an identified Tokyo booking.
+
+> For Tokyo, I’d like us to sit together and take one extra checked bag. Use up to 360 Flex credits.
+
+The reviewed request shows seats together, one extra checked bag, one total credit cap and an expiry. Both changes must be arranged together. The displayed expiry is 1 November 2026 at 9 am Hong Kong time, before the illustrative baggage service closes at 10 am.
+
+**Publish request** confirms these terms. The illustration has an eligible seat supplier who has conditionally agreed to the move and an available airline baggage entitlement. The combined arrangement costs 160 credits for seating and 200 for baggage. It must fit the single 360-credit cap. Neither part proceeds alone. The request supplies the traveller’s authorization, so no additional requester acceptance appears.
+
+## A complete, visible outcome
+
+The final state shows Mia, Jamie and the traveller together in 32A, 32B and 32C, one additional 23 kg checked bag, 360 credits used and 40 remaining. It stays visible until the visitor returns to the opening chapter. Flex coordinates all changes and credit settlement. Personal baggage allowances never pass between travellers.
 
 ## Motion and access
 
-Structured preference rows appear after the sentence with a 70-millisecond stagger. Screen transitions last 280 milliseconds. Motion is explanatory and never blocks an action. Keyboard actions and reduced-motion preferences bypass the movement. The new stage heading receives focus, and a live region describes the result.
+The same app surface carries all four states. Source clauses reveal with a short 65-millisecond stagger. State transitions use a 240-millisecond opacity and five-pixel movement. A change in the wallet receives a small synchronized emphasis. Publication includes a 650-millisecond matching transition, with visible feedback on the existing action and a screen-reader announcement.
 
-One fixed app frame is reused across the six stages. The page retains the same editorial hierarchy and Cathay styling. Neither natural-language step is presented as a separate AI-branded feature.
+Keyboard activation and reduced-motion preferences skip movement and the matching delay. Every completed transition moves reading focus to the new state’s heading. If the new card context is outside the visible area, the page brings its date and balance beneath the sticky header. An already visible card keeps its position. Keyboard and reduced-motion scrolling is immediate. The quiet chapter return cancels pending motion and returns to the initial offer without duplicate credits. Live-region announcements describe both booking outcomes and the remaining balance.
 
-## Implementation boundaries
+The app frame uses automatic height. Mobile content remains fully readable without clipping or a nested scroll area. The primary action has a minimum 46-pixel target, visible focus and immediate press feedback. Hover effects apply only to devices with a fine pointer.
 
-The two sentences and their interpretations are authored product illustrations. The public website does not call a language model or airline API. Seat compatibility, service selection, consent preconditions, credit issuance and redemption execute locally against illustrative data. Credit amounts are illustrative. All offers, booking changes and credits are coordinated by Flex, with no direct traveller payments.
+## Illustration boundaries
+
+The source statements, interpreted conditions, journeys, prices, supplier response and booking confirmations are authored local data. The fixed clock begins on 5 October 2026 and moves to 19 October for the later request. There are no live language-model calls, airline API requests, external payments or actual Flex accounts on this page. The product platform implements those workflows separately.
+
+The state functions check the stated duration boundary, active counterparty authorization, correct journey and booking party, available airline inventory, one total funded cap and the service expiry. Repeated actions cannot issue or spend credits twice. A missing service leaves the entire requested arrangement unchanged. Unit tests cover these relationships and the 400 minus 360 equals 40 credit flow.

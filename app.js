@@ -23,6 +23,7 @@ document.addEventListener('pointerdown', event => {
   if (narrow.matches && !event.target.closest('.site-header')) closeMenu();
 }, { passive:true });
 narrow.addEventListener('change', () => closeMenu());
+document.documentElement.dataset.navigation = 'ready';
 const header = document.querySelector('.site-header');
 const navigationLinks = [...navigation.querySelectorAll('a[href^="#"]')];
 const navigationSections = navigationLinks.map(link => document.querySelector(link.getAttribute('href')));
