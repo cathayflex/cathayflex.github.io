@@ -24,8 +24,9 @@ The authenticated platform is maintained separately. Its API and operational ver
 
 ## Design and assets
 
-The design uses Cathay Jade, white space, GT Walsheim Regular headings, Cathay Sans EN body text, restrained movement and airline photography. `assets/cathay-flex-logo.svg` combines the original official Cathay vector with outlined FLEX lettering on a shared baseline. The note “For the Cathay Hackathon demo only” stays separate and readable beneath the logo.
+The design uses Cathay Jade, white space, GT Walsheim Regular headings, Cathay Sans EN body text, restrained movement and airline photography. `assets/cathay-flex-logo.svg` is the default horizontal lockup. It preserves the brushwing and CATHAY paths from the official Cathay Cargo master and adds custom serif FLEX outlines matched to its cap height, stem weight, terminals and baseline. `assets/cathay-flex-logo-stacked.svg` retains the centered stacked alternative. Both are path-only SVGs with no font dependency. The Cargo anniversary badge is excluded. Regenerate both assets with `python3 scripts/build-brand.py`. The note “For the Cathay Hackathon demo only” stays separate and readable beneath the logo.
 
+- [Official Cathay Cargo master](https://www.cathaycargo.com/content/dam/cargo/logo_icons/logo/cargo-logo.svg), retrieved 4 October 2026 and preserved in `assets/brand/cathay-cargo-original.svg`
 - [Official Cathay wordmark](https://www.cathaypacific.com/content/dam/content-fragment/en_hk/config/logo.originalimage.svg)
 - [Official brushwing](https://www.cathaypacific.com/content/dam/header-footer/cx_brushwing_logo.originalimage.png)
 - [Hero photography, Cathay Pacific](https://news.cathaypacific.com/let-s-move-beyond-362353)
