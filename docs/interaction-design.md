@@ -1,49 +1,53 @@
-# An illustration of earning and using credits
+# The traveller experience
 
-The product explanation stays separate from the example. The static heading, “Different priorities. Better journeys.”, describes how Flex connects requests with voluntary changes. The interaction never replaces that heading or its supporting text with a destination, traveller or scenario outcome.
+The public page separates the traveller experience from the explanation of AI interpretation and matching. The experience shows what a traveller says, chooses and receives. The separate technology section explains how the system works with the same example data.
 
-Beside this explanation, one compact app surface illustrates earning and using credits. Its first screen already shows a useful seat offer and its reward. Four stable states carry this example, with three primary actions and a quiet return to earning credits. Journey names, dates, seats and credit amounts remain inside the app surface. They illustrate possible arrangements without defining the product’s scope.
+The product heading and surrounding explanation remain static. Cities, dates, seats and amounts belong inside the illustration. Its six screens are controlled by the visitor, with one task or outcome per screen.
 
-## A seat that can change
+## Earning credits
 
-The traveller’s saved words state an exact boundary.
+The opening screen shows **Your flexibility** and one prepared statement.
 
 > On flights up to four hours, any seat is fine. On longer flights, I need an aisle.
 
-Two compact interpretations retain that boundary. The current Taipei flight lasts 105 minutes, so window 22A is compatible. Another traveller has an active, no-charge request for aisle 22C. The offer shows both seat positions, the unchanged flight and a 400-credit airline-funded reward. The only primary action is **Accept seat change**.
+**Save flexibility** opens the seat offer. The opening contains no extracted rules, offer, reward or zero balance. It illustrates saving a clear preference without presenting the technology explanation at the same time.
 
-No profile setup or preliminary search click is needed to understand this opening. The saved preference is context for a specific voluntary choice. It remains distinct from a later request to spend credits.
+The offer shows the current aisle seat 22C and proposed window seat 22A. The reason is concrete.
 
-## Value that stays with the traveller
+> Another traveller needs an aisle. This window seat fits your flexibility.
 
-Acceptance confirms window 22A and adds 400 credits once. The app header keeps the balance visible throughout the remaining example. The reward view explains that credits are available for the current journey or a future one. **Use credits** opens an illustrative later request.
+The flight stays the same. A 400-credit reward and **Accept seat change** are the decision. **Back** returns to the prepared statement without changing the booking or earning credits.
 
-The Taipei flight is unchanged. No Tokyo seat or baggage allocation changes at this stage.
+Acceptance confirms window seat 22A and adds 400 credits once. The result screen centres the earned amount and explains that the credits are available for the current journey or a future one. **Use credits** continues to a later need.
 
-## Different priorities on another journey
+## Using credits
 
-The next statement concerns an identified Tokyo booking.
+The next screen keeps the 400-credit balance in the app header and changes the journey context to Tokyo. It shows **Your request** and one prepared statement.
 
 > For Tokyo, I’d like us to sit together and take one extra checked bag. Use up to 360 Flex credits.
 
-The reviewed request shows seats together, one extra checked bag, one total credit cap and an expiry. Both changes must be arranged together. The displayed expiry is 1 November 2026 at 9 am Hong Kong time, before the illustrative baggage service closes at 10 am.
+**Review request** opens a separate confirmation screen. The original statement is no longer repeated. The review contains seats together, one additional checked bag, a single 360-credit limit and an expiry of 1 November at 9 am Hong Kong time. Both changes must be arranged together. Publishing explicitly permits Flex to confirm both changes within those terms.
 
-**Publish request** confirms these terms. The illustration has an eligible seat supplier who has conditionally agreed to the move and an available airline baggage entitlement. The combined arrangement costs 160 credits for seating and 200 for baggage. It must fit the single 360-credit cap. Neither part proceeds alone. The request supplies the traveller’s authorization, so no additional requester acceptance appears.
+**Publish request** applies the existing illustrative matching and settlement operation. There is no invented processing delay or further requester approval. The result shows seats 32A, 32B and 32C together, one additional checked bag of up to 23 kg, 360 credits used and 40 remaining.
 
-## A complete, visible outcome
+The seat arrangement costs 160 credits and the airline baggage service costs 200. The authored seat supplier has already conditionally agreed, and the baggage service is available. Personal baggage allowances never pass between travellers.
 
-The final state shows Mia, Jamie and the traveller together in 32A, 32B and 32C, one additional 23 kg checked bag, 360 credits used and 40 remaining. It stays visible until the visitor returns to the opening chapter. Flex coordinates all changes and credit settlement. Personal baggage allowances never pass between travellers.
+## Presentation and state
+
+Six presentation screens sit above the existing four domain stages. Saving flexibility and reviewing a request change the presentation only. The existing `accept`, `openRequest` and `publishRequest` functions remain authoritative for earning, request eligibility and spending.
+
+Back is available from the offer to flexibility, from the request description to the earned result, and from review to the request description. It never undoes a confirmed change or duplicates credits. The quiet restart control resets the entire local illustration to its initial state. The Earn credits and Use credits labels indicate the current phase with `aria-current="step"`.
+
+The balance is hidden before earning. It remains visible from the reward screen onwards to connect the accepted change to the later request. Each screen uses the same compact app frame and a consistent minimum content height. Content can grow when needed, including on narrow screens. There is no nested scrolling or clipped text.
 
 ## Motion and access
 
-The same app surface carries all four states. Its restrained border distinguishes it from the white page without framing the entire explanation in a tinted panel. Source clauses reveal with a short 65-millisecond stagger. State transitions use a 240-millisecond opacity and five-pixel movement. A change in the wallet receives a small synchronized emphasis. Publication includes a 650-millisecond matching transition, with visible feedback on the existing action and a screen-reader announcement.
+Transitions use opacity and five pixels of movement over 240 milliseconds. There is no autoplay sequence, artificial typing, progress animation or waiting timer. Keyboard input and reduced-motion preferences use immediate transitions.
 
-Keyboard activation and reduced-motion preferences skip movement and the matching delay. Every completed transition moves reading focus to the new state’s heading. If the new card context is outside the visible area, the page brings its date and balance beneath the sticky header. An already visible card keeps its position. Keyboard and reduced-motion scrolling is immediate. The quiet **Earn credits** return cancels pending motion and returns to the initial offer without duplicate credits. **Earn credits** and **Use credits** indicate the current phase visually and with `aria-current="step"`. Live-region announcements describe both booking outcomes and the remaining balance.
-
-The app frame uses automatic height. Mobile content remains fully readable without clipping or a nested scroll area. The primary action has a minimum 46-pixel target, visible focus and immediate press feedback. Hover effects apply only to devices with a fine pointer.
+Every change moves reading focus to the new screen heading. If the app context is outside the visible area, the page brings its top beneath the sticky header. An already visible card preserves the visitor’s scroll position. Restart has a descriptive accessible name and tooltip. Back and the primary action remain normal keyboard-accessible buttons. Screen-reader announcements describe the current task or confirmed outcome.
 
 ## Illustration boundaries
 
-The source statements, interpreted conditions, journeys, prices, supplier response and booking confirmations are authored local data. The fixed clock begins on 5 October 2026 and moves to 19 October for the later request. There are no live language-model calls, airline API requests, external payments or actual Flex accounts on this page. The product platform implements those workflows separately.
+The natural-language statements, interpretation, journeys, reward, prices and other travellers’ responses are prepared example data. This page makes no live AI or airline API calls and does not connect to a real credit account. The technology section must describe these boundaries without suggesting that the illustration is running a language model.
 
-The state functions check the stated duration boundary, active counterparty authorization, correct journey and booking party, available airline inventory, one total funded cap and the service expiry. Repeated actions cannot issue or spend credits twice. A missing service leaves the entire requested arrangement unchanged. Unit tests cover these relationships and the 400 minus 360 equals 40 credit flow.
+The matching functions validate the four-hour seat condition, counterparty request, journey, party, service availability, credit funding, expiry and all-together requirement. A missing service preserves both requested resources. The existing tests cover these constraints and the 400 earned, 360 used and 40 remaining credit flow. Presentation transitions do not weaken those checks.

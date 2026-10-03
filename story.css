@@ -28,3 +28,9 @@
   .product-choices > p { font-size: 16px; }
   .product-credits .airline-copy > .product-value-note { padding-top: 20px; margin-top: 22px; font-size: 14px; }
 }
+
+/* Cathay uses regular display type with natural tracking. */
+.hero-copy h1, .journey-editorial h2, .airline-copy h2,
+.product-choices h2, .closing h2 { letter-spacing: normal; font-weight: 400; }
+.journey-editorial h2, .airline-copy h2, .product-choices h2 { line-height: 1.16; }
+.closing h2 { line-height: 1.18; }

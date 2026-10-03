@@ -1,0 +1,26 @@
+/* Font sources match Cathay's public production font stylesheet. */
+@font-face {
+  font-family: "Cathay Sans EN";
+  src: url("https://assets.cathaypacific.com/fonts/en/CathayPacific/CathaySans_WCorp_Rg.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cathay Sans EN";
+  src: url("https://assets.cathaypacific.com/fonts/en/CathayPacific/CathaySans_WCorp_Bd.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "GT Walsheim";
+  src: url("https://assets.cathaypacific.com/fonts/en/GTWalshiem/GT-Walsheim-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+:root {
+  --font-body: "Cathay Sans EN", Arial, sans-serif;
+  --font-heading: "GT Walsheim", "Cathay Sans EN", Arial, sans-serif;
+}

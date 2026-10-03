@@ -1,0 +1,186 @@
+.technology {
+  padding-block: 104px 94px;
+  border-top: 1px solid var(--line);
+}
+.technology-heading {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  column-gap: 10%;
+  align-items: end;
+  margin-bottom: 46px;
+}
+.technology-heading > .eyebrow { grid-column: 1 / -1; margin-bottom: 22px; }
+.technology-heading > h2 { font-size: clamp(36px, 3.7vw, 55px); }
+.technology-heading > p:last-child { max-width: 430px; font-size: 17px; color: var(--muted); }
+.technology-tabs { display: flex; gap: 36px; border-bottom: 1px solid var(--line); }
+.technology-tabs > button {
+  appearance: none;
+  position: relative;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 14px 0 18px;
+  min-height: 48px;
+  color: var(--muted);
+  font-size: 16px;
+  transition: transform 160ms var(--ease);
+}
+.technology-tabs > button::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 -1px;
+  height: 2px;
+  background: var(--jade);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 220ms var(--ease);
+}
+.technology-tabs > button[aria-selected="true"] { color: var(--jade); }
+.technology-tabs > button[aria-selected="true"]::after { transform: scaleX(1); }
+.technology-tabs > button:active { transform: scale(.98); }
+.technology-panel { padding-top: 32px; }
+.technology-panel[hidden] { display: none; }
+.technology-flow { display: grid; grid-template-columns: 1fr .95fr 1.05fr; gap: 34px; }
+.technology-region { min-width: 0; }
+.technology-region > h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 26px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: .025em;
+  color: var(--muted);
+}
+.technology-connector { display: flex; align-items: center; flex: 1; margin-left: 12px; }
+.technology-connector::before { content: ""; width: 100%; height: 1px; background: var(--line); }
+.technology-connector svg { width: 21px; height: 21px; flex: 0 0 auto; }
+.technology svg { fill: none; stroke: currentColor; stroke-width: 1.2; }
+.technology-quote { margin: -4px 0 0; font-size: clamp(20px, 1.8vw, 25px); font-weight: 400; line-height: 1.48; letter-spacing: normal; }
+.technology-clause {
+  appearance: none;
+  display: inline;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  text-align: left;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 5px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.technology-clause.is-highlighted { color: var(--jade); text-decoration-color: var(--jade); }
+.technology-clause:focus-visible { outline-offset: 3px; }
+.technology-rules { display: grid; gap: 15px; margin: 0; }
+.technology-rules > div { position: relative; isolation: isolate; border-left: 2px solid var(--line); padding: 0 0 0 14px; }
+.technology-rules > div.is-highlighted { border-left-color: var(--jade); }
+.technology-rules > div::before {
+  content: "";
+  position: absolute;
+  inset: -6px -6px -6px -2px;
+  background: var(--mist);
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 160ms var(--ease);
+}
+.technology-rules > div.is-highlighted::before { opacity: 1; }
+.technology-rules dt { font-size: 12px; color: var(--muted); margin-bottom: 3px; }
+.technology-rules dd { margin: 0; font-size: 18px; line-height: 1.35; }
+.technology-interpretation-note { font-size: 12px; color: var(--muted); margin-top: 24px; }
+.technology-match-context { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; line-height: 1.45; color: var(--muted); }
+.technology-match-context > span { white-space: nowrap; }
+.technology-seat-swap { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding-block: 18px; }
+.technology-seat-swap > div { display: grid; gap: 3px; }
+.technology-seat-swap strong { font-size: 38px; font-weight: 300; letter-spacing: -.025em; line-height: 1.1; }
+.technology-seat-swap span { font-size: 12px; color: var(--muted); }
+.technology-swap-arrows { display: grid; gap: 1px; }
+.technology-swap-arrows > svg { width: 28px; height: 18px; color: var(--jade); }
+.technology-swap-arrows > svg:last-child { transform: rotate(180deg); }
+.technology-match-reason { font-size: 13px; line-height: 1.5; color: var(--muted); max-width: 230px; }
+.technology-result-line { border-top: 1px solid var(--line); display: flex; align-items: flex-start; gap: 9px; padding-top: 15px; margin-top: 22px; }
+.technology-result-line > svg { width: 17px; height: 17px; flex: 0 0 auto; margin-top: 2px; color: var(--jade); }
+.technology-result-line > span { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+.technology-result-line strong { font-size: 20px; font-weight: 400; color: var(--jade); }
+.technology-result-note { margin-top: 12px; font-size: 12px; color: var(--muted); line-height: 1.5; }
+.technology-family-row { display: flex; gap: 6px; margin: 16px 0 11px; }
+.technology-family-row > span { border: 1px solid var(--line); border-radius: 10px 10px 3px 3px; min-width: 53px; padding: 15px 8px 11px; text-align: center; font-size: 16px; }
+.technology-family-row .is-yours { background: var(--mist); border-color: var(--jade); color: var(--jade); }
+.technology-service-line { display: flex; align-items: center; gap: 11px; font-size: 13px; }
+.technology-service-line > strong { margin-left: auto; font-weight: 400; font-variant-numeric: tabular-nums; }
+.technology-baggage { padding-top: 18px; }
+.technology-baggage > svg { width: 26px; height: 29px; color: var(--jade); flex: 0 0 auto; }
+.technology-baggage small { display: block; color: var(--muted); font-size: 11px; margin-top: 4px; }
+.technology-terms { display: flex; flex-wrap: wrap; column-gap: 18px; row-gap: 5px; margin-top: 30px; padding: 15px 0; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+.technology-terms > p { flex: 1 0 100%; font-size: 12px; color: var(--ink); margin-bottom: 2px; }
+.technology-terms > span + span::before { content: "·"; margin-right: 18px; color: var(--muted); }
+.technology-details { margin-top: 34px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.technology-terms + .technology-details { margin-top: 12px; }
+.technology-details > summary { min-height: 50px; padding-block: 15px; display: flex; align-items: center; justify-content: space-between; gap: 20px; cursor: pointer; font-size: 13px; list-style: none; }
+.technology-details > summary::-webkit-details-marker { display: none; }
+.technology-details > summary:focus-visible { outline: 2px solid var(--jade); outline-offset: 4px; }
+.technology-plus { position: relative; width: 15px; height: 15px; flex: 0 0 auto; }
+.technology-plus::before,.technology-plus::after { content: ""; position: absolute; inset: 7px 1px auto; height: 1px; background: currentColor; }
+.technology-plus::after { transform: rotate(90deg); transition: transform 160ms var(--ease); }
+.technology-details[open] .technology-plus::after { transform: rotate(0); }
+.technology-detail-content { display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; padding: 3px 0 25px; }
+.technology-detail-content h4 { font-size: 13px; font-weight: 500; margin: 0 0 7px; }
+.technology-detail-content p { font-size: 13px; line-height: 1.6; color: var(--muted); }
+.technology-disclosure { margin-top: 14px; font-size: 11px; line-height: 1.5; color: var(--muted); }
+.technology-no-match h4 { margin: 0 0 15px; font-size: 22px; font-weight: 300; }
+.technology-no-match p { font-size: 14px; color: var(--muted); }
+@media (hover: hover) and (pointer: fine) {
+  .technology-tabs > button:hover,.technology-details > summary:hover { color: var(--jade); }
+}
+@media (max-width: 1100px) {
+  .technology-flow,.technology-detail-content { gap: 25px; }
+  .technology-heading { column-gap: 8%; }
+  .technology-quote { font-size: 21px; }
+  .technology-rules dd { font-size: 17px; }
+}
+@media (max-width: 800px) {
+  .technology { padding-block: 75px; }
+  .technology-heading { grid-template-columns: 1fr; gap: 0; margin-bottom: 30px; }
+  .technology-heading > h2 { font-size: 42px; }
+  .technology-heading > p:last-child { margin-top: 24px; max-width: 530px; }
+  .technology-flow { grid-template-columns: 1fr; gap: 30px; }
+  .technology-region > h3 { margin-bottom: 18px; }
+  .technology-quote { font-size: 24px; max-width: 540px; }
+  .technology-connector { max-width: 85px; margin-right: 2px; }
+  .technology-connector > svg { transform: rotate(90deg); }
+  .technology-connector::before { display: none; }
+  .technology-connector { flex: 0 0 auto; }
+  .technology-interpretation,.technology-result { border-top: 1px solid var(--line); padding-top: 23px; }
+  .technology-rules { grid-template-columns: 1fr 1fr; gap: 21px; }
+  .technology-rules dd { font-size: 18px; }
+  .technology-interpretation-note { margin-top: 18px; }
+  .technology-result { max-width: 540px; width: 100%; }
+  .technology-seat-swap { max-width: 270px; }
+  .technology-match-reason { max-width: none; }
+  .technology-match-context { justify-content: flex-start; gap: 24px; }
+  .technology-result-line > span { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 20px; row-gap: 3px; }
+  .technology-family-row > span { min-width: 65px; }
+  .technology-service-line { max-width: 340px; }
+  .technology-detail-content { grid-template-columns: 1fr; gap: 19px; padding-top: 7px; max-width: 530px; }
+}
+@media (max-width: 440px) {
+  .technology { padding-block: 64px; }
+  .technology-heading > h2 { font-size: 36px; }
+  .technology-heading > p:last-child { font-size: 16px; margin-top: 20px; }
+  .technology-tabs { gap: 29px; }
+  .technology-tabs > button { font-size: 15px; }
+  .technology-quote { font-size: 22px; }
+  .technology-rules { column-gap: 14px; }
+  .technology-rules dd { font-size: 17px; }
+  .technology-terms { flex-direction: column; gap: 6px; }
+  .technology-terms > span + span::before { content: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .technology *, .technology *::before, .technology *::after { transition: none !important; animation: none !important; }
+}

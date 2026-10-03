@@ -14,15 +14,18 @@
   <meta property="og:image" content="https://cathayflex.github.io/assets/flight.jpg">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="assets/cathay-brushwing.png" type="image/png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://assets.cathaypacific.com" crossorigin>
+  <link rel="preload" href="https://assets.cathaypacific.com/fonts/en/GTWalshiem/GT-Walsheim-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="https://assets.cathaypacific.com/fonts/en/CathayPacific/CathaySans_WCorp_Rg.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/fonts.css?v=20261003-cathay">
   <link rel="preload" href="assets/flight.jpg" as="image" fetchpriority="high">
-  <link rel="stylesheet" href="style.css?v=20261003-nodes">
-  <link rel="stylesheet" href="exchange.css?v=20261003-product">
-  <link rel="stylesheet" href="story.css?v=20261003-product">
+  <link rel="stylesheet" href="style.css?v=20261003-cathay">
+  <link rel="stylesheet" href="exchange.css?v=20261003-experience">
+  <link rel="stylesheet" href="story.css?v=20261003-experience">
+  <link rel="stylesheet" href="technology.css?v=20261003-experience">
   <script src="app.js?v=20261003-product" defer></script>
-  <script src="exchange.js?v=20261003-product" type="module"></script>
+  <script src="exchange.js?v=20261003-experience" type="module"></script>
+  <script src="technology.js?v=20261003-experience" type="module"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -34,7 +37,7 @@
     <div class="brand-lockup"><a class="brand" href="#top" aria-label="Cathay Flex home"><img class="brand-logo" src="assets/cathay-flex-logo.svg?v=20261003-weight" width="630" height="120" alt="Cathay Flex"></a><span class="brand-note">For the Cathay Hackathon demo only</span></div>
     <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav"><span>Menu</span><span class="menu-lines" aria-hidden="true"></span></button>
     <nav id="site-nav" aria-label="Main navigation">
-      <a href="#exchanges">The idea</a><a href="#credits">Flex credits</a><a href="#your-choices">Your choices</a>
+      <a href="#exchanges">The idea</a><a href="#intelligence">Behind Flex</a><a href="#credits">Flex credits</a><a href="#your-choices">Your choices</a>
     </nav>
   </header>
   <main id="main" tabindex="-1">
@@ -51,7 +54,7 @@
     </section>
     <section class="exchanges section-shell" id="exchanges" aria-labelledby="journey-title">
       <span id="the-idea" class="anchor-alias" aria-hidden="true"></span>
-      <div class="journey" id="flex-journey" data-stage="offer">
+      <div class="journey" id="flex-journey" data-stage="flexibility">
         <div class="journey-editorial">
           <p class="eyebrow" id="journey-chapter">THE IDEA</p>
           <h2 id="journey-title">Different priorities.<br> Better journeys.</h2>
@@ -59,19 +62,26 @@
           <nav class="journey-route" aria-label="Illustrative experience stages"><button id="journey-beginning" class="is-current" type="button" data-action="restart" disabled aria-label="Return to earning credits and start again" title="Back to earning credits"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 5-7 7 7 7M3 12h18"/></svg>Earn credits</button><span class="route-line" aria-hidden="true"></span><span data-part="use">Use credits</span></nav>
         </div>
         <div class="journey-card">
-          <div class="journey-appbar"><span>Flex</span><span id="app-context">Taipei · 7 Oct</span></div>
+          <div class="journey-appbar"><span>Flex</span><span id="app-context">Your preferences</span></div>
           <div id="journey-content" class="journey-content">
-            <div class="journey-offer">
-              <div class="journey-language"><p class="card-overline">YOUR SAVED FLEXIBILITY</p><p class="journey-words">“On flights up to four hours, any seat is fine. On longer flights, I need an aisle.”</p></div>
-              <dl class="understood-rules" aria-label="Your words, understood"><div><dt>Up to 4 hours</dt><dd>Any seat</dd></div><div><dt>Over 4 hours</dt><dd>Aisle</dd></div></dl>
-              <div class="seat-change"><h3 id="card-title" tabindex="-1">Switch seats. Earn credits.</h3><div class="seat-pair"><div><strong>22C</strong><span>Current aisle seat</span></div><span class="seat-arrow"><svg aria-hidden="true"><use href="#arrow"/></svg></span><div class="seat-destination"><strong>22A</strong><span>New window seat</span></div></div><p class="card-detail">Same flight. Another traveller gets the aisle.</p></div>
-              <div class="offer-reward"><span>You earn</span><strong>400 <small>Flex credits</small></strong></div>
-            </div>
+            <p class="card-overline">EARN CREDITS</p>
+            <h3 id="card-title" tabindex="-1">What can change for you?</h3>
+            <p class="journey-words">“On flights up to four hours, any seat is fine. On longer flights, I need an aisle.”</p>
+            <p class="card-detail">Save your flexibility. Decide on each offer when it arrives.</p>
           </div>
         </div>
       </div>
-      <p class="journey-note">An illustrative experience. Offers and credit amounts depend on availability and the arrangement.</p>
+      <p class="journey-note">An illustrated journey. Offers and credit amounts vary by arrangement.</p>
       <p id="journey-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+    </section>
+    <section id="intelligence" class="technology section-shell" aria-labelledby="technology-title">
+      <div class="technology-heading">
+        <p class="eyebrow">BEHIND THE MATCH</p>
+        <h2 id="technology-title">Your words.<br> A match that fits.</h2>
+        <p>AI translates what matters to you into clear conditions. The matching engine checks which arrangements can satisfy them.</p>
+      </div>
+      <div id="technology-visual"></div>
+      <noscript><p>Flex interprets travel preferences, then checks compatible bookings, credit limits and each traveller’s agreement before presenting an arrangement.</p></noscript>
     </section>
     <section class="airline product-credits" id="credits" aria-labelledby="credits-title">
       <span id="for-cathay" class="anchor-alias" aria-hidden="true"></span>
