@@ -4,7 +4,7 @@
 .hero-description { max-width: 400px; }
 .closing h2 { font-size: clamp(32px, 4vw, 58px); text-wrap: balance; }
 .product-credits { position: relative; }
-.product-credits .airline-copy h2 { max-width: 490px; }
+.product-credits .airline-copy h2 { max-width: none; text-wrap: balance; }
 .product-credits .airline-copy > p:not(.eyebrow) { max-width: 440px; }
 .product-credits .airline-copy > .product-value-note { padding-top: 24px; margin-top: 27px; border-top: 1px solid #d1dcd3; font-size: 15px; line-height: 1.6; }
 .product-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 11%; align-items: center; padding-block: 86px; border-bottom: 1px solid var(--line); }
