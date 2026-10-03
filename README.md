@@ -42,7 +42,7 @@ The credit narrative draws on the exchange coordination problem illustrated in t
 
 `/technology/` is a separate technical page reached from Behind Flex. The homepage keeps its two compact illustrations and links to this page instead of embedding structured rule disclosures.
 
-The detail page follows interpretation, the market model, matching and confirmation. Its browser explorer runs exported platform domain code with synthetic data. Visitors can change availability, expire a request, inspect the request book, settle a complete arrangement, invalidate an unchanged companion dependency and recover a simulated lost acknowledgement. Disclosure panels show rules, exact quotes, selected candidates, rejection reasons, search bounds and ledger checks. The market model explains how conditional demands and available resources become a constrained allocation problem. It separates indicative permissions from firm requests and states the limits of the trading-system analogy.
+The detail page follows interpretation, the market model, matching and confirmation. Its browser explorer runs exported platform domain code with synthetic data. Visitors can change availability, expire a request, inspect the request book, settle a complete arrangement, invalidate an unchanged companion dependency and recover a simulated lost acknowledgement. The first reading layer shows the interpretation, shared records, complete arrangement and current wallet. Disclosure panels show rules, exact quotes, selected candidates, rejection reasons, search bounds and ledger checks. The market model explains how conditional demands and available resources become a constrained allocation problem. It separates indicative permissions from firm requests and states the limits of the trading-system analogy.
 
 Regenerate the engine after platform changes with an architecture-compatible Node runtime and the platform's installed esbuild.
 
@@ -52,3 +52,5 @@ npm test
 ```
 
 The export copies only reviewed pure domain modules into `technology/source`. It never copies API handlers, authentication, environment files or live state. `technology/manifest.json` records per-file hashes, an aggregate digest and the base commit. `technology/benchmark.json` records bounded synthetic performance measurements. The linked research note distinguishes implemented methods from proposed experiments. The exact exported source is committed beside the browser bundle.
+
+Source links open static reading pages under `/technology/source/<module>/`. Each starts with the module’s purpose, inputs, outputs and limits. TypeScript is available in a collapsed, scrollable panel. The generator verifies its bytes against the export manifest before embedding escaped source. Run `node scripts/build-source-readers.mjs` to refresh the reading pages independently. Engine exports regenerate them automatically. Research and JSON evidence links explicitly open GitHub’s document viewer.

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The fixed quote contract | Cathay Flex</title><meta name="description" content="Define the fields that a fixed quote and its publication terms must contain."><meta name="theme-color" content="#006564"><link rel="canonical" href="https://cathayflex.github.io/technology/source/request-quote-schema/"><link rel="icon" href="/assets/cathay-brushwing.png"><link rel="stylesheet" href="/fonts.css?v=20261003-cathay"><link rel="stylesheet" href="/style.css?v=20261003-clear-headings"><link rel="stylesheet" href="/technology/source/reader.css?v=7d397c4928e7"><script src="/app.js?v=20261003-product" defer></script></head>
+<body><a class="skip-link" href="#main">Skip to content</a><header class="site-header">
+    <div class="brand-lockup"><a class="brand" href="/" aria-label="Cathay Flex home"><img class="brand-logo" src="/assets/cathay-flex-logo.svg?v=20261004-cargo" width="1164" height="200" alt="Cathay Flex"></a><span class="brand-note">For the Cathay Hackathon demo only</span></div>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav"><span>Menu</span><span class="menu-lines" aria-hidden="true"></span></button>
+    <nav id="site-nav" aria-label="Main navigation"><a href="/technology/">Inside the system <span aria-hidden="true">↗</span></a><a href="/technology/#evidence">Implementation &amp; evidence</a></nav>
+  </header>
+<main id="main" class="source-reader" tabindex="-1"><a class="reader-back" href="/technology/#commit"><span aria-hidden="true">←</span> Back to the explanation</a><p class="reader-eyebrow">INSIDE THE IMPLEMENTATION</p><h1>The fixed quote contract</h1><p class="reader-intro">Define the fields that a fixed quote and its publication terms must contain.</p><dl class="reader-facts"><div><dt>What it reads</dt><dd>A proposed quote or request authorization payload.</dd></div><div><dt>What it produces</dt><dd>A validated structured record containing the request identity, exact line items, debit and expiry.</dd></div><div><dt>What to know</dt><dd>Shape validation is followed by contextual validation in the quote and transaction modules. A well-formed object alone grants no authority.</dd></div></dl>
+<details class="reader-code"><summary><span>View TypeScript source</span><span class="reader-file">request-quote-schema.ts</span><span class="reader-plus" aria-hidden="true">+</span></summary><div class="reader-code-body"><p>TypeScript is the implementation language. This is the source exported with the public matching engine.</p><pre tabindex="0" aria-label="request-quote-schema.ts source"><code>import { z } from &quot;zod&quot;;
+
+// Prices are published resource reference values. Capacity, another traveller&#39;s
+// consent, wallet balance and optimizer scores never enter this calculation.
+export const REQUEST_PRICING_VERSION = &quot;REFERENCE-2026-10&quot;;
+const itemSchema = z
+  .object({
+    kind: z.enum([&quot;seat&quot;, &quot;baggage&quot;]),
+    label: z.string().min(1).max(180),
+    ruleIds: z.array(z.string().min(1).max(100)).min(1).max(30),
+    resourceIds: z.array(z.string().min(1).max(120)).min(1).max(1000),
+    catalogKey: z.string().min(1).max(100000),
+    allocationKeys: z.array(z.string().min(1).max(120)).min(1).max(100),
+    quantity: z.number().int().positive().max(100),
+    unitCredits: z.number().int().nonnegative().max(1000000),
+    credits: z.number().int().nonnegative().max(1000000),
+  })
+  .strict();
+export const requestQuoteSchema = z
+  .object({
+    version: z.literal(1),
+    id: z.string().min(1).max(250),
+    person: z.string().min(1).max(40),
+    journeyId: z.string().min(1).max(100),
+    intentId: z.string().min(1).max(100),
+    targetRevision: z.number().int().positive(),
+    pricingVersion: z.literal(REQUEST_PRICING_VERSION),
+    issuedAt: z.number().finite().nonnegative().max(1500),
+    validUntil: z.number().finite().nonnegative().max(1500),
+    outcomeKey: z.string().min(1).max(100000),
+    bookingKey: z.string().min(1).max(100000),
+    debit: z.number().int().nonnegative().max(1000000),
+    lineItems: z.array(itemSchema).min(1).max(2),
+    allowPartial: z.literal(false),
+  })
+  .strict();
+export type RequestQuote = z.infer&lt;typeof requestQuoteSchema&gt;;
+</code></pre><a href="https://github.com/cathayflex/cathayflex.github.io/blob/main/technology/source/request-quote-schema.ts" target="_blank" rel="noopener">View this file on GitHub <span aria-hidden="true">↗</span></a></div></details>
+<details class="reader-provenance"><summary>Source verification</summary><p>The source shown above matches the published export manifest.</p><dl><dt>SHA-256</dt><dd><code>daf626cb7b95aadd1290daad9b39ec1ffc9054a19a7e4200f6cc5a4359af9b3a</code></dd><dt>Platform source commit</dt><dd><code>3c792c47304ef6a3717ecd4e6c2735207e0363d2</code></dd></dl></details></main><footer class="site-footer"><div class="footer-main"><p>Team Globe · Cathay Hackathon 2026</p><a href="/technology/">Inside the system <span aria-hidden="true">↗</span></a></div></footer></body></html>

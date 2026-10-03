@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The request book | Cathay Flex</title><meta name="description" content="Make the current requests, saved flexibility and pending agreements readable from one consistent state."><meta name="theme-color" content="#006564"><link rel="canonical" href="https://cathayflex.github.io/technology/source/order-book/"><link rel="icon" href="/assets/cathay-brushwing.png"><link rel="stylesheet" href="/fonts.css?v=20261003-cathay"><link rel="stylesheet" href="/style.css?v=20261003-clear-headings"><link rel="stylesheet" href="/technology/source/reader.css?v=7d397c4928e7"><script src="/app.js?v=20261003-product" defer></script></head>
+<body><a class="skip-link" href="#main">Skip to content</a><header class="site-header">
+    <div class="brand-lockup"><a class="brand" href="/" aria-label="Cathay Flex home"><img class="brand-logo" src="/assets/cathay-flex-logo.svg?v=20261004-cargo" width="1164" height="200" alt="Cathay Flex"></a><span class="brand-note">For the Cathay Hackathon demo only</span></div>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav"><span>Menu</span><span class="menu-lines" aria-hidden="true"></span></button>
+    <nav id="site-nav" aria-label="Main navigation"><a href="/technology/">Inside the system <span aria-hidden="true">↗</span></a><a href="/technology/#evidence">Implementation &amp; evidence</a></nav>
+  </header>
+<main id="main" class="source-reader" tabindex="-1"><a class="reader-back" href="/technology/#market-model"><span aria-hidden="true">←</span> Back to the explanation</a><p class="reader-eyebrow">INSIDE THE IMPLEMENTATION</p><h1>The request book</h1><p class="reader-intro">Make the current requests, saved flexibility and pending agreements readable from one consistent state.</p><dl class="reader-facts"><div><dt>What it reads</dt><dd>The platform’s current requests, permissions, contracts and wallet reservations.</dd></div><div><dt>What it produces</dt><dd>A detached view of lifecycle status, exact authorization, consent, funding and the reason each entry has that status.</dd></div><div><dt>What to know</dt><dd>Reading the book cannot publish a request, change a price, reserve inventory or process an expiry. Saved flexibility carries no transaction authority.</dd></div></dl>
+<details class="reader-code"><summary><span>View TypeScript source</span><span class="reader-file">order-book.ts</span><span class="reader-plus" aria-hidden="true">+</span></summary><div class="reader-code-body"><p>TypeScript is the implementation language. This is the source exported with the public matching engine.</p><pre tabindex="0" aria-label="order-book.ts source"><code>import {
+  available,
+  availableRequestCredits,
+  held,
+  requestAuthorizationStatus,
+  validate,
+} from &quot;./engine.ts&quot;;
+import {
+  bookedJourneys,
+  flexibilityRulesFor,
+  intentPurpose,
+  journeyFacts,
+  requestProgress,
+  ruleConditionMatches,
+  ruleDescription,
+  validateIntent,
+} from &quot;./intent.ts&quot;;
+import { acceptedQuoteContextCurrent } from &quot;./request-quote.ts&quot;;
+import type { RequestQuote } from &quot;./request-quote.ts&quot;;
+import type { Contract, IntentRecord, State } from &quot;./types.ts&quot;;
+
+export type BookStatus =
+  | &quot;draft&quot;
+  | &quot;indicative&quot;
+  | &quot;open&quot;
+  | &quot;reserved&quot;
+  | &quot;executing&quot;
+  | &quot;settled&quot;
+  | &quot;fulfilled&quot;
+  | &quot;expired&quot;
+  | &quot;withdrawn&quot;
+  | &quot;invalidated&quot;;
+
+export type BookWallet = {
+  person: string;
+  balance: number;
+  reserved: number;
+  free: number;
+  contractReserved: number;
+  requestEarmarked: number;
+};
+
+type BookSource = {
+  person: string;
+  intentId: string;
+  revision: number;
+  text: string;
+  scope: IntentRecord[&quot;scope&quot;];
+  rules: IntentRecord[&quot;rules&quot;];
+  descriptions: string[];
+};
+
+export type BookPermission = {
+  id: string;
+  kind: &quot;permission&quot;;
+  source: BookSource;
+  status: &quot;indicative&quot; | &quot;draft&quot; | &quot;withdrawn&quot; | &quot;invalidated&quot;;
+  firm: false;
+  authority: &quot;none&quot;;
+  reason: string;
+  applicability: {
+    journeyId: string;
+    effectiveRuleIds: string[];
+    unknownRuleIds: string[];
+  }[];
+};
+
+export type BookRequest = {
+  id: string;
+  kind: &quot;request&quot;;
+  source: BookSource;
+  status: Exclude&lt;BookStatus, &quot;indicative&quot;&gt;;
+  /** True only for a funded, current request available for a NEW arrangement.
+   * The matcher must still validate an exact complete candidate and its supply. */
+  firm: boolean;
+  reason: string;
+  authorizationMode: &quot;fixed_quote&quot; | &quot;legacy&quot; | &quot;missing&quot;;
+  authorizationStatus: ReturnType&lt;typeof requestAuthorizationStatus&gt;[&quot;status&quot;];
+  authorizedAt: number | null;
+  termsRevision: number | null;
+  expiresAt: number | null;
+  quote: RequestQuote | null;
+  contextCurrent: boolean | null;
+  progress: ReturnType&lt;typeof requestProgress&gt;;
+  funding: {
+    debit: number | null;
+    spent: number;
+    committed: number;
+    reserved: number;
+    earmarked: number;
+    availableForThisRequest: number;
+    wallet: BookWallet;
+  };
+  contractIds: string[];
+  currentContractIds: string[];
+};
+
+export type BookContract = {
+  id: string;
+  kind: &quot;contract&quot;;
+  contractId: string;
+  candidateId: string;
+  title: string;
+  status:
+    | &quot;reserved&quot;
+    | &quot;executing&quot;
+    | &quot;settled&quot;
+    | &quot;expired&quot;
+    | &quot;withdrawn&quot;
+    | &quot;invalidated&quot;;
+  engineStatus: Contract[&quot;status&quot;];
+  reason: string;
+  createdAt: number;
+  expiresAt: number;
+  deadline: number;
+  /** Due is observational. Only an engine transition releases a recorded hold. */
+  expiryDue: boolean;
+  reservationRetained: boolean;
+  participants: string[];
+  accepted: string[];
+  awaitingConsent: string[];
+  allAccepted: boolean;
+  pricingVersion: string;
+  credits: Record&lt;string, number&gt;;
+  reservedCredits: Record&lt;string, number&gt;;
+  requestReferences: {
+    person: string;
+    intentId: string;
+    revision: number;
+    entryId: string;
+  }[];
+  authorizations: NonNullable&lt;Contract[&quot;authorizations&quot;]&gt;;
+  changes: Contract[&quot;changes&quot;];
+  dependencies: Contract[&quot;dependencies&quot;];
+  receipts: string[];
+  ledgerEntryIds: string[];
+  validationErrors: string[];
+};
+
+export type OrderBook = {
+  version: 1;
+  audit: { stateVersion: number; hour: number; stateSchema: State[&quot;schema&quot;] };
+  /** A diagnostic projection of supplied state, never a reservation or access boundary. */
+  semantics: &quot;derived_conditional_book&quot;;
+  wallets: BookWallet[];
+  permissions: BookPermission[];
+  requests: BookRequest[];
+  contracts: BookContract[];
+};
+
+const compare = (a: string, b: string) =&gt; (a &lt; b ? -1 : a &gt; b ? 1 : 0);
+const sorted = (values: string[]) =&gt; [...new Set(values)].sort(compare);
+const active = (contract: Contract) =&gt;
+  [&quot;HELD&quot;, &quot;ACCEPTED&quot;, &quot;AWAITING_EVIDENCE&quot;, &quot;RECONCILING&quot;].includes(
+    contract.status,
+  );
+const debit = (contract: Contract, person: string) =&gt;
+  Math.max(0, -(contract.credits[person] || 0));
+const sourceId = (
+  kind: &quot;permission&quot; | &quot;request&quot;,
+  person: string,
+  intentId: string,
+  revision: number,
+) =&gt;
+  `${kind}/${encodeURIComponent(person)}/${encodeURIComponent(intentId)}/r${revision}`;
+const source = (person: string, record: IntentRecord): BookSource =&gt; ({
+  person,
+  intentId: record.id,
+  revision: record.revision,
+  text: record.sourceText,
+  scope: record.scope,
+  rules: record.rules,
+  descriptions: record.rules.map(ruleDescription),
+});
+
+function wallet(state: State, person: string): BookWallet {
+  const reserved = held(state, person);
+  const contractReserved = state.contracts
+    .filter(active)
+    .reduce((total, contract) =&gt; total + debit(contract, person), 0);
+  return {
+    person,
+    balance: state.wallets[person],
+    reserved,
+    free: available(state, person),
+    contractReserved,
+    requestEarmarked: Math.max(0, reserved - contractReserved),
+  };
+}
+
+function permission(
+  state: State,
+  person: string,
+  record: IntentRecord,
+): BookPermission {
+  let status: BookPermission[&quot;status&quot;] = &quot;indicative&quot;;
+  let reason =
+    &quot;Confirmed preferences and conditional permissions guide proposals. Every proposed change still needs its own transaction authority.&quot;;
+  if (record.cancelled) {
+    status = &quot;withdrawn&quot;;
+    reason = &quot;This statement was withdrawn and supplies no current permission.&quot;;
+  } else if (!record.confirmed || record.questions.length) {
+    status = &quot;draft&quot;;
+    reason =
+      &quot;The statement still needs review and supplies no confirmed permission.&quot;;
+  } else {
+    try {
+      validateIntent(state, person, record);
+    } catch {
+      status = &quot;invalidated&quot;;
+      reason =
+        &quot;The statement no longer validates against the supplied booking context. Review its interpretation.&quot;;
+    }
+  }
+  const journeys = bookedJourneys(state, person).filter(
+    (journey) =&gt;
+      record.scope.kind === &quot;all&quot; || record.scope.journeyId === journey,
+  );
+  const applicability = sorted(journeys).map((journeyId) =&gt; ({
+    journeyId,
+    effectiveRuleIds:
+      status === &quot;indicative&quot;
+        ? sorted(
+            flexibilityRulesFor(state, person, journeyId)
+              .filter((rule) =&gt; rule.recordId === record.id)
+              .map((rule) =&gt; rule.id),
+          )
+        : [],
+    unknownRuleIds: sorted(
+      record.rules
+        .filter(
+          (rule) =&gt;
+            ruleConditionMatches(
+              journeyFacts(state, person, journeyId),
+              rule,
+            ) === undefined,
+        )
+        .map((rule) =&gt; rule.id),
+    ),
+  }));
+  return {
+    id: sourceId(&quot;permission&quot;, person, record.id, record.revision),
+    kind: &quot;permission&quot;,
+    source: source(person, record),
+    status,
+    firm: false,
+    authority: &quot;none&quot;,
+    reason,
+    applicability,
+  };
+}
+
+function contractProjection(state: State, contract: Contract): BookContract {
+  const reservationRetained = active(contract);
+  const allAccepted = contract.participants.every((person) =&gt;
+    contract.accepted.includes(person),
+  );
+  // These are the existing engine&#39;s expiry conditions. Reporting a due release
+  // does not apply that transition or reduce the engine&#39;s recorded wallet hold.
+  const expiryDue =
+    ((contract.status === &quot;HELD&quot; || contract.status === &quot;ACCEPTED&quot;) &amp;&amp;
+      state.hour &gt;= contract.expires &amp;&amp;
+      !(contract.authorizations &amp;&amp; allAccepted)) ||
+    (contract.status === &quot;HELD&quot; &amp;&amp;
+      Object.values(contract.authorizations || {}).some(
+        (authorization) =&gt; authorization.validUntil &lt;= state.hour,
+      )) ||
+    (contract.status === &quot;AWAITING_EVIDENCE&quot; &amp;&amp;
+      state.hour &gt;= contract.deadline);
+  let validationErrors: string[] = [];
+  if (reservationRetained) {
+    // Match the engine&#39;s reconciliation view. Restore only changed allocations,
+    // preserving current unchanged dependencies and leaving actual writes intact.
+    const original = new Map(
+      contract.changes.map((change) =&gt; [change.key, change]),
+    );
+    const view =
+      contract.status === &quot;RECONCILING&quot;
+        ? {
+            ...state,
+            allocations: state.allocations.map((allocation) =&gt; {
+              const change = original.get(allocation.key);
+              return change
+                ? {
+                    ...allocation,
+                    resource: change.from,
+                    version: change.version,
+                  }
+                : allocation;
+            }),
+          }
+        : state;
+    validationErrors = sorted(validate(view, contract, contract.contractId));
+  }
+  let status: BookContract[&quot;status&quot;];
+  let reason: string;
+  switch (contract.status) {
+    case &quot;SETTLED&quot;:
+      status = &quot;settled&quot;;
+      reason =
+        &quot;The engine recorded verified fulfilment and settlement. This arrangement holds no further credits.&quot;;
+      break;
+    case &quot;EXPIRED&quot;:
+      status = &quot;expired&quot;;
+      reason =
+        &quot;The engine expired this arrangement and released its reservations.&quot;;
+      break;
+    case &quot;CANCELLED&quot;:
+      status = &quot;withdrawn&quot;;
+      reason =
+        &quot;The arrangement was cancelled and its reservations were released.&quot;;
+      break;
+    case &quot;FAILED&quot;:
+      status = &quot;invalidated&quot;;
+      reason =
+        &quot;The arrangement failed without settlement. Its reservations were released.&quot;;
+      break;
+    case &quot;RECONCILING&quot;:
+      status = &quot;executing&quot;;
+      reason =
+        &quot;An adapter result needs reconciliation. Recorded consent, exact prices and all reservations remain in force until resolution.&quot;;
+      break;
+    case &quot;AWAITING_EVIDENCE&quot;:
+      status = &quot;executing&quot;;
+      reason =
+        &quot;Consent is recorded and the arrangement awaits delivery evidence. Reservations remain held.&quot;;
+      break;
+    case &quot;ACCEPTED&quot;:
+      status = &quot;executing&quot;;
+      reason =
+        &quot;All required consent is recorded. The arrangement awaits verified execution and retains its reservations.&quot;;
+      break;
+    default:
+      status = validationErrors.length ? &quot;invalidated&quot; : &quot;reserved&quot;;
+      reason = validationErrors.length
+        ? &quot;This held arrangement no longer passes current validation. Its recorded reservations remain until the engine resolves it.&quot;
+        : &quot;The exact arrangement is reserved while the remaining participants review their changes.&quot;;
+  }
+  if (expiryDue)
+    reason +=
+      &quot; Its expiry is due. The supplied state still records the hold until an engine transition releases it.&quot;;
+  if (validationErrors.length &amp;&amp; status === &quot;executing&quot;)
+    reason +=
+      &quot; Current validation blocks further delivery and requires resolution.&quot;;
+  const references = [
+    ...(contract.requestRefs || []),
+    ...Object.entries(contract.authorizations || {}).map(
+      ([person, authorization]) =&gt; ({
+        person,
+        intentId: authorization.intentId,
+        revision: authorization.revision,
+      }),
+    ),
+  ];
+  const referenceMap = new Map(
+    references.map((reference) =&gt; {
+      const entryId = sourceId(
+        &quot;request&quot;,
+        reference.person,
+        reference.intentId,
+        reference.revision,
+      );
+      return [entryId, { ...reference, entryId }];
+    }),
+  );
+  const participants = sorted(contract.participants);
+  return {
+    id: `contract/${encodeURIComponent(contract.contractId)}`,
+    kind: &quot;contract&quot;,
+    contractId: contract.contractId,
+    candidateId: contract.id,
+    title: contract.title,
+    status,
+    engineStatus: contract.status,
+    reason,
+    createdAt: contract.created,
+    expiresAt: contract.expires,
+    deadline: contract.deadline,
+    expiryDue,
+    reservationRetained,
+    participants,
+    accepted: sorted(contract.accepted),
+    awaitingConsent: participants.filter(
+      (person) =&gt; !contract.accepted.includes(person),
+    ),
+    allAccepted,
+    pricingVersion: contract.pricingVersion,
+    credits: Object.fromEntries(
+      Object.entries(contract.credits).sort(([a], [b]) =&gt; compare(a, b)),
+    ),
+    reservedCredits: Object.fromEntries(
+      participants.map((person) =&gt; [
+        person,
+        reservationRetained ? debit(contract, person) : 0,
+      ]),
+    ),
+    requestReferences: [...referenceMap.values()].sort((a, b) =&gt;
+      compare(a.entryId, b.entryId),
+    ),
+    authorizations: Object.fromEntries(
+      Object.entries(contract.authorizations || {}).sort(([a], [b]) =&gt;
+        compare(a, b),
+      ),
+    ),
+    changes: [...contract.changes].sort((a, b) =&gt; compare(a.key, b.key)),
+    dependencies: [...contract.dependencies].sort((a, b) =&gt;
+      compare(a.key, b.key),
+    ),
+    receipts: [...contract.receipts],
+    ledgerEntryIds: sorted(
+      state.ledger
+        .filter((entry) =&gt; entry.contract === contract.contractId)
+        .map((entry) =&gt; entry.id),
+    ),
+    validationErrors,
+  };
+}
+
+function request(
+  state: State,
+  person: string,
+  record: IntentRecord,
+  funds: BookWallet,
+  contracts: BookContract[],
+): BookRequest {
+  const authorization = record.authorization;
+  const finance = requestAuthorizationStatus(state, person, record);
+  const progress = requestProgress(state, person, record);
+  const quote =
+    authorization?.mode === &quot;fixed_quote&quot; ? authorization.quote || null : null;
+  const related = contracts.filter((contract) =&gt;
+    contract.requestReferences.some(
+      (reference) =&gt;
+        reference.person === person &amp;&amp; reference.intentId === record.id,
+    ),
+  );
+  const current = related.filter((contract) =&gt;
+    contract.requestReferences.some(
+      (reference) =&gt;
+        reference.person === person &amp;&amp;
+        reference.intentId === record.id &amp;&amp;
+        reference.revision === record.revision,
+    ),
+  );
+  const pending = current.filter((contract) =&gt; contract.reservationRetained);
+  const executing = pending.some((contract) =&gt; contract.status === &quot;executing&quot;);
+  const contextCurrent =
+    quote &amp;&amp; !pending.length &amp;&amp; progress.status !== &quot;fulfilled&quot;
+      ? acceptedQuoteContextCurrent(state, person, record, quote)
+      : null;
+  const availableForThisRequest = availableRequestCredits(
+    state,
+    person,
+    record.id,
+  );
+  const authorizationExact =
+    !!authorization &amp;&amp;
+    !!quote &amp;&amp;
+    authorization.mode === &quot;fixed_quote&quot; &amp;&amp;
+    authorization.allowPartial === false &amp;&amp;
+    authorization.maxCredits === quote.debit &amp;&amp;
+    authorization.termsRevision === record.revision &amp;&amp;
+    quote.targetRevision === record.revision &amp;&amp;
+    authorization.validUntil &lt;= quote.validUntil;
+  const funded =
+    !!quote &amp;&amp;
+    Number.isFinite(funds.balance) &amp;&amp;
+    funds.free &gt;= 0 &amp;&amp;
+    availableForThisRequest &gt;= quote.debit &amp;&amp;
+    finance.remaining &gt;= quote.debit;
+  let status: BookRequest[&quot;status&quot;];
+  let reason: string;
+  let firm = false;
+  if (executing) {
+    status = &quot;executing&quot;;
+    reason =
+      &quot;An accepted contract is executing this request. Its signed terms and reservation survive request expiry until delivery or reconciliation resolves it.&quot;;
+  } else if (pending.length) {
+    status = pending.some(
+      (contract) =&gt; contract.status === &quot;invalidated&quot; || contract.expiryDue,
+    )
+      ? &quot;invalidated&quot;
+      : &quot;reserved&quot;;
+    reason =
+      status === &quot;reserved&quot;
+        ? &quot;The request&#39;s accepted quote is assigned to a held arrangement. It cannot authorize a second arrangement.&quot;
+        : &quot;A linked held arrangement needs resolution. Its recorded reservation remains and this request cannot authorize another arrangement.&quot;;
+  } else if (record.cancelled) {
+    status = &quot;withdrawn&quot;;
+    reason =
+      &quot;The request was withdrawn. It supplies no authority for a new arrangement.&quot;;
+  } else if (!record.confirmed || record.questions.length) {
+    status = &quot;draft&quot;;
+    reason =
+      &quot;Review and publication are incomplete. No transaction is authorized.&quot;;
+  } else if (progress.status === &quot;fulfilled&quot;) {
+    status = current.some((contract) =&gt; contract.status === &quot;settled&quot;)
+      ? &quot;settled&quot;
+      : &quot;fulfilled&quot;;
+    reason =
+      status === &quot;settled&quot;
+        ? &quot;The requested outcome is fulfilled and a linked arrangement settled. The request cannot authorize another debit.&quot;
+        : &quot;The current booking already meets the request. No linked settlement is inferred and no new debit is authorized.&quot;;
+  } else if (
+    progress.status === &quot;expired&quot; ||
+    (quote &amp;&amp; quote.validUntil &lt;= state.hour)
+  ) {
+    status = &quot;expired&quot;;
+    reason =
+      &quot;The request or quoted service has expired and cannot authorize a new arrangement.&quot;;
+  } else if (!authorizationExact || finance.status !== &quot;active&quot;) {
+    status = &quot;invalidated&quot;;
+    reason =
+      authorization?.mode !== &quot;fixed_quote&quot;
+        ? &quot;A reviewed fixed quote is required. Saved preferences and legacy credit limits do not authorize a new arrangement.&quot;
+        : &quot;The accepted quote does not bind this request revision and complete-delivery terms. Review a new quote.&quot;;
+  } else if (!contextCurrent) {
+    status = &quot;invalidated&quot;;
+    reason =
+      &quot;The request, booking, party or quoted products changed. Review a new fixed quote before reserving another arrangement.&quot;;
+  } else if (!funded) {
+    status = &quot;invalidated&quot;;
+    reason =
+      &quot;The exact debit is not fully backed by this request&#39;s earmark and available wallet balance. No new arrangement is authorized.&quot;;
+  } else {
+    status = &quot;open&quot;;
+    firm = true;
+    reason =
+      &quot;The current fixed quote and exact debit are authorized for one complete arrangement. Eligible supply and every other participant&#39;s consent still need validation.&quot;;
+  }
+  return {
+    id: sourceId(&quot;request&quot;, person, record.id, record.revision),
+    kind: &quot;request&quot;,
+    source: source(person, record),
+    status,
+    firm,
+    reason,
+    authorizationMode: authorization
+      ? authorization.mode === &quot;fixed_quote&quot;
+        ? &quot;fixed_quote&quot;
+        : &quot;legacy&quot;
+      : &quot;missing&quot;,
+    authorizationStatus: finance.status,
+    authorizedAt: authorization?.authorizedAt ?? null,
+    termsRevision: authorization?.termsRevision ?? null,
+    expiresAt: authorization
+      ? Math.min(authorization.validUntil, quote?.validUntil ?? Infinity)
+      : null,
+    quote,
+    contextCurrent,
+    progress,
+    funding: {
+      debit: quote?.debit ?? null,
+      spent: finance.spent,
+      committed: finance.committed,
+      reserved: finance.reserved,
+      earmarked: Math.max(0, finance.reserved - finance.committed),
+      availableForThisRequest,
+      wallet: funds,
+    },
+    contractIds: related.map((contract) =&gt; contract.contractId),
+    currentContractIds: current.map((contract) =&gt; contract.contractId),
+  };
+}
+
+/** Pure diagnostic book over authoritative state. This never runs a match,
+ * reprices an accepted quote, manufactures consent or processes expiry.
+ * Pass a full authorised state for engine parity. It is not a privacy filter. */
+export function projectOrderBook(state: State): OrderBook {
+  const wallets = sorted(Object.keys(state.wallets)).map((person) =&gt;
+    wallet(state, person),
+  );
+  const walletMap = new Map(wallets.map((entry) =&gt; [entry.person, entry]));
+  const contracts = state.contracts
+    .map((contract) =&gt; contractProjection(state, contract))
+    .sort((a, b) =&gt; compare(a.id, b.id));
+  const permissions: BookPermission[] = [];
+  const requests: BookRequest[] = [];
+  for (const [person, records] of Object.entries(state.intents || {})) {
+    for (const record of records) {
+      if (intentPurpose(record) === &quot;flexibility&quot;)
+        permissions.push(permission(state, person, record));
+      else
+        requests.push(
+          request(
+            state,
+            person,
+            record,
+            walletMap.get(person) || wallet(state, person),
+            contracts,
+          ),
+        );
+    }
+  }
+  // Detach all nested source, quote and contract snapshots from the input. A
+  // consumer can inspect or format this projection without mutating the engine.
+  return structuredClone({
+    version: 1,
+    audit: {
+      stateVersion: state.version,
+      hour: state.hour,
+      stateSchema: state.schema,
+    },
+    semantics: &quot;derived_conditional_book&quot;,
+    wallets,
+    permissions: permissions.sort((a, b) =&gt; compare(a.id, b.id)),
+    requests: requests.sort((a, b) =&gt; compare(a.id, b.id)),
+    contracts,
+  });
+}
+</code></pre><a href="https://github.com/cathayflex/cathayflex.github.io/blob/main/technology/source/order-book.ts" target="_blank" rel="noopener">View this file on GitHub <span aria-hidden="true">↗</span></a></div></details>
+<details class="reader-provenance"><summary>Source verification</summary><p>The source shown above matches the published export manifest.</p><dl><dt>SHA-256</dt><dd><code>8ac17a46a3dd743ca2a5953ead1e406de4a86ccce6b750f19b89a57bb071e839</code></dd><dt>Platform source commit</dt><dd><code>3c792c47304ef6a3717ecd4e6c2735207e0363d2</code></dd></dl></details></main><footer class="site-footer"><div class="footer-main"><p>Team Globe · Cathay Hackathon 2026</p><a href="/technology/">Inside the system <span aria-hidden="true">↗</span></a></div></footer></body></html>

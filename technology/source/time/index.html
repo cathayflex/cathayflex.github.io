@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Simulation time | Cathay Flex</title><meta name="description" content="Translate the simulation clock into consistent journey and expiry times."><meta name="theme-color" content="#006564"><link rel="canonical" href="https://cathayflex.github.io/technology/source/time/"><link rel="icon" href="/assets/cathay-brushwing.png"><link rel="stylesheet" href="/fonts.css?v=20261003-cathay"><link rel="stylesheet" href="/style.css?v=20261003-clear-headings"><link rel="stylesheet" href="/technology/source/reader.css?v=7d397c4928e7"><script src="/app.js?v=20261003-product" defer></script></head>
+<body><a class="skip-link" href="#main">Skip to content</a><header class="site-header">
+    <div class="brand-lockup"><a class="brand" href="/" aria-label="Cathay Flex home"><img class="brand-logo" src="/assets/cathay-flex-logo.svg?v=20261004-cargo" width="1164" height="200" alt="Cathay Flex"></a><span class="brand-note">For the Cathay Hackathon demo only</span></div>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav"><span>Menu</span><span class="menu-lines" aria-hidden="true"></span></button>
+    <nav id="site-nav" aria-label="Main navigation"><a href="/technology/">Inside the system <span aria-hidden="true">↗</span></a><a href="/technology/#evidence">Implementation &amp; evidence</a></nav>
+  </header>
+<main id="main" class="source-reader" tabindex="-1"><a class="reader-back" href="/technology/#evidence"><span aria-hidden="true">←</span> Back to the explanation</a><p class="reader-eyebrow">INSIDE THE IMPLEMENTATION</p><h1>Simulation time</h1><p class="reader-intro">Translate the simulation clock into consistent journey and expiry times.</p><dl class="reader-facts"><div><dt>What it reads</dt><dd>The simulation’s recorded time and calendar context.</dd></div><div><dt>What it produces</dt><dd>Time values shared by the example and its lifecycle checks.</dd></div><div><dt>What to know</dt><dd>Controlled simulation time is separate from a production scheduling service.</dd></div></dl>
+<details class="reader-code"><summary><span>View TypeScript source</span><span class="reader-file">time.ts</span><span class="reader-plus" aria-hidden="true">+</span></summary><div class="reader-code-body"><p>TypeScript is the implementation language. This is the source exported with the public matching engine.</p><pre tabindex="0" aria-label="time.ts source"><code>import type { State } from &quot;./types.ts&quot;;
+
+export const simulationEpoch = (state: State) =&gt;
+  state.scenarioId === &quot;lin-family&quot;
+    ? Date.parse(&quot;2026-10-05T00:00:00Z&quot;)
+    : Date.UTC(2026, 9, 18, 7);
+
+export const simulationTimeZone = (state: State) =&gt;
+  state.scenarioId === &quot;lin-family&quot; ? &quot;Hong Kong time&quot; : &quot;UTC&quot;;
+
+/** Native datetime-local values use the simulation&#39;s displayed timezone. */
+export function simulationTimeInput(state: State, hour: number) {
+  const offset = state.scenarioId === &quot;lin-family&quot; ? 8 : 0;
+  return new Date(simulationEpoch(state) + (hour + offset) * 3600000)
+    .toISOString()
+    .slice(0, 16);
+}
+
+export function simulationHourFromInput(state: State, value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return NaN;
+  const zone = state.scenarioId === &quot;lin-family&quot; ? &quot;+08:00&quot; : &quot;Z&quot;;
+  return (Date.parse(`${value}:00${zone}`) - simulationEpoch(state)) / 3600000;
+}
+</code></pre><a href="https://github.com/cathayflex/cathayflex.github.io/blob/main/technology/source/time.ts" target="_blank" rel="noopener">View this file on GitHub <span aria-hidden="true">↗</span></a></div></details>
+<details class="reader-provenance"><summary>Source verification</summary><p>The source shown above matches the published export manifest.</p><dl><dt>SHA-256</dt><dd><code>dd7370317b029126a1baa3a5d2d5572721075f8e9e7763c32f4f0514ce779b2b</code></dd><dt>Platform source commit</dt><dd><code>3c792c47304ef6a3717ecd4e6c2735207e0363d2</code></dd></dl></details></main><footer class="site-footer"><div class="footer-main"><p>Team Globe · Cathay Hackathon 2026</p><a href="/technology/">Inside the system <span aria-hidden="true">↗</span></a></div></footer></body></html>

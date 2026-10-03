@@ -4,6 +4,7 @@ import { resolve, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { buildSourceReaders } from './build-source-readers.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 if (!process.argv[2]) throw new Error('Pass the absolute Cathay Flex platform directory.');
@@ -53,4 +54,5 @@ const html = resolve(root,'technology/index.html');
 await writeFile(html,(await readFile(html,'utf8'))
   .replace(/system\.js\?v=[^"']+/,`system.js?v=${digest(await readFile(view))}`)
   .replace(/system\.css\?v=[^"']+/,`system.css?v=${digest(await readFile(resolve(root,'technology/system.css')))}`));
+await buildSourceReaders(root);
 console.log(JSON.stringify({sourceFiles:files.length,engineBytes:manifest.engineBytes,digest:manifest.sourceTreeDigest}));

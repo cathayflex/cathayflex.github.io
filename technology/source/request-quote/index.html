@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Validating fixed quotes | Cathay Flex</title><meta name="description" content="Give a reviewed request an exact credit price and verify that later arrangements still satisfy the accepted terms."><meta name="theme-color" content="#006564"><link rel="canonical" href="https://cathayflex.github.io/technology/source/request-quote/"><link rel="icon" href="/assets/cathay-brushwing.png"><link rel="stylesheet" href="/fonts.css?v=20261003-cathay"><link rel="stylesheet" href="/style.css?v=20261003-clear-headings"><link rel="stylesheet" href="/technology/source/reader.css?v=7d397c4928e7"><script src="/app.js?v=20261003-product" defer></script></head>
+<body><a class="skip-link" href="#main">Skip to content</a><header class="site-header">
+    <div class="brand-lockup"><a class="brand" href="/" aria-label="Cathay Flex home"><img class="brand-logo" src="/assets/cathay-flex-logo.svg?v=20261004-cargo" width="1164" height="200" alt="Cathay Flex"></a><span class="brand-note">For the Cathay Hackathon demo only</span></div>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav"><span>Menu</span><span class="menu-lines" aria-hidden="true"></span></button>
+    <nav id="site-nav" aria-label="Main navigation"><a href="/technology/">Inside the system <span aria-hidden="true">↗</span></a><a href="/technology/#evidence">Implementation &amp; evidence</a></nav>
+  </header>
+<main id="main" class="source-reader" tabindex="-1"><a class="reader-back" href="/technology/#commit"><span aria-hidden="true">←</span> Back to the explanation</a><p class="reader-eyebrow">INSIDE THE IMPLEMENTATION</p><h1>Validating fixed quotes</h1><p class="reader-intro">Give a reviewed request an exact credit price and verify that later arrangements still satisfy the accepted terms.</p><dl class="reader-facts"><div><dt>What it reads</dt><dd>The reviewed request, booking and party context, product catalog and chosen validity period.</dd></div><div><dt>What it produces</dt><dd>A fixed quote with specific products, quantities and debit, or a reason the request cannot be quoted. Candidate coverage is checked against those exact terms.</dd></div><div><dt>What to know</dt><dd>A change to the accepted request revision, booking, party or quoted product invalidates reuse. Matching cannot silently substitute a different price or incomplete bundle.</dd></div></dl>
+<details class="reader-code"><summary><span>View TypeScript source</span><span class="reader-file">request-quote.ts</span><span class="reader-plus" aria-hidden="true">+</span></summary><div class="reader-code-body"><p>TypeScript is the implementation language. This is the source exported with the public matching engine.</p><pre tabindex="0" aria-label="request-quote.ts source"><code>import {
+  bookedJourneys,
+  intentPurpose,
+  journeyFacts,
+  requestAuthorizationDeadline,
+  requestGoalSatisfied,
+  ruleConditionMatches,
+  rulesFor,
+  validateIntent,
+} from &quot;./intent.ts&quot;;
+import type {
+  Candidate,
+  IntentRecord,
+  IntentRule,
+  Resource,
+  State,
+} from &quot;./types.ts&quot;;
+
+import {
+  REQUEST_PRICING_VERSION,
+  requestQuoteSchema,
+} from &quot;./request-quote-schema.ts&quot;;
+import type { RequestQuote } from &quot;./request-quote-schema.ts&quot;;
+export {
+  REQUEST_PRICING_VERSION,
+  requestQuoteSchema,
+} from &quot;./request-quote-schema.ts&quot;;
+export type { RequestQuote } from &quot;./request-quote-schema.ts&quot;;
+
+export type RequestQuoteResult =
+  | { status: &quot;quoted&quot;; quote: RequestQuote }
+  | { status: &quot;unavailable&quot;; reason: string };
+
+function canonical(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(&quot;,&quot;)}]`;
+  if (value &amp;&amp; typeof value === &quot;object&quot;)
+    return `{${Object.entries(value)
+      .filter(([, entry]) =&gt; entry !== undefined)
+      .sort(([a], [b]) =&gt; a.localeCompare(b))
+      .map(([key, entry]) =&gt; `${JSON.stringify(key)}:${canonical(entry)}`)
+      .join(&quot;,&quot;)}}`;
+  return JSON.stringify(value);
+}
+const unavailable = (reason: string): RequestQuoteResult =&gt; ({
+  status: &quot;unavailable&quot;,
+  reason,
+});
+const resource = (s: State, id: string | null) =&gt;
+  s.resources.find((entry) =&gt; entry.id === id);
+const onJourney = (
+  s: State,
+  allocation: State[&quot;allocations&quot;][number],
+  journeyId: string,
+) =&gt;
+  (allocation.journeyId || resource(s, allocation.resource)?.journey) ===
+  journeyId;
+const resourcePrice = (entry: Resource) =&gt;
+  Number.isSafeInteger(entry.q) &amp;&amp; entry.q &gt;= 0;
+const eligible = (entry: Resource, person: string) =&gt;
+  !entry.eligible.length || entry.eligible.includes(person);
+const seatCost = (from: Resource, to: Resource) =&gt;
+  Math.max(0, to.source === &quot;airline_inventory&quot; ? to.q : to.q - from.q);
+
+function catalogKey(s: State, resourceIds: string[]) {
+  return canonical(
+    resourceIds
+      .slice()
+      .sort()
+      .map((id) =&gt; {
+        const entry = resource(s, id);
+        if (!entry) return null;
+        const { kind, product, source, q, seatPosition, seatMap, baggage } =
+          entry;
+        return { id, kind, product, source, q, seatPosition, seatMap, baggage };
+      }),
+  );
+}
+
+function bookingKey(s: State, person: string, journeyId: string) {
+  const parties = (s.parties || []).filter(
+    (party) =&gt;
+      party.journeyId === journeyId &amp;&amp; party.memberIds.includes(person),
+  );
+  const members = new Set([
+    person,
+    ...parties.flatMap((party) =&gt; party.memberIds),
+  ]);
+  return canonical({
+    journey: s.journeys?.find((journey) =&gt; journey.id === journeyId),
+    parties: parties
+      .map((party) =&gt; ({ ...party, memberIds: [...party.memberIds].sort() }))
+      .sort((a, b) =&gt; a.id.localeCompare(b.id)),
+    allocations: s.allocations
+      .filter(
+        (allocation) =&gt;
+          members.has(allocation.person) &amp;&amp; onJourney(s, allocation, journeyId),
+      )
+      .map(({ key, person: owner, resource: assigned, version }) =&gt; ({
+        key,
+        person: owner,
+        resource: assigned,
+        version,
+      }))
+      .sort((a, b) =&gt; a.key.localeCompare(b.key)),
+  });
+}
+
+function seatDestinations(
+  s: State,
+  person: string,
+  journeyId: string,
+  rules: IntentRule[],
+) {
+  const own = s.allocations.find(
+    (allocation) =&gt;
+      allocation.person === person &amp;&amp;
+      onJourney(s, allocation, journeyId) &amp;&amp;
+      resource(s, allocation.resource)?.kind === &quot;seat&quot;,
+  );
+  const from = own &amp;&amp; resource(s, own.resource);
+  if (!own || !from || !resourcePrice(from)) return null;
+  const positions = rules.filter(
+    (rule) =&gt; rule.effect.kind === &quot;seat_position&quot;,
+  );
+  const together = rules.filter(
+    (rule) =&gt; rule.effect.kind === &quot;seating_together&quot;,
+  );
+  const choices = s.resources.filter(
+    (entry) =&gt;
+      entry.kind === &quot;seat&quot; &amp;&amp;
+      entry.journey === journeyId &amp;&amp;
+      entry.id !== from.id &amp;&amp;
+      resourcePrice(entry) &amp;&amp;
+      eligible(entry, person) &amp;&amp;
+      positions.every(
+        (rule) =&gt;
+          rule.effect.kind === &quot;seat_position&quot; &amp;&amp;
+          rule.effect.positions.includes(entry.seatPosition!),
+      ),
+  );
+  if (!together.length) return { own, from, choices };
+  const parties = (s.parties || []).filter(
+    (party) =&gt;
+      party.journeyId === journeyId &amp;&amp;
+      party.memberIds.includes(person) &amp;&amp;
+      together.every(
+        (rule) =&gt;
+          rule.effect.kind === &quot;seating_together&quot; &amp;&amp;
+          (!rule.effect.partyId || rule.effect.partyId === party.id),
+      ),
+  );
+  if (
+    parties.length !== 1 ||
+    parties[0].memberIds.length &lt; 2 ||
+    parties[0].memberIds.length &gt; 8
+  )
+    return null;
+  const party = parties[0];
+  const current = party.memberIds.map(
+    (member) =&gt;
+      s.allocations.find(
+        (allocation) =&gt;
+          allocation.person === member &amp;&amp;
+          onJourney(s, allocation, journeyId) &amp;&amp;
+          resource(s, allocation.resource)?.kind === &quot;seat&quot;,
+      )?.resource,
+  );
+  if (current.some((id) =&gt; !id)) return null;
+  const maps = s.resources.filter(
+    (entry) =&gt;
+      entry.kind === &quot;seat&quot; &amp;&amp; entry.journey === journeyId &amp;&amp; entry.seatMap,
+  );
+  const blocks = new Map&lt;string, Resource[]&gt;();
+  for (const entry of maps) {
+    const key = `${entry.seatMap!.row}:${entry.seatMap!.block}`;
+    blocks.set(key, [...(blocks.get(key) || []), entry]);
+  }
+  const options: { seat: Resource; moves: number }[] = [];
+  for (const seats of blocks.values()) {
+    seats.sort((a, b) =&gt; a.seatMap!.column - b.seatMap!.column);
+    for (let i = 0; i + party.memberIds.length &lt;= seats.length; i++) {
+      const tuple = seats.slice(i, i + party.memberIds.length);
+      if (
+        !tuple.every(
+          (seat, index) =&gt;
+            !index ||
+            seat.seatMap!.column === tuple[index - 1].seatMap!.column + 1,
+        )
+      )
+        continue;
+      for (const seat of choices.filter((choice) =&gt; tuple.includes(choice))) {
+        // First preserve as many booked seats as possible. If all companions
+        // must move, the same geometry can still receive a fixed quote.
+        const unchanged = current.filter(
+          (id, index) =&gt;
+            party.memberIds[index] !== person &amp;&amp;
+            id !== seat.id &amp;&amp;
+            tuple.some((entry) =&gt; entry.id === id),
+        ).length;
+        options.push({ seat, moves: party.memberIds.length - unchanged });
+      }
+    }
+  }
+  const minimumMoves = Math.min(
+    Infinity,
+    ...options.map((option) =&gt; option.moves),
+  );
+  return {
+    own,
+    from,
+    choices: [
+      ...new Set(
+        options
+          .filter((option) =&gt; option.moves === minimumMoves)
+          .map((option) =&gt; option.seat),
+      ),
+    ],
+  };
+}
+
+/** Quote a reviewed draft before publication. Its revision is the existing revision. */
+export function quoteRequest(
+  s: State,
+  person: string,
+  record: IntentRecord,
+  options: { validUntil?: number } = {},
+): RequestQuoteResult {
+  try {
+    validateIntent(s, person, record);
+  } catch (error) {
+    return unavailable(
+      error instanceof Error
+        ? error.message
+        : &quot;Review the request details first.&quot;,
+    );
+  }
+  if (
+    intentPurpose(record) !== &quot;request&quot; ||
+    record.scope.kind !== &quot;journey&quot; ||
+    record.questions.length
+  )
+    return unavailable(
+      &quot;Resolve the journey and request details before getting a quote.&quot;,
+    );
+  const journeyId = record.scope.journeyId;
+  if (!bookedJourneys(s, person).includes(journeyId))
+    return unavailable(&quot;Choose a journey on your booking.&quot;);
+  if (record.rules.some((rule) =&gt; rule.effect.kind === &quot;credit_budget&quot;))
+    return unavailable(
+      &quot;Remove the credit limit from this request. Flex will quote a fixed price for the requested changes.&quot;,
+    );
+  const facts = journeyFacts(s, person, journeyId);
+  if (
+    record.rules.some((rule) =&gt; ruleConditionMatches(facts, rule) === undefined)
+  )
+    return unavailable(
+      &quot;A request condition still needs verified booking details.&quot;,
+    );
+  const goals = record.rules.filter(
+    (rule) =&gt;
+      rule.strength !== &quot;flexible&quot; &amp;&amp;
+      ruleConditionMatches(facts, rule) === true,
+  );
+  const unmet = goals.filter(
+    (rule) =&gt; !requestGoalSatisfied(s, person, journeyId, rule),
+  );
+  if (!unmet.length)
+    return unavailable(&quot;Your booking already meets this request.&quot;);
+  if (
+    unmet.some(
+      (rule) =&gt;
+        ![&quot;seat_position&quot;, &quot;seating_together&quot;, &quot;baggage&quot;].includes(
+          rule.effect.kind,
+        ),
+    )
+  )
+    return unavailable(
+      &quot;A fixed catalog price is not available for every part of this request. Review an exact offer before accepting these changes.&quot;,
+    );
+  const lineItems: RequestQuote[&quot;lineItems&quot;] = [];
+  const seatGoals = goals.filter((rule) =&gt;
+    [&quot;seat_position&quot;, &quot;seating_together&quot;].includes(rule.effect.kind),
+  );
+  const standingHardSeats = rulesFor(s, person, journeyId).filter(
+    (rule) =&gt;
+      rule.recordId !== record.id &amp;&amp;
+      rule.strength === &quot;must&quot; &amp;&amp;
+      [&quot;seat_position&quot;, &quot;seating_together&quot;].includes(rule.effect.kind),
+  );
+  if (unmet.some((rule) =&gt; seatGoals.includes(rule))) {
+    const destinations = seatDestinations(s, person, journeyId, [
+      ...seatGoals,
+      ...standingHardSeats,
+    ]);
+    if (!destinations?.choices.length)
+      return unavailable(
+        &quot;A fixed seating price is not available for this arrangement yet.&quot;,
+      );
+    const price = Math.min(
+      ...destinations.choices.map((seat) =&gt; seatCost(destinations.from, seat)),
+    );
+    const tier = destinations.choices.filter(
+      (seat) =&gt; seatCost(destinations.from, seat) === price,
+    );
+    lineItems.push({
+      kind: &quot;seat&quot;,
+      label: seatGoals.some((rule) =&gt; rule.effect.kind === &quot;seating_together&quot;)
+        ? &quot;Seats together&quot;
+        : &quot;Requested seat&quot;,
+      ruleIds: seatGoals.map((rule) =&gt; rule.id).sort(),
+      resourceIds: tier.map((seat) =&gt; seat.id).sort(),
+      catalogKey: catalogKey(
+        s,
+        tier.map((seat) =&gt; seat.id),
+      ),
+      allocationKeys: [destinations.own.key],
+      quantity: 1,
+      unitCredits: price,
+      credits: price,
+    });
+  }
+  const bagGoals = goals.filter((rule) =&gt; rule.effect.kind === &quot;baggage&quot;);
+  if (unmet.some((rule) =&gt; bagGoals.includes(rule))) {
+    const pieces = Math.max(
+      ...bagGoals.map((rule) =&gt;
+        rule.effect.kind === &quot;baggage&quot; ? rule.effect.extraPieces : 0,
+      ),
+    );
+    const minimumKg = Math.max(
+      0,
+      ...bagGoals.map((rule) =&gt;
+        rule.effect.kind === &quot;baggage&quot; ? rule.effect.maxKgPerPiece || 0 : 0,
+      ),
+    );
+    const own = s.allocations.filter(
+      (allocation) =&gt;
+        allocation.person === person &amp;&amp;
+        onJourney(s, allocation, journeyId) &amp;&amp;
+        (allocation.resourceKind === &quot;baggage&quot; ||
+          resource(s, allocation.resource)?.kind === &quot;baggage&quot;),
+    );
+    const supplied = own.reduce((sum, allocation) =&gt; {
+      const entry = resource(s, allocation.resource);
+      return (
+        sum +
+        ((entry?.baggage?.maxKg || 0) &gt;= minimumKg
+          ? entry?.baggage?.pieces || 0
+          : 0)
+      );
+    }, 0);
+    const needed = pieces - supplied;
+    const products = s.resources.filter(
+      (entry) =&gt;
+        entry.kind === &quot;baggage&quot; &amp;&amp;
+        entry.journey === journeyId &amp;&amp;
+        entry.source === &quot;airline_inventory&quot; &amp;&amp;
+        eligible(entry, person) &amp;&amp;
+        resourcePrice(entry) &amp;&amp;
+        entry.baggage?.passenger === person &amp;&amp;
+        entry.baggage.pieces &gt; 0 &amp;&amp;
+        entry.baggage.maxKg &gt;= minimumKg &amp;&amp;
+        needed &gt; 0 &amp;&amp;
+        needed % entry.baggage.pieces === 0,
+    );
+    if (!products.length)
+      return unavailable(
+        &quot;An exact baggage product with a fixed catalog price is not available for this request.&quot;,
+      );
+    products.sort(
+      (a, b) =&gt;
+        (a.q * needed) / a.baggage!.pieces -
+          (b.q * needed) / b.baggage!.pieces ||
+        a.baggage!.maxKg - b.baggage!.maxKg ||
+        a.id.localeCompare(b.id),
+    );
+    const product = products[0],
+      quantity = needed / product.baggage!.pieces;
+    const slots = own
+      .filter((allocation) =&gt; allocation.resource === null)
+      .map((allocation) =&gt; allocation.key)
+      .sort();
+    // Publishing creates these empty entitlement slots deterministically.
+    for (let index = own.length; index &lt; pieces; index++)
+      slots.push(`extra-baggage:${person}:${journeyId}:${index}`);
+    if (slots.length &lt; quantity)
+      return unavailable(
+        &quot;This baggage quantity cannot be represented by the booking.&quot;,
+      );
+    const tier = products.filter(
+      (entry) =&gt;
+        entry.q === product.q &amp;&amp;
+        entry.product === product.product &amp;&amp;
+        canonical(entry.baggage) === canonical(product.baggage),
+    );
+    lineItems.push({
+      kind: &quot;baggage&quot;,
+      label: `${needed} extra checked ${needed === 1 ? &quot;bag&quot; : &quot;bags&quot;} · Up to ${product.baggage!.maxKg} kg each`,
+      ruleIds: bagGoals.map((rule) =&gt; rule.id).sort(),
+      resourceIds: tier.map((entry) =&gt; entry.id).sort(),
+      catalogKey: catalogKey(
+        s,
+        tier.map((entry) =&gt; entry.id),
+      ),
+      allocationKeys: slots,
+      quantity,
+      unitCredits: product.q,
+      credits: product.q * quantity,
+    });
+  }
+  const deadline = Math.min(
+    requestAuthorizationDeadline(s, person, record),
+    ...lineItems.flatMap((item) =&gt;
+      item.resourceIds.map((id) =&gt; resource(s, id)!.deadline),
+    ),
+  );
+  const validUntil = options.validUntil ?? deadline;
+  if (
+    !Number.isFinite(validUntil) ||
+    validUntil &lt;= s.hour ||
+    validUntil &gt; deadline
+  )
+    return unavailable(
+      &quot;The quote must expire before the requested services close.&quot;,
+    );
+  const quote: RequestQuote = {
+    version: 1,
+    id: `request-quote:${person}:${record.id}:${record.revision + 1}:${s.hour}`,
+    person,
+    journeyId,
+    intentId: record.id,
+    targetRevision: record.revision + 1,
+    pricingVersion: REQUEST_PRICING_VERSION,
+    issuedAt: s.hour,
+    validUntil,
+    outcomeKey: canonical({
+      sourceText: record.sourceText,
+      scope: record.scope,
+      rules: record.rules,
+      standingHardSeats,
+    }),
+    bookingKey: bookingKey(s, person, journeyId),
+    debit: lineItems.reduce((sum, item) =&gt; sum + item.credits, 0),
+    lineItems,
+    allowPartial: false,
+  };
+  const parsed = requestQuoteSchema.safeParse(quote);
+  return parsed.success
+    ? { status: &quot;quoted&quot;, quote: parsed.data }
+    : unavailable(&quot;This request exceeds the supported fixed quote limits.&quot;);
+}
+
+/** Validate against the current booking before publishing or reserving a quote. */
+export function validateRequestQuote(
+  s: State,
+  person: string,
+  record: IntentRecord,
+  input: RequestQuote,
+): string[] {
+  const parsed = requestQuoteSchema.safeParse(input);
+  if (!parsed.success)
+    return [&quot;Review a valid platform quote before publishing.&quot;];
+  const quote = parsed.data;
+  if (quote.issuedAt &gt; s.hour || quote.validUntil &lt;= s.hour)
+    return [&quot;This quote has expired. Review a new quote.&quot;];
+  // Recompute every field. The readable quote ID is a reference, never a proof
+  // of authority. Altering a client debit or binding cannot grant consent.
+  const result = quoteRequest({ ...s, hour: quote.issuedAt }, person, record, {
+    validUntil: quote.validUntil,
+  });
+  return result.status === &quot;quoted&quot; &amp;&amp;
+    canonical(result.quote) === canonical(quote)
+    ? []
+    : [
+        &quot;The request, booking or quoted products changed. Review a new fixed quote.&quot;,
+      ];
+}
+
+/** Recheck an accepted quote&#39;s source and booking context before reservation. */
+export function acceptedQuoteContextCurrent(
+  s: State,
+  person: string,
+  record: IntentRecord,
+  quote: RequestQuote,
+): boolean {
+  if (record.revision !== quote.targetRevision || record.id !== quote.intentId)
+    return false;
+  try {
+    const baseline = JSON.parse(quote.bookingKey) as {
+      allocations?: { key: string }[];
+    };
+    if (!Array.isArray(baseline.allocations)) return false;
+    const originalKeys = new Set(
+      baseline.allocations.map((allocation) =&gt; allocation.key),
+    );
+    const addedBagKeys = new Set(
+      quote.lineItems
+        .filter((item) =&gt; item.kind === &quot;baggage&quot;)
+        .flatMap((item) =&gt; item.allocationKeys),
+    );
+    const originalContext = {
+      ...s,
+      allocations: s.allocations.filter(
+        (allocation) =&gt;
+          !(
+            !originalKeys.has(allocation.key) &amp;&amp;
+            addedBagKeys.has(allocation.key) &amp;&amp;
+            allocation.person === person &amp;&amp;
+            allocation.resource === null &amp;&amp;
+            allocation.resourceKind === &quot;baggage&quot; &amp;&amp;
+            allocation.version === 1
+          ),
+      ),
+    };
+    return (
+      validateRequestQuote(
+        originalContext,
+        person,
+        { ...record, revision: record.revision - 1 },
+        quote,
+      ).length === 0
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Check exact quoted products and line prices in a complete candidate. */
+export function quoteCoversCandidate(
+  s: State,
+  person: string,
+  quote: RequestQuote,
+  candidate: Candidate,
+): boolean {
+  if (
+    quote.person !== person ||
+    quote.pricingVersion !== candidate.pricingVersion ||
+    Math.max(0, -(candidate.credits[person] || 0)) !== quote.debit
+  )
+    return false;
+  const ownChanges = candidate.changes.filter(
+    (change) =&gt;
+      s.allocations.find((allocation) =&gt; allocation.key === change.key)
+        ?.person === person,
+  );
+  if (
+    ownChanges.length !==
+    quote.lineItems.reduce((sum, item) =&gt; sum + item.quantity, 0)
+  )
+    return false;
+  return quote.lineItems.every((item) =&gt; {
+    if (catalogKey(s, item.resourceIds) !== item.catalogKey) return false;
+    const changes = ownChanges.filter(
+      (change) =&gt;
+        item.allocationKeys.includes(change.key) &amp;&amp;
+        !!change.to &amp;&amp;
+        item.resourceIds.includes(change.to),
+    );
+    if (changes.length !== item.quantity) return false;
+    return changes.every((change) =&gt; {
+      const to = resource(s, change.to),
+        from = resource(s, change.from);
+      if (!to || to.kind !== item.kind) return false;
+      const cost = item.kind === &quot;seat&quot; &amp;&amp; from ? seatCost(from, to) : to.q;
+      return cost === item.unitCredits;
+    });
+  });
+}
+</code></pre><a href="https://github.com/cathayflex/cathayflex.github.io/blob/main/technology/source/request-quote.ts" target="_blank" rel="noopener">View this file on GitHub <span aria-hidden="true">↗</span></a></div></details>
+<details class="reader-provenance"><summary>Source verification</summary><p>The source shown above matches the published export manifest.</p><dl><dt>SHA-256</dt><dd><code>9929a267ea45f812484d06f79fbcb0ddd4f2892b6dcce6b95414610488099a90</code></dd><dt>Platform source commit</dt><dd><code>3c792c47304ef6a3717ecd4e6c2735207e0363d2</code></dd></dl></details></main><footer class="site-footer"><div class="footer-main"><p>Team Globe · Cathay Hackathon 2026</p><a href="/technology/">Inside the system <span aria-hidden="true">↗</span></a></div></footer></body></html>

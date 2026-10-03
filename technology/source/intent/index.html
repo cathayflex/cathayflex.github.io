@@ -1,0 +1,1052 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Validating travel requirements | Cathay Flex</title><meta name="description" content="Connect reviewed statements to booking facts and check the conditions that apply to a proposed outcome."><meta name="theme-color" content="#006564"><link rel="canonical" href="https://cathayflex.github.io/technology/source/intent/"><link rel="icon" href="/assets/cathay-brushwing.png"><link rel="stylesheet" href="/fonts.css?v=20261003-cathay"><link rel="stylesheet" href="/style.css?v=20261003-clear-headings"><link rel="stylesheet" href="/technology/source/reader.css?v=7d397c4928e7"><script src="/app.js?v=20261003-product" defer></script></head>
+<body><a class="skip-link" href="#main">Skip to content</a><header class="site-header">
+    <div class="brand-lockup"><a class="brand" href="/" aria-label="Cathay Flex home"><img class="brand-logo" src="/assets/cathay-flex-logo.svg?v=20261004-cargo" width="1164" height="200" alt="Cathay Flex"></a><span class="brand-note">For the Cathay Hackathon demo only</span></div>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav"><span>Menu</span><span class="menu-lines" aria-hidden="true"></span></button>
+    <nav id="site-nav" aria-label="Main navigation"><a href="/technology/">Inside the system <span aria-hidden="true">↗</span></a><a href="/technology/#evidence">Implementation &amp; evidence</a></nav>
+  </header>
+<main id="main" class="source-reader" tabindex="-1"><a class="reader-back" href="/technology/#understand"><span aria-hidden="true">←</span> Back to the explanation</a><p class="reader-eyebrow">INSIDE THE IMPLEMENTATION</p><h1>Validating travel requirements</h1><p class="reader-intro">Connect reviewed statements to booking facts and check the conditions that apply to a proposed outcome.</p><dl class="reader-facts"><div><dt>What it reads</dt><dd>Saved rules and their source evidence, the traveller’s account context and proposed allocation changes.</dd></div><div><dt>What it produces</dt><dd>Applicable requirements, validation issues and request progress. Complete outcomes include companions who keep their existing seats.</dd></div><div><dt>What to know</dt><dd>Standing hard restrictions survive softer journey preferences. Unsupported or ambiguous requirements need review before they can authorize a change.</dd></div></dl>
+<details class="reader-code"><summary><span>View TypeScript source</span><span class="reader-file">intent.ts</span><span class="reader-plus" aria-hidden="true">+</span></summary><div class="reader-code-body"><p>TypeScript is the implementation language. This is the source exported with the public matching engine.</p><pre tabindex="0" aria-label="intent.ts source"><code>import { z } from &quot;zod&quot;;
+import { requestQuoteSchema } from &quot;./request-quote-schema.ts&quot;;
+import {
+  andTruth,
+  orTruth,
+  evaluatePredicate,
+  predicateAtoms,
+  describePredicate,
+  intentConditionSchema,
+  intentEffectSchema,
+  intentPredicateSchema,
+  outcomePredicateSchema,
+} from &quot;./predicates.ts&quot;;
+import { simulationEpoch } from &quot;./time.ts&quot;;
+import type {
+  Candidate,
+  IntentCondition,
+  IntentPurpose,
+  IntentEffect,
+  OutcomeCondition,
+  OutcomePredicate,
+  IntentRecord,
+  IntentRule,
+  Resource,
+  State,
+} from &quot;./types.ts&quot;;
+
+export const intentRuleSchema = z
+  .object({
+    id: z.string().min(1).max(100),
+    evidence: z.string().min(1).max(4000),
+    when: z.array(intentConditionSchema).max(16),
+    condition: intentPredicateSchema.optional(),
+    onlyIf: outcomePredicateSchema.optional(),
+    sourceSpan: z
+      .object({
+        start: z.number().int().nonnegative().max(8000),
+        end: z.number().int().positive().max(8000),
+      })
+      .strict()
+      .optional(),
+    effect: intentEffectSchema,
+    strength: z.enum([&quot;must&quot;, &quot;prefer&quot;, &quot;flexible&quot;]),
+  })
+  .strict();
+export const intentRecordSchema = z
+  .object({
+    purpose: z.enum([&quot;flexibility&quot;, &quot;request&quot;]).optional(),
+    cancelled: z.boolean().optional(),
+    id: z.string().min(1).max(100),
+    sourceText: z.string().min(1).max(8000),
+    scope: z.discriminatedUnion(&quot;kind&quot;, [
+      z.object({ kind: z.literal(&quot;all&quot;) }).strict(),
+      z
+        .object({
+          kind: z.literal(&quot;journey&quot;),
+          journeyId: z.string().min(1).max(100),
+        })
+        .strict(),
+    ]),
+    rules: z.array(intentRuleSchema).max(30),
+    questions: z.array(z.string().min(1).max(500)).max(10),
+    confirmed: z.boolean(),
+    revision: z.number().int().min(0),
+    authorization: z
+      .object({
+        mode: z.literal(&quot;fixed_quote&quot;).optional(),
+        quote: requestQuoteSchema.optional(),
+        maxCredits: z.number().int().min(0).max(1000000),
+        validUntil: z.number().finite().nonnegative().max(1500),
+        allowPartial: z.boolean(),
+        authorizedAt: z.number().finite().nonnegative().max(1500),
+        termsRevision: z.number().int().positive(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
+export const requestAuthorizationSchema = z
+  .object({
+    quote: requestQuoteSchema,
+    validUntil: z.number().finite().nonnegative().max(1500),
+    allowPartial: z.literal(false),
+  })
+  .strict();
+
+export function bookedJourneys(s: State, person: string): string[] {
+  return [
+    ...new Set(
+      s.allocations
+        .filter((a) =&gt; a.person === person)
+        .map(
+          (a) =&gt;
+            a.journeyId ||
+            s.resources.find((r) =&gt; r.id === a.resource)?.journey,
+        )
+        .filter((j): j is string =&gt; !!j),
+    ),
+  ];
+}
+export class IntentAvailabilityError extends Error {
+  constructor(
+    public code: &quot;REQUESTS_CLOSED&quot; | &quot;REQUEST_SERVICE_CLOSED&quot;,
+    message: string,
+  ) {
+    super(message);
+    this.name = &quot;IntentAvailabilityError&quot;;
+  }
+}
+/** Inventory deadlines share the authoritative workspace clock. */
+export function journeyAcceptsRequests(s: State, journeyId: string): boolean {
+  return s.resources.some(
+    (resource) =&gt; resource.journey === journeyId &amp;&amp; resource.deadline &gt; s.hour,
+  );
+}
+export function journeyServiceAcceptsRequests(
+  s: State,
+  journeyId: string,
+  kind: Resource[&quot;kind&quot;],
+): boolean {
+  return s.resources.some(
+    (resource) =&gt;
+      resource.journey === journeyId &amp;&amp;
+      resource.kind === kind &amp;&amp;
+      resource.deadline &gt; s.hour,
+  );
+}
+export function assertRequestJourneyOpen(s: State, journeyId: string): void {
+  if (!journeyAcceptsRequests(s, journeyId))
+    throw new IntentAvailabilityError(
+      &quot;REQUESTS_CLOSED&quot;,
+      &quot;Changes are closed for this journey. Choose an upcoming journey.&quot;,
+    );
+}
+export function journeyFacts(s: State, person: string, journeyId: string) {
+  const journey = s.journeys?.find((j) =&gt; j.id === journeyId);
+  const party = s.parties?.find(
+    (p) =&gt; p.journeyId === journeyId &amp;&amp; p.memberIds.includes(person),
+  );
+  const soloKnown = s.allocations.some(
+    (a) =&gt;
+      a.person === person &amp;&amp;
+      a.partyId === null &amp;&amp;
+      (a.journeyId === journeyId ||
+        s.resources.find((r) =&gt; r.id === a.resource)?.journey === journeyId),
+  );
+  return {
+    journeyId,
+    origin: journey?.origin,
+    destination: journey?.destination,
+    cabin: journey?.cabin,
+    durationMinutes: journey?.durationMinutes,
+    partyId: party?.id ?? (soloKnown ? null : undefined),
+    partySize: party?.memberIds.length ?? (soloKnown ? 1 : undefined),
+  };
+}
+export function matchesCondition(
+  facts: ReturnType&lt;typeof journeyFacts&gt;,
+  condition: IntentCondition,
+): boolean | undefined {
+  const value = facts[condition.field];
+  if (value === undefined) return undefined;
+  if (condition.op === &quot;eq&quot;) return value === condition.value;
+  if (condition.op === &quot;ne&quot;) return value !== condition.value;
+  if (typeof value !== &quot;number&quot; || typeof condition.value !== &quot;number&quot;)
+    return undefined;
+  if (condition.op === &quot;lt&quot;) return value &lt; condition.value;
+  if (condition.op === &quot;lte&quot;) return value &lt;= condition.value;
+  if (condition.op === &quot;gt&quot;) return value &gt; condition.value;
+  return value &gt;= condition.value;
+}
+/** The legacy AND list and the explicit Boolean tree both constrain activation. */
+export function ruleConditionMatches(
+  facts: ReturnType&lt;typeof journeyFacts&gt;,
+  rule: IntentRule,
+): boolean | undefined {
+  return andTruth([
+    ...rule.when.map((condition) =&gt; matchesCondition(facts, condition)),
+    rule.condition
+      ? evaluatePredicate(rule.condition, (condition) =&gt;
+          matchesCondition(facts, condition),
+        )
+      : true,
+  ]);
+}
+export type AppliedRule = IntentRule &amp; {
+  recordId: string;
+  recordRevision: number;
+  purpose: IntentPurpose;
+};
+/** Old statements had no purpose. Their declared scope and concessions provide a conservative migration. */
+export function intentPurpose(record: IntentRecord): IntentPurpose {
+  return (
+    record.purpose ??
+    (record.scope.kind === &quot;all&quot; ||
+    record.rules.every((rule) =&gt; rule.strength === &quot;flexible&quot;)
+      ? &quot;flexibility&quot;
+      : &quot;request&quot;)
+  );
+}
+function relevantRecords(s: State, person: string, journeyId: string) {
+  return (s.intents?.[person] || []).filter(
+    (record) =&gt;
+      record.confirmed &amp;&amp;
+      !record.cancelled &amp;&amp;
+      !record.questions.length &amp;&amp;
+      (record.scope.kind === &quot;all&quot; || record.scope.journeyId === journeyId),
+  );
+}
+function appliedRules(
+  s: State,
+  person: string,
+  journeyId: string,
+  records: IntentRecord[],
+): AppliedRule[] {
+  const facts = journeyFacts(s, person, journeyId);
+  return records.flatMap((record) =&gt;
+    record.rules
+      .filter((rule) =&gt; ruleConditionMatches(facts, rule) === true)
+      .map((rule) =&gt; ({
+        ...rule,
+        recordId: record.id,
+        recordRevision: record.revision,
+        purpose: intentPurpose(record),
+      })),
+  );
+}
+export function flexibilityRulesFor(
+  s: State,
+  person: string,
+  journeyId: string,
+): AppliedRule[] {
+  const records = relevantRecords(s, person, journeyId).filter(
+    (record) =&gt; intentPurpose(record) === &quot;flexibility&quot;,
+  );
+  const journeyRules = appliedRules(
+    s,
+    person,
+    journeyId,
+    records.filter((record) =&gt; record.scope.kind === &quot;journey&quot;),
+  );
+  const overridden = new Set(journeyRules.map((rule) =&gt; rule.effect.kind));
+  return [
+    ...appliedRules(
+      s,
+      person,
+      journeyId,
+      records.filter((record) =&gt; record.scope.kind === &quot;all&quot;),
+    ).filter(
+      (rule) =&gt; rule.strength === &quot;must&quot; || !overridden.has(rule.effect.kind),
+    ),
+    ...journeyRules,
+  ];
+}
+function resourceOn(s: State, id: string | null, journeyId: string) {
+  return s.resources.find((r) =&gt; r.id === id &amp;&amp; r.journey === journeyId);
+}
+export function requestGoalSatisfied(
+  s: State,
+  person: string,
+  journeyId: string,
+  rule: IntentRule,
+): boolean {
+  const own = s.allocations.filter(
+    (a) =&gt;
+      a.person === person &amp;&amp;
+      (a.journeyId === journeyId || resourceOn(s, a.resource, journeyId)),
+  );
+  const resources = own.flatMap((a) =&gt; {
+    const r = resourceOn(s, a.resource, journeyId);
+    return r ? [r] : [];
+  });
+  const effect = rule.effect;
+  if (effect.kind === &quot;seat_position&quot;)
+    return resources.some(
+      (r) =&gt;
+        r.kind === &quot;seat&quot; &amp;&amp;
+        !!r.seatPosition &amp;&amp;
+        effect.positions.includes(r.seatPosition),
+    );
+  if (effect.kind === &quot;baggage&quot;)
+    return (
+      resources
+        .filter(
+          (r) =&gt;
+            r.kind === &quot;baggage&quot; &amp;&amp;
+            (!effect.maxKgPerPiece ||
+              (r.baggage?.maxKg || 0) &gt;= effect.maxKgPerPiece),
+        )
+        .reduce((n, r) =&gt; n + (r.baggage?.pieces || 0), 0) &gt;= effect.extraPieces
+    );
+  if (effect.kind === &quot;seating_together&quot;) {
+    const party = s.parties?.find(
+      (p) =&gt;
+        p.journeyId === journeyId &amp;&amp;
+        p.memberIds.includes(person) &amp;&amp;
+        (!effect.partyId || p.id === effect.partyId),
+    );
+    if (!party) return false;
+    const seats = party.memberIds.map((member) =&gt;
+      s.allocations
+        .filter((a) =&gt; a.person === member)
+        .map((a) =&gt; resourceOn(s, a.resource, journeyId))
+        .find((r) =&gt; r?.kind === &quot;seat&quot;),
+    );
+    if (seats.some((r) =&gt; !r?.seatMap)) return false;
+    const maps = seats
+      .map((r) =&gt; r!.seatMap!)
+      .sort((a, b) =&gt; a.column - b.column);
+    return maps.every(
+      (m, i) =&gt;
+        m.row === maps[0].row &amp;&amp;
+        m.block === maps[0].block &amp;&amp;
+        (i === 0 || m.column === maps[i - 1].column + 1),
+    );
+  }
+  if (effect.kind === &quot;meal&quot;)
+    return resources.some((r) =&gt; r.kind === &quot;meal&quot;) === effect.receive;
+  if (effect.kind === &quot;gate_check&quot;)
+    return resources.some((r) =&gt; r.kind === &quot;handover&quot;) === effect.allowed;
+  if (effect.kind === &quot;departure_window&quot;) {
+    const current = resources.find((r) =&gt; r.kind === &quot;flight&quot;);
+    const departure = current
+      ? simulationEpoch(s) + current.serviceHour * 3600000
+      : undefined;
+    if (departure === undefined || (!effect.earliest &amp;&amp; !effect.latest))
+      return false;
+    return (
+      (!effect.earliest || departure &gt;= Date.parse(effect.earliest)) &amp;&amp;
+      (!effect.latest || departure &lt;= Date.parse(effect.latest))
+    );
+  }
+  return true;
+}
+export type RequestProgress = {
+  status: &quot;active&quot; | &quot;partly_fulfilled&quot; | &quot;fulfilled&quot; | &quot;expired&quot; | &quot;cancelled&quot;;
+  fulfilledRules: number;
+  totalRules: number;
+  matchedOfferIds: string[];
+};
+export function requestAuthorizationDeadline(
+  s: State,
+  person: string,
+  record: IntentRecord,
+): number {
+  if (record.scope.kind !== &quot;journey&quot;) return s.hour;
+  const journeyId = record.scope.journeyId;
+  const facts = journeyFacts(s, person, journeyId);
+  const journeyResources = s.resources.filter(
+    (resource) =&gt; resource.journey === journeyId,
+  );
+  const journeyDeadline = Math.max(
+    s.hour,
+    ...journeyResources.map((resource) =&gt; resource.deadline),
+  );
+  const deadlines = record.rules
+    .filter(
+      (rule) =&gt;
+        rule.strength !== &quot;flexible&quot; &amp;&amp;
+        rule.effect.kind !== &quot;credit_budget&quot; &amp;&amp;
+        ruleConditionMatches(facts, rule) === true &amp;&amp;
+        !requestGoalSatisfied(s, person, journeyId, rule),
+    )
+    .map((rule) =&gt; {
+      const kind =
+        rule.effect.kind === &quot;seat_position&quot; ||
+        rule.effect.kind === &quot;seating_together&quot;
+          ? &quot;seat&quot;
+          : rule.effect.kind === &quot;departure_window&quot;
+            ? &quot;flight&quot;
+            : rule.effect.kind === &quot;gate_check&quot;
+              ? &quot;handover&quot;
+              : rule.effect.kind;
+      const services = journeyResources.filter(
+        (resource) =&gt; resource.kind === kind,
+      );
+      return services.length
+        ? Math.max(...services.map((resource) =&gt; resource.deadline))
+        : journeyDeadline;
+    });
+  return Math.min(1500, journeyDeadline, ...deadlines);
+}
+export function requestProgress(
+  s: State,
+  person: string,
+  record: IntentRecord,
+  offers: Candidate[] = [],
+): RequestProgress {
+  const unresolved = s.contracts.filter(
+    (contract) =&gt; contract.status === &quot;RECONCILING&quot;,
+  );
+  if (unresolved.length) {
+    const original = new Map(
+      unresolved.flatMap((contract) =&gt;
+        contract.changes.map((change) =&gt; [change.key, change.from] as const),
+      ),
+    );
+    s = {
+      ...s,
+      allocations: s.allocations.map((allocation) =&gt;
+        original.has(allocation.key)
+          ? { ...allocation, resource: original.get(allocation.key)! }
+          : allocation,
+      ),
+    };
+  }
+  const journeyId =
+    record.scope.kind === &quot;journey&quot; ? record.scope.journeyId : &quot;&quot;;
+  const facts = journeyFacts(s, person, journeyId);
+  const goals = record.rules.filter(
+    (rule) =&gt;
+      rule.strength !== &quot;flexible&quot; &amp;&amp;
+      rule.effect.kind !== &quot;credit_budget&quot; &amp;&amp;
+      ruleConditionMatches(facts, rule) === true,
+  );
+  const fulfilledRules = goals.filter((rule) =&gt;
+    requestGoalSatisfied(s, person, journeyId, rule),
+  ).length;
+  const expired =
+    (record.authorization !== undefined &amp;&amp;
+      record.authorization.validUntil &lt;= s.hour) ||
+    goals.some((rule) =&gt; {
+      if (requestGoalSatisfied(s, person, journeyId, rule)) return false;
+      const kind =
+        rule.effect.kind === &quot;seating_together&quot; ||
+        rule.effect.kind === &quot;seat_position&quot;
+          ? &quot;seat&quot;
+          : rule.effect.kind === &quot;departure_window&quot;
+            ? &quot;flight&quot;
+            : rule.effect.kind === &quot;gate_check&quot;
+              ? &quot;handover&quot;
+              : rule.effect.kind;
+      const resources = s.resources.filter(
+        (resource) =&gt; resource.journey === journeyId &amp;&amp; resource.kind === kind,
+      );
+      return (
+        resources.length &gt; 0 &amp;&amp;
+        resources.every((resource) =&gt; resource.deadline &lt;= s.hour)
+      );
+    });
+  const status = record.cancelled
+    ? &quot;cancelled&quot;
+    : goals.length &gt; 0 &amp;&amp; fulfilledRules === goals.length
+      ? &quot;fulfilled&quot;
+      : expired
+        ? &quot;expired&quot;
+        : fulfilledRules &gt; 0
+          ? &quot;partly_fulfilled&quot;
+          : &quot;active&quot;;
+  return {
+    status,
+    fulfilledRules,
+    totalRules: goals.length,
+    matchedOfferIds: offers
+      .filter(
+        (offer) =&gt;
+          (!(&quot;blocked&quot; in offer) ||
+            !Array.isArray(offer.blocked) ||
+            offer.blocked.length === 0) &amp;&amp;
+          offer.requestRefs?.some(
+            (ref) =&gt;
+              ref.person === person &amp;&amp;
+              ref.intentId === record.id &amp;&amp;
+              ref.revision === record.revision,
+          ),
+      )
+      .map((offer) =&gt; offer.id),
+  };
+}
+export function requestRulesFor(
+  s: State,
+  person: string,
+  journeyId: string,
+): AppliedRule[] {
+  return appliedRules(
+    s,
+    person,
+    journeyId,
+    relevantRecords(s, person, journeyId).filter(
+      (record) =&gt;
+        intentPurpose(record) === &quot;request&quot; &amp;&amp;
+        [&quot;active&quot;, &quot;partly_fulfilled&quot;].includes(
+          requestProgress(s, person, record).status,
+        ),
+    ),
+  );
+}
+export function rulesFor(
+  s: State,
+  person: string,
+  journeyId: string,
+): AppliedRule[] {
+  // A fulfilled request protects the completed arrangement for the rest of this journey.
+  const requests = relevantRecords(s, person, journeyId).filter(
+    (record) =&gt;
+      intentPurpose(record) === &quot;request&quot; &amp;&amp;
+      requestProgress(s, person, record).status !== &quot;expired&quot;,
+  );
+  return [
+    ...flexibilityRulesFor(s, person, journeyId),
+    ...appliedRules(s, person, journeyId, requests),
+  ];
+}
+export function ruleDescription(rule: IntentRule): string {
+  const effect = rule.effect;
+  const prefix =
+    rule.strength === &quot;must&quot;
+      ? &quot;Require&quot;
+      : rule.strength === &quot;prefer&quot;
+        ? &quot;Prefer&quot;
+        : &quot;Open to&quot;;
+  let result = &quot;&quot;;
+  if (effect.kind === &quot;seat_position&quot;)
+    result = `${prefix} ${effect.positions.length === 3 ? &quot;any seat&quot; : effect.positions.join(&quot; or &quot;) + &quot; seats&quot;}`;
+  if (effect.kind === &quot;seating_together&quot;)
+    result = `${prefix} seats together with the booking party`;
+  if (effect.kind === &quot;departure_window&quot;)
+    result = `${prefix} a departure${effect.earliest ? ` from ${effect.earliest}` : &quot;&quot;}${effect.latest ? ` by ${effect.latest}` : &quot;&quot;}${effect.maxDelayMinutes !== undefined ? ` no more than ${effect.maxDelayMinutes} minutes later` : &quot;&quot;}`;
+  if (effect.kind === &quot;baggage&quot;)
+    result = `${prefix} ${effect.extraPieces} extra checked ${effect.extraPieces === 1 ? &quot;bag&quot; : &quot;bags&quot;}${effect.maxKgPerPiece ? ` up to ${effect.maxKgPerPiece} kg each` : &quot;&quot;}`;
+  if (effect.kind === &quot;gate_check&quot;)
+    result = effect.allowed
+      ? &quot;Open to checking a cabin bag when the airline requests it&quot;
+      : &quot;Keep the cabin bag with you&quot;;
+  if (effect.kind === &quot;meal&quot;)
+    result = effect.receive
+      ? `${prefix} the included meal`
+      : &quot;Open to declining the included meal&quot;;
+  if (effect.kind === &quot;credit_budget&quot;)
+    result = `Spend up to ${effect.maxCredits} Flex credits in total`;
+  const labels: Record&lt;IntentCondition[&quot;field&quot;], string&gt; = {
+    journeyId: &quot;journey&quot;,
+    origin: &quot;origin&quot;,
+    destination: &quot;destination&quot;,
+    cabin: &quot;cabin&quot;,
+    partyId: &quot;booking party&quot;,
+    durationMinutes: &quot;flight duration in minutes&quot;,
+    partySize: &quot;travellers in the booking&quot;,
+  };
+  const operators = {
+    eq: &quot;is&quot;,
+    ne: &quot;is not&quot;,
+    lt: &quot;is under&quot;,
+    lte: &quot;is at most&quot;,
+    gt: &quot;is over&quot;,
+    gte: &quot;is at least&quot;,
+  };
+  const describeContext = (condition: IntentCondition) =&gt;
+    `${labels[condition.field]} ${operators[condition.op]} ${condition.value}`;
+  const contexts = [
+    ...rule.when.map(describeContext),
+    ...(rule.condition
+      ? [describePredicate(rule.condition, describeContext)]
+      : []),
+  ];
+  if (contexts.length) result += ` when ${contexts.join(&quot; and &quot;)}`;
+  if (rule.onlyIf)
+    result += ` only if ${describePredicate(rule.onlyIf, (condition) =&gt;
+      condition.kind === &quot;flight_unchanged&quot;
+        ? &quot;the booked flight remains unchanged&quot;
+        : ruleDescription({
+            id: &quot;description&quot;,
+            evidence: &quot;description&quot;,
+            when: [],
+            effect: condition,
+            strength: &quot;must&quot;,
+          }).replace(/^Require /, &quot;&quot;),
+    )}`;
+  return result;
+}
+export const explainRule = ruleDescription;
+export function intentContextIssues(
+  s: State,
+  person: string,
+  journeyId: string,
+): string[] {
+  const facts = journeyFacts(s, person, journeyId),
+    errors: string[] = [];
+  const overrideKinds = new Set(
+    relevantRecords(s, person, journeyId)
+      .filter(
+        (record) =&gt;
+          intentPurpose(record) === &quot;flexibility&quot; &amp;&amp;
+          record.scope.kind === &quot;journey&quot;,
+      )
+      .flatMap((record) =&gt;
+        record.rules
+          .filter((rule) =&gt; ruleConditionMatches(facts, rule) === true)
+          .map((rule) =&gt; rule.effect.kind),
+      ),
+  );
+  for (const record of s.intents?.[person] || []) {
+    if (
+      !record.confirmed ||
+      record.cancelled ||
+      record.questions.length ||
+      (record.scope.kind === &quot;journey&quot; &amp;&amp; record.scope.journeyId !== journeyId)
+    )
+      continue;
+    for (const rule of record.rules) {
+      if (
+        intentPurpose(record) === &quot;flexibility&quot; &amp;&amp;
+        record.scope.kind === &quot;all&quot; &amp;&amp;
+        rule.strength !== &quot;must&quot; &amp;&amp;
+        overrideKinds.has(rule.effect.kind)
+      )
+        continue;
+      const outcome = ruleConditionMatches(facts, rule);
+      if (outcome === undefined)
+        errors.push(
+          `The booking does not establish a condition in “${rule.evidence}”`,
+        );
+    }
+  }
+  const rules = rulesFor(s, person, journeyId),
+    seatRules = rules.filter(
+      (r) =&gt; r.strength === &quot;must&quot; &amp;&amp; r.effect.kind === &quot;seat_position&quot;,
+    );
+  if (
+    seatRules.length &amp;&amp;
+    !([&quot;aisle&quot;, &quot;window&quot;, &quot;middle&quot;] as const).some((p) =&gt;
+      seatRules.every(
+        (r) =&gt;
+          r.effect.kind === &quot;seat_position&quot; &amp;&amp; r.effect.positions.includes(p),
+      ),
+    )
+  )
+    errors.push(
+      &quot;The confirmed seat requirements conflict. Review the source statements.&quot;,
+    );
+  const meals = rules.filter(
+    (r) =&gt; r.strength === &quot;must&quot; &amp;&amp; r.effect.kind === &quot;meal&quot;,
+  );
+  if (
+    meals.some((r) =&gt; r.effect.kind === &quot;meal&quot; &amp;&amp; r.effect.receive) &amp;&amp;
+    meals.some((r) =&gt; r.effect.kind === &quot;meal&quot; &amp;&amp; !r.effect.receive)
+  )
+    errors.push(&quot;The confirmed meal requirements conflict.&quot;);
+  const windows = rules.filter(
+    (r) =&gt; r.strength === &quot;must&quot; &amp;&amp; r.effect.kind === &quot;departure_window&quot;,
+  );
+  const earliest = Math.max(
+    -Infinity,
+    ...windows.flatMap((r) =&gt;
+      r.effect.kind === &quot;departure_window&quot; &amp;&amp; r.effect.earliest
+        ? [Date.parse(r.effect.earliest)]
+        : [],
+    ),
+  );
+  const latest = Math.min(
+    Infinity,
+    ...windows.flatMap((r) =&gt;
+      r.effect.kind === &quot;departure_window&quot; &amp;&amp; r.effect.latest
+        ? [Date.parse(r.effect.latest)]
+        : [],
+    ),
+  );
+  if (earliest &gt; latest)
+    errors.push(&quot;The confirmed departure windows conflict.&quot;);
+  return errors;
+}
+export function validateIntent(
+  s: State,
+  person: string,
+  input: IntentRecord,
+): void {
+  const parsed = intentRecordSchema.parse(input) as IntentRecord;
+  if (!s.people.some((p) =&gt; p.id === person))
+    throw new Error(&quot;Choose an existing traveller&quot;);
+  const journeys = bookedJourneys(s, person);
+  if (intentPurpose(parsed) === &quot;request&quot; &amp;&amp; parsed.scope.kind !== &quot;journey&quot;)
+    throw new Error(&quot;Choose one booked journey for this request&quot;);
+  if (
+    parsed.scope.kind === &quot;journey&quot; &amp;&amp;
+    !journeys.includes(parsed.scope.journeyId)
+  )
+    throw new Error(&quot;Choose a journey on your own booking&quot;);
+  const isRequest = intentPurpose(parsed) === &quot;request&quot;;
+  if (isRequest &amp;&amp; parsed.scope.kind === &quot;journey&quot;)
+    assertRequestJourneyOpen(s, parsed.scope.journeyId);
+  if (new Set(parsed.rules.map((r) =&gt; r.id)).size !== parsed.rules.length)
+    throw new Error(&quot;Rule identifiers must be unique within a statement&quot;);
+  for (const rule of parsed.rules) {
+    if (!parsed.sourceText.includes(rule.evidence))
+      throw new Error(
+        &quot;Every interpretation must refer to the original statement&quot;,
+      );
+    if (
+      rule.sourceSpan &amp;&amp;
+      (rule.sourceSpan.start &gt;= rule.sourceSpan.end ||
+        parsed.sourceText.slice(rule.sourceSpan.start, rule.sourceSpan.end) !==
+          rule.evidence)
+    )
+      throw new Error(&quot;The source span does not match the original evidence&quot;);
+    if (
+      rule.onlyIf &amp;&amp;
+      (rule.strength !== &quot;flexible&quot; || rule.effect.kind === &quot;credit_budget&quot;)
+    )
+      throw new Error(
+        &quot;An only-if condition must guard a defined flexible service change&quot;,
+      );
+    for (const c of [
+      ...rule.when,
+      ...(rule.condition ? predicateAtoms(rule.condition) : []),
+    ]) {
+      if (c.field === &quot;journeyId&quot; &amp;&amp; !journeys.includes(String(c.value)))
+        throw new Error(&quot;A condition refers to an unbooked journey&quot;);
+      if (
+        c.field === &quot;partyId&quot; &amp;&amp;
+        !s.parties?.some(
+          (p) =&gt; p.id === c.value &amp;&amp; p.memberIds.includes(person),
+        )
+      )
+        throw new Error(&quot;A condition refers to an unverified booking party&quot;);
+    }
+    for (const atom of rule.onlyIf ? predicateAtoms(rule.onlyIf) : []) {
+      if (
+        atom.kind === &quot;seating_together&quot; &amp;&amp;
+        atom.partyId &amp;&amp;
+        !s.parties?.some(
+          (p) =&gt;
+            p.id === atom.partyId &amp;&amp;
+            p.memberIds.includes(person) &amp;&amp;
+            (parsed.scope.kind !== &quot;journey&quot; ||
+              parsed.scope.journeyId === p.journeyId),
+        )
+      )
+        throw new Error(
+          &quot;An outcome condition refers to an unverified booking party&quot;,
+        );
+      if (atom.kind === &quot;departure_window&quot;) validateDepartureWindow(atom);
+    }
+    const effect = rule.effect;
+    if (
+      isRequest &amp;&amp;
+      parsed.scope.kind === &quot;journey&quot; &amp;&amp;
+      rule.strength !== &quot;flexible&quot; &amp;&amp;
+      effect.kind !== &quot;credit_budget&quot;
+    ) {
+      const kind =
+        effect.kind === &quot;seat_position&quot; || effect.kind === &quot;seating_together&quot;
+          ? &quot;seat&quot;
+          : effect.kind === &quot;departure_window&quot;
+            ? &quot;flight&quot;
+            : effect.kind === &quot;gate_check&quot;
+              ? &quot;handover&quot;
+              : effect.kind;
+      // A missing inventory category means no known offer, not an elapsed deadline.
+      const journeyId = parsed.scope.journeyId;
+      const knownService = s.resources.some(
+        (resource) =&gt; resource.journey === journeyId &amp;&amp; resource.kind === kind,
+      );
+      if (knownService &amp;&amp; !journeyServiceAcceptsRequests(s, journeyId, kind)) {
+        const label = {
+          seat: &quot;Seat changes&quot;,
+          flight: &quot;Flight changes&quot;,
+          baggage: &quot;Extra baggage requests&quot;,
+          handover: &quot;Cabin bag check-in requests&quot;,
+          meal: &quot;Meal requests&quot;,
+        }[kind];
+        throw new IntentAvailabilityError(
+          &quot;REQUEST_SERVICE_CLOSED&quot;,
+          `${label} are closed for this journey. Other services may still be available.`,
+        );
+      }
+    }
+    if (
+      effect.kind === &quot;seating_together&quot; &amp;&amp;
+      effect.partyId &amp;&amp;
+      !s.parties?.some(
+        (p) =&gt;
+          p.id === effect.partyId &amp;&amp;
+          p.memberIds.includes(person) &amp;&amp;
+          (parsed.scope.kind !== &quot;journey&quot; ||
+            parsed.scope.journeyId === p.journeyId),
+      )
+    )
+      throw new Error(&quot;The requested party is not verified on this booking&quot;);
+    if (effect.kind === &quot;departure_window&quot;) validateDepartureWindow(effect);
+  }
+}
+
+function validateDepartureWindow(
+  effect: Extract&lt;IntentEffect, { kind: &quot;departure_window&quot; }&gt;,
+): void {
+  if (
+    effect.earliest === undefined &amp;&amp;
+    effect.latest === undefined &amp;&amp;
+    effect.maxDelayMinutes === undefined
+  )
+    throw new Error(&quot;A departure window requires an explicit bound&quot;);
+  if (
+    effect.earliest &amp;&amp;
+    effect.latest &amp;&amp;
+    Date.parse(effect.earliest) &gt; Date.parse(effect.latest)
+  )
+    throw new Error(&quot;The departure window ends before it begins&quot;);
+}
+
+function effectResourceKind(effect: OutcomeCondition): Resource[&quot;kind&quot;] {
+  if (effect.kind === &quot;seat_position&quot; || effect.kind === &quot;seating_together&quot;)
+    return &quot;seat&quot;;
+  if (effect.kind === &quot;departure_window&quot; || effect.kind === &quot;flight_unchanged&quot;)
+    return &quot;flight&quot;;
+  if (effect.kind === &quot;gate_check&quot;) return &quot;handover&quot;;
+  return effect.kind;
+}
+function outcomeAllocations(
+  s: State,
+  person: string,
+  journeyId: string,
+  kind: Resource[&quot;kind&quot;],
+) {
+  return s.allocations.filter((allocation) =&gt; {
+    const resource = s.resources.find(
+      (item) =&gt; item.id === allocation.resource,
+    );
+    return (
+      allocation.person === person &amp;&amp;
+      (allocation.journeyId || resource?.journey) === journeyId &amp;&amp;
+      (resource?.kind || allocation.resourceKind) === kind
+    );
+  });
+}
+/** Outcome facts come from the complete proposed allocation, never a single move. */
+export function evaluateOutcomePredicate(
+  before: State,
+  after: State,
+  person: string,
+  journeyId: string,
+  predicate: OutcomePredicate,
+): boolean | undefined {
+  return evaluatePredicate(predicate, (condition) =&gt;
+    outcomeConditionMatches(before, after, person, journeyId, condition),
+  );
+}
+function outcomeConditionMatches(
+  before: State,
+  after: State,
+  person: string,
+  journeyId: string,
+  condition: OutcomeCondition,
+): boolean | undefined {
+  if (condition.kind === &quot;seating_together&quot;) {
+    const party = after.parties?.find(
+      (p) =&gt;
+        p.journeyId === journeyId &amp;&amp;
+        p.memberIds.includes(person) &amp;&amp;
+        (!condition.partyId || condition.partyId === p.id),
+    );
+    if (!party || !party.memberIds.length) return undefined;
+    const seats = party.memberIds.map((member) =&gt; {
+      const allocations = outcomeAllocations(after, member, journeyId, &quot;seat&quot;);
+      if (allocations.length !== 1) return undefined;
+      return resourceOn(after, allocations[0].resource, journeyId);
+    });
+    if (seats.some((seat) =&gt; !seat?.seatMap)) return undefined;
+    const maps = seats
+      .map((seat) =&gt; seat!.seatMap!)
+      .sort((a, b) =&gt; a.column - b.column);
+    return maps.every(
+      (map, i) =&gt;
+        map.row === maps[0].row &amp;&amp;
+        map.block === maps[0].block &amp;&amp;
+        (i === 0 || map.column === maps[i - 1].column + 1),
+    );
+  }
+  const kind = effectResourceKind(condition);
+  const allocations = outcomeAllocations(after, person, journeyId, kind);
+  if (!allocations.length) return undefined;
+  const resources = allocations.flatMap((allocation) =&gt; {
+    const resource = resourceOn(after, allocation.resource, journeyId);
+    return resource ? [resource] : [];
+  });
+  if (
+    allocations.some(
+      (allocation) =&gt;
+        allocation.resource !== null &amp;&amp;
+        !resourceOn(after, allocation.resource, journeyId),
+    )
+  )
+    return undefined;
+  if (condition.kind === &quot;seat_position&quot;) {
+    if (resources.some((resource) =&gt; resource.seatPosition === null))
+      return undefined;
+    return resources.some((resource) =&gt;
+      condition.positions.includes(resource.seatPosition!),
+    );
+  }
+  if (condition.kind === &quot;baggage&quot;) {
+    if (resources.some((resource) =&gt; !resource.baggage)) return undefined;
+    return (
+      resources
+        .filter(
+          (resource) =&gt;
+            condition.maxKgPerPiece === undefined ||
+            resource.baggage!.maxKg &gt;= condition.maxKgPerPiece,
+        )
+        .reduce((pieces, resource) =&gt; pieces + resource.baggage!.pieces, 0) &gt;=
+      condition.extraPieces
+    );
+  }
+  if (condition.kind === &quot;meal&quot;)
+    return resources.length &gt; 0 === condition.receive;
+  if (condition.kind === &quot;gate_check&quot;)
+    return resources.length &gt; 0 === condition.allowed;
+  const prior = outcomeAllocations(before, person, journeyId, &quot;flight&quot;);
+  if (condition.kind === &quot;flight_unchanged&quot;) {
+    if (
+      prior.length !== 1 ||
+      allocations.length !== 1 ||
+      !prior[0].resource ||
+      !allocations[0].resource
+    )
+      return undefined;
+    return prior[0].resource === allocations[0].resource;
+  }
+  if (resources.length !== 1) return undefined;
+  const departure = simulationEpoch(after) + resources[0].serviceHour * 3600000;
+  const checks: (boolean | undefined)[] = [
+    condition.earliest ? departure &gt;= Date.parse(condition.earliest) : true,
+    condition.latest ? departure &lt;= Date.parse(condition.latest) : true,
+  ];
+  if (condition.maxDelayMinutes !== undefined) {
+    const from =
+      prior.length === 1
+        ? resourceOn(before, prior[0].resource, journeyId)
+        : undefined;
+    checks.push(
+      from
+        ? (resources[0].serviceHour - from.serviceHour) * 60 &lt;=
+            condition.maxDelayMinutes
+        : undefined,
+    );
+  }
+  return andTruth(checks);
+}
+
+/** An only-if relation does not require, or authorize, its antecedent action. */
+export function conditionalOutcomeIssues(
+  before: State,
+  after: State,
+  person: string,
+  journeyId: string,
+): string[] {
+  const rules = rulesFor(before, person, journeyId);
+  const guarded = rules.filter(
+    (rule) =&gt;
+      rule.onlyIf &amp;&amp;
+      rule.effect.kind !== &quot;credit_budget&quot; &amp;&amp;
+      outcomeConditionMatches(before, after, person, journeyId, rule.effect) !==
+        false,
+  );
+  const errors: string[] = [];
+  const kinds = new Set(
+    guarded.map((rule) =&gt; effectResourceKind(rule.effect as OutcomeCondition)),
+  );
+  for (const kind of kinds) {
+    const old = outcomeAllocations(before, person, journeyId, kind);
+    const next = outcomeAllocations(after, person, journeyId, kind);
+    if (
+      old.length === next.length &amp;&amp;
+      old.every((allocation) =&gt;
+        next.some(
+          (item) =&gt;
+            item.key === allocation.key &amp;&amp;
+            item.resource === allocation.resource,
+        ),
+      )
+    )
+      continue;
+    const alternatives = rules.filter(
+      (rule) =&gt;
+        rule.strength === &quot;flexible&quot; &amp;&amp;
+        rule.effect.kind !== &quot;credit_budget&quot; &amp;&amp;
+        effectResourceKind(rule.effect) === kind,
+    );
+    const permissions = alternatives.map((rule) =&gt;
+      andTruth([
+        outcomeConditionMatches(
+          before,
+          after,
+          person,
+          journeyId,
+          rule.effect as OutcomeCondition,
+        ),
+        rule.onlyIf
+          ? evaluateOutcomePredicate(
+              before,
+              after,
+              person,
+              journeyId,
+              rule.onlyIf,
+            )
+          : true,
+      ]),
+    );
+    if (orTruth(permissions) !== true)
+      errors.push(
+        `The complete arrangement does not establish an only-if condition in “${guarded
+          .filter(
+            (rule) =&gt;
+              effectResourceKind(rule.effect as OutcomeCondition) === kind,
+          )
+          .map((rule) =&gt; rule.evidence)
+          .join(&quot; and &quot;)}”`,
+      );
+  }
+  return errors;
+}
+
+/** Keep unchanged companion and service allocations locked while their promise is used. */
+export function conditionalOutcomeDependencies(
+  s: State,
+  person: string,
+  journeyId: string,
+): string[] {
+  const keys = new Set&lt;string&gt;();
+  for (const rule of rulesFor(s, person, journeyId)) {
+    if (!rule.onlyIf) continue;
+    for (const condition of predicateAtoms(rule.onlyIf)) {
+      const members =
+        condition.kind === &quot;seating_together&quot;
+          ? s.parties?.find(
+              (p) =&gt;
+                p.journeyId === journeyId &amp;&amp;
+                p.memberIds.includes(person) &amp;&amp;
+                (!condition.partyId || condition.partyId === p.id),
+            )?.memberIds || []
+          : [person];
+      for (const member of members)
+        for (const allocation of outcomeAllocations(
+          s,
+          member,
+          journeyId,
+          effectResourceKind(condition),
+        ))
+          keys.add(allocation.key);
+    }
+  }
+  return [...keys].sort();
+}
+</code></pre><a href="https://github.com/cathayflex/cathayflex.github.io/blob/main/technology/source/intent.ts" target="_blank" rel="noopener">View this file on GitHub <span aria-hidden="true">↗</span></a></div></details>
+<details class="reader-provenance"><summary>Source verification</summary><p>The source shown above matches the published export manifest.</p><dl><dt>SHA-256</dt><dd><code>7c116b263e61823281dcb6c791c24d44d95000116b4ffd0ebd418065a06b92bd</code></dd><dt>Platform source commit</dt><dd><code>3c792c47304ef6a3717ecd4e6c2735207e0363d2</code></dd></dl></details></main><footer class="site-footer"><div class="footer-main"><p>Team Globe · Cathay Hackathon 2026</p><a href="/technology/">Inside the system <span aria-hidden="true">↗</span></a></div></footer></body></html>

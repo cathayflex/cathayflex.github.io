@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The demonstration sequence | Cathay Flex</title><meta name="description" content="Connect a prepared travel story to commands that run through the platform’s transition engine."><meta name="theme-color" content="#006564"><link rel="canonical" href="https://cathayflex.github.io/technology/source/story/"><link rel="icon" href="/assets/cathay-brushwing.png"><link rel="stylesheet" href="/fonts.css?v=20261003-cathay"><link rel="stylesheet" href="/style.css?v=20261003-clear-headings"><link rel="stylesheet" href="/technology/source/reader.css?v=7d397c4928e7"><script src="/app.js?v=20261003-product" defer></script></head>
+<body><a class="skip-link" href="#main">Skip to content</a><header class="site-header">
+    <div class="brand-lockup"><a class="brand" href="/" aria-label="Cathay Flex home"><img class="brand-logo" src="/assets/cathay-flex-logo.svg?v=20261004-cargo" width="1164" height="200" alt="Cathay Flex"></a><span class="brand-note">For the Cathay Hackathon demo only</span></div>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav"><span>Menu</span><span class="menu-lines" aria-hidden="true"></span></button>
+    <nav id="site-nav" aria-label="Main navigation"><a href="/technology/">Inside the system <span aria-hidden="true">↗</span></a><a href="/technology/#evidence">Implementation &amp; evidence</a></nav>
+  </header>
+<main id="main" class="source-reader" tabindex="-1"><a class="reader-back" href="/technology/#evidence"><span aria-hidden="true">←</span> Back to the explanation</a><p class="reader-eyebrow">INSIDE THE IMPLEMENTATION</p><h1>The demonstration sequence</h1><p class="reader-intro">Connect a prepared travel story to commands that run through the platform’s transition engine.</p><dl class="reader-facts"><div><dt>What it reads</dt><dd>The current demonstration step and state.</dd></div><div><dt>What it produces</dt><dd>The next story command and its prepared travel context.</dd></div><div><dt>What to know</dt><dd>The story is an authored example. Its commands use the domain engine, and its successful outcome does not establish general matching coverage.</dd></div></dl>
+<details class="reader-code"><summary><span>View TypeScript source</span><span class="reader-file">story.ts</span><span class="reader-plus" aria-hidden="true">+</span></summary><div class="reader-code-body"><p>TypeScript is the implementation language. This is the source exported with the public matching engine.</p><pre tabindex="0" aria-label="story.ts source"><code>import type { Command, State, IntentRecord } from &quot;./types.ts&quot;;
+import { quoteRequest } from &quot;./request-quote.ts&quot;;
+
+export const storyEpoch = &quot;2026-10-05T08:00:00+08:00&quot;;
+export type StoryStep = {
+  id: string;
+  hour: number;
+  title: string;
+  narration: string;
+  actor: string;
+  utterance?: string;
+  intent?: Record&lt;string, unknown&gt;;
+  expectedOutcome: string;
+  action:
+    | &quot;intent_save&quot;
+    | &quot;preferences&quot;
+    | &quot;seat_preferences&quot;
+    | &quot;quote&quot;
+    | &quot;accept&quot;
+    | &quot;execute&quot;
+    | &quot;advance&quot;
+    | &quot;travel_need&quot;;
+  candidateId?: string;
+  person?: string;
+};
+
+// Narrative metadata belongs to the director workspace. It never impersonates
+// a live traveller or claims that a scripted interpretation came from a model.
+export const storySteps: StoryStep[] = [
+  {
+    id: &quot;preferences&quot;,
+    hour: 0,
+    actor: &quot;A&quot;,
+    title: &quot;Different trips, different priorities&quot;,
+    narration:
+      &quot;Lin is preparing for a solo trip to Taipei. In one message, Lin explains what can change and what matters on other journeys.&quot;,
+    utterance:
+      &quot;When I travel alone, any seat is fine on flights up to six hours. On longer flights, I need an aisle. When I’m with my family, I’d like us to sit together.&quot;,
+    intent: {
+      description:
+        &quot;The three reviewed clauses remain one source statement with explicit duration and booking-party conditions.&quot;,
+    },
+    expectedOutcome:
+      &quot;Lin reviews and confirms three contextual seat preferences. Nothing about the booking changes.&quot;,
+    action: &quot;intent_save&quot;,
+    person: &quot;A&quot;,
+  },
+  {
+    id: &quot;alex-request&quot;,
+    hour: 0,
+    actor: &quot;B&quot;,
+    title: &quot;An aisle would help Alex&quot;,
+    narration:
+      &quot;Alex has a window seat on the same Taipei flight. Every unallocated aisle seat is gone, so a normal seat-map search cannot help.&quot;,
+    utterance:
+      &quot;Could I have an aisle seat on my Taipei flight? I’m happy to keep the same flight and cabin.&quot;,
+    intent: {
+      journeyId: &quot;story-taipei&quot;,
+      seat: &quot;aisle&quot;,
+      keepFlight: true,
+      keepCabin: true,
+    },
+    expectedOutcome:
+      &quot;Alex accepts the platform’s fixed zero-credit quote and an expiry before changes close. A matching arrangement can proceed without another approval from Alex.&quot;,
+    action: &quot;intent_save&quot;,
+    person: &quot;B&quot;,
+  },
+  {
+    id: &quot;seat-offer&quot;,
+    hour: 0,
+    actor: &quot;platform&quot;,
+    title: &quot;One useful offer&quot;,
+    narration:
+      &quot;The platform checks the same flight, seat eligibility, confirmed preferences and airline reward budget. It reserves both seats for a complete exchange.&quot;,
+    expectedOutcome:
+      &quot;Lin can move from aisle 22C to window 22A for 400 Flex credits. Alex’s confirmed request authorizes the aisle assignment. Lin still decides whether to move.&quot;,
+    action: &quot;quote&quot;,
+    candidateId: &quot;exchange-A-seat-taipei&gt;tpe-22A|B-seat-taipei&gt;tpe-22C&quot;,
+  },
+  {
+    id: &quot;lin-seat-consent&quot;,
+    hour: 0,
+    actor: &quot;A&quot;,
+    title: &quot;Lin chooses to move&quot;,
+    narration:
+      &quot;The offer says exactly which seat changes, which flight stays and when the reward becomes available.&quot;,
+    utterance: &quot;The window is fine for this short flight. I accept.&quot;,
+    expectedOutcome:
+      &quot;Lin’s consent completes the arrangement. The airline confirms both seats, then the platform issues 400 credits once.&quot;,
+    action: &quot;accept&quot;,
+    candidateId: &quot;exchange-A-seat-taipei&gt;tpe-22A|B-seat-taipei&gt;tpe-22C&quot;,
+    person: &quot;A&quot;,
+  },
+  {
+    id: &quot;alex-seat-consent&quot;,
+    hour: 0,
+    actor: &quot;B&quot;,
+    title: &quot;Alex’s request already covers the change&quot;,
+    narration:
+      &quot;The platform checks the aisle assignment, zero-credit cost and validity period against the terms Alex already confirmed. Alex does not need to return for another approval.&quot;,
+    expectedOutcome:
+      &quot;Alex now holds aisle 22C. The platform records the existing request authorization alongside Lin’s voluntary acceptance.&quot;,
+    action: &quot;accept&quot;,
+    candidateId: &quot;exchange-A-seat-taipei&gt;tpe-22A|B-seat-taipei&gt;tpe-22C&quot;,
+    person: &quot;B&quot;,
+  },
+  {
+    id: &quot;seat-settlement&quot;,
+    hour: 0,
+    actor: &quot;platform&quot;,
+    title: &quot;A small change, value kept&quot;,
+    narration:
+      &quot;Both seat assignments are verified. Only then does the airline-funded reward reach Lin’s wallet.&quot;,
+    expectedOutcome:
+      &quot;Lin has 400 available Flex credits. Alex has the aisle. The credit ledger records one verified issuance.&quot;,
+    action: &quot;execute&quot;,
+    candidateId: &quot;exchange-A-seat-taipei&gt;tpe-22A|B-seat-taipei&gt;tpe-22C&quot;,
+  },
+  {
+    id: &quot;two-weeks-later&quot;,
+    hour: 336,
+    actor: &quot;A&quot;,
+    title: &quot;Two weeks later&quot;,
+    narration:
+      &quot;Lin and Mia are planning their Tokyo trip with seven-year-old Jamie. Mia and Jamie already have adjacent seats. Lin is two rows behind them.&quot;,
+    expectedOutcome:
+      &quot;The same wallet and confirmed preferences continue into a different journey and travel party.&quot;,
+    action: &quot;advance&quot;,
+  },
+  {
+    id: &quot;family-request&quot;,
+    hour: 336,
+    actor: &quot;A&quot;,
+    title: &quot;One message for the family trip&quot;,
+    narration:
+      &quot;The booking identifies the family party. Lin asks to join them and adds a practical need for the same journey.&quot;,
+    utterance:
+      &quot;For Tokyo, can the three of us sit together? Mia and Jamie are in 32A and 32B. We also need one extra checked bag.&quot;,
+    intent: {
+      journeyId: &quot;story-tokyo&quot;,
+      partyId: &quot;lin-family&quot;,
+      sitTogether: true,
+      extraBags: 1,
+    },
+    expectedOutcome:
+      &quot;The platform quotes 160 credits for seating and 200 for baggage. Lin accepts the fixed 360-credit price and authorizes both changes together. The credits are reserved while Daniel reviews his move.&quot;,
+    action: &quot;intent_save&quot;,
+    person: &quot;A&quot;,
+  },
+  {
+    id: &quot;family-offer&quot;,
+    hour: 336,
+    actor: &quot;platform&quot;,
+    title: &quot;The missing seat in their row&quot;,
+    narration:
+      &quot;Daniel holds 32C. He travels alone and has already said that another regular aisle is acceptable. The platform proposes a complete exchange with Lin’s 34C.&quot;,
+    expectedOutcome:
+      &quot;Both seats and the baggage entitlement are reserved as one complete arrangement. Lin would spend exactly 360 credits, Daniel would receive 160, and Mia and Jamie would keep their seats.&quot;,
+    action: &quot;quote&quot;,
+    candidateId: &quot;bundle-exchange-A-seat-tokyo&gt;hnd-32C|C-seat-tokyo&gt;hnd-34C~redeem-A-tokyo-extra-bag&quot;,
+  },
+  {
+    id: &quot;lin-family-consent&quot;,
+    hour: 336,
+    actor: &quot;A&quot;,
+    title: &quot;The family seats fit Lin’s authorization&quot;,
+    narration:
+      &quot;The platform verifies the full row, exact 23 kg baggage product, fixed 360-credit price and unchanged guardian arrangement against Lin’s published request.&quot;,
+    expectedOutcome:
+      &quot;Lin’s accepted quote covers all requested changes together. The 360 credits remain reserved. No seat or baggage change is completed before the whole arrangement is accepted.&quot;,
+    action: &quot;accept&quot;,
+    candidateId: &quot;bundle-exchange-A-seat-tokyo&gt;hnd-32C|C-seat-tokyo&gt;hnd-34C~redeem-A-tokyo-extra-bag&quot;,
+    person: &quot;A&quot;,
+  },
+  {
+    id: &quot;daniel-consent&quot;,
+    hour: 336,
+    actor: &quot;C&quot;,
+    title: &quot;Daniel keeps what matters to him&quot;,
+    narration:
+      &quot;Daniel reviews 34C, another regular aisle seat on the same flight. No one changes his booking automatically.&quot;,
+    utterance:
+      &quot;34C is still an aisle. I accept the move and the 160 Flex credits.&quot;,
+    expectedOutcome:
+      &quot;Daniel’s acceptance completes the exchange within Lin’s published terms. The seats and baggage are confirmed together and the exact quoted credits settle automatically.&quot;,
+    action: &quot;accept&quot;,
+    candidateId: &quot;bundle-exchange-A-seat-tokyo&gt;hnd-32C|C-seat-tokyo&gt;hnd-34C~redeem-A-tokyo-extra-bag&quot;,
+    person: &quot;C&quot;,
+  },
+  {
+    id: &quot;family-settlement&quot;,
+    hour: 336,
+    actor: &quot;platform&quot;,
+    title: &quot;Three seats together&quot;,
+    narration:
+      &quot;The airline adapter confirms both changed seats and the baggage entitlement. The platform then settles the agreed credit amounts once.&quot;,
+    expectedOutcome:
+      &quot;Mia, Jamie and Lin hold 32A, 32B and 32C. Daniel has 34C and 160 credits. Lin has 40 credits remaining after the complete seat and baggage arrangement.&quot;,
+    action: &quot;execute&quot;,
+    candidateId: &quot;bundle-exchange-A-seat-tokyo&gt;hnd-32C|C-seat-tokyo&gt;hnd-34C~redeem-A-tokyo-extra-bag&quot;,
+  },
+  {
+    id: &quot;baggage-offer&quot;,
+    hour: 336,
+    actor: &quot;platform&quot;,
+    title: &quot;Room for the extra bag&quot;,
+    narration:
+      &quot;The booking includes the extra bag confirmed with the family seats. This timeline moment shows the delivered entitlement and its receipt.&quot;,
+    expectedOutcome:
+      &quot;One additional 23 kg checked bag has been confirmed for Lin as the 200-credit line item in the accepted fixed quote.&quot;,
+    action: &quot;quote&quot;,
+    candidateId: &quot;bundle-exchange-A-seat-tokyo&gt;hnd-32C|C-seat-tokyo&gt;hnd-34C~redeem-A-tokyo-extra-bag&quot;,
+  },
+  {
+    id: &quot;baggage-consent&quot;,
+    hour: 336,
+    actor: &quot;A&quot;,
+    title: &quot;The bag fits the same request&quot;,
+    narration:
+      &quot;The audit shows that Lin’s published request covered the 200-credit baggage entitlement. No additional approval was requested.&quot;,
+    expectedOutcome:
+      &quot;The baggage receipt and the single redemption entry confirm delivery. This story moment does not change the booking or charge again.&quot;,
+    action: &quot;accept&quot;,
+    candidateId: &quot;bundle-exchange-A-seat-tokyo&gt;hnd-32C|C-seat-tokyo&gt;hnd-34C~redeem-A-tokyo-extra-bag&quot;,
+    person: &quot;A&quot;,
+  },
+  {
+    id: &quot;baggage-settlement&quot;,
+    hour: 336,
+    actor: &quot;platform&quot;,
+    title: &quot;Flexibility that travels with you&quot;,
+    narration:
+      &quot;The family now has its seats together and the extra bag. A small voluntary change on an earlier solo trip helped meet different needs later.&quot;,
+    expectedOutcome:
+      &quot;Lin retains 40 Flex credits. Daniel retains 160. The ledger reconciles 400 issued and 200 redeemed across two settled contracts.&quot;,
+    action: &quot;execute&quot;,
+    candidateId: &quot;bundle-exchange-A-seat-tokyo&gt;hnd-32C|C-seat-tokyo&gt;hnd-34C~redeem-A-tokyo-extra-bag&quot;,
+  },
+];
+
+export function nextStoryCommand(
+  s: State,
+): Omit&lt;Command, &quot;expectedVersion&quot; | &quot;requestId&quot;&gt; | null {
+  if (s.scenarioId !== &quot;lin-family&quot;) return null;
+  const step = storySteps[s.storyCursor || 0];
+  if (!step) return null;
+  const noChange = { action: &quot;advance&quot; as const, hour: s.hour };
+  if (step.action === &quot;advance&quot;)
+    return { action: &quot;advance&quot;, hour: Math.max(s.hour, step.hour) };
+  if (step.action === &quot;intent_save&quot;) {
+    const intent = storyIntent(step.id);
+    if (s.intents?.[step.person!]?.some((record) =&gt; record.id === intent.id &amp;&amp; record.confirmed)) return noChange;
+    if (intent.purpose !== &quot;request&quot;) return {action: &quot;intent_save&quot;, person: step.person, intent};
+    const result = quoteRequest(s, step.person!, intent);
+    if (result.status !== &quot;quoted&quot;) throw new Error(result.reason);
+    return {action: &quot;intent_save&quot;, person: step.person, intent,
+      requestAuthorization: {quote: result.quote, validUntil: result.quote.validUntil, allowPartial: false}};
+  }
+
+  const contract = s.contracts
+    .filter(
+      (c) =&gt;
+        c.id === step.candidateId &amp;&amp;
+        ![&quot;CANCELLED&quot;, &quot;EXPIRED&quot;, &quot;FAILED&quot;].includes(c.status),
+    )
+    .at(-1);
+  if (step.action === &quot;quote&quot;)
+    return contract
+      ? noChange
+      : { action: &quot;quote&quot;, candidateId: step.candidateId };
+  if (!contract)
+    throw new Error(
+      &quot;The story offer was cancelled or expired. Create a fresh story workspace to replay this sequence.&quot;,
+    );
+  if (contract.status === &quot;SETTLED&quot;) return noChange;
+  if (step.action === &quot;accept&quot;)
+    return contract.accepted.includes(step.person!)
+      ? noChange
+      : {
+          action: &quot;accept&quot;,
+          contractId: contract.contractId,
+          person: step.person,
+        };
+  if (contract.status === &quot;RECONCILING&quot;)
+    return { action: &quot;reconcile&quot;, contractId: contract.contractId };
+  return { action: &quot;execute&quot;, contractId: contract.contractId };
+}
+
+export function storyDate(hour: number) {
+  return new Date(
+    new Date(storyEpoch).getTime() + hour * 3600000,
+  ).toISOString();
+}
+
+export function storyIntent(stepId: string): IntentRecord {
+  const step = storySteps.find((s) =&gt; s.id === stepId)!;
+  const base = {
+    purpose:
+      stepId === &quot;preferences&quot;
+        ? (&quot;flexibility&quot; as const)
+        : (&quot;request&quot; as const),
+    id: `story-${stepId}`,
+    sourceText: step.utterance!,
+    scope: { kind: &quot;all&quot; as const },
+    questions: [],
+    confirmed: false,
+    revision: 0,
+  };
+  if (stepId === &quot;preferences&quot;)
+    return {
+      ...base,
+      rules: [
+        {
+          id: &quot;solo-window&quot;,
+          evidence: &quot;any seat is fine on flights up to six hours&quot;,
+          when: [
+            { field: &quot;partySize&quot;, op: &quot;eq&quot;, value: 1 },
+            { field: &quot;durationMinutes&quot;, op: &quot;lte&quot;, value: 360 },
+          ],
+          effect: {
+            kind: &quot;seat_position&quot;,
+            positions: [&quot;aisle&quot;, &quot;window&quot;, &quot;middle&quot;],
+          },
+          strength: &quot;flexible&quot;,
+        },
+        {
+          id: &quot;longer-aisle&quot;,
+          evidence: &quot;On longer flights, I need an aisle&quot;,
+          when: [
+            { field: &quot;partySize&quot;, op: &quot;eq&quot;, value: 1 },
+            { field: &quot;durationMinutes&quot;, op: &quot;gt&quot;, value: 360 },
+          ],
+          effect: { kind: &quot;seat_position&quot;, positions: [&quot;aisle&quot;] },
+          strength: &quot;must&quot;,
+        },
+        {
+          id: &quot;companions&quot;,
+          evidence: &quot;When I’m with my family, I’d like us to sit together&quot;,
+          when: [{ field: &quot;partyId&quot;, op: &quot;eq&quot;, value: &quot;lin-family&quot; }],
+          effect: { kind: &quot;seating_together&quot; },
+          strength: &quot;prefer&quot;,
+        },
+      ],
+    };
+  if (stepId === &quot;alex-request&quot;)
+    return {
+      ...base,
+      scope: { kind: &quot;journey&quot;, journeyId: &quot;story-taipei&quot; },
+      rules: [
+        {
+          id: &quot;aisle&quot;,
+          evidence: &quot;Could I have an aisle seat on my Taipei flight?&quot;,
+          when: [],
+          effect: { kind: &quot;seat_position&quot;, positions: [&quot;aisle&quot;] },
+          strength: &quot;must&quot;,
+        },
+      ],
+    };
+  if (stepId === &quot;family-request&quot;)
+    return {
+      ...base,
+      scope: { kind: &quot;journey&quot;, journeyId: &quot;story-tokyo&quot; },
+      rules: [
+        {
+          id: &quot;together&quot;,
+          evidence: &quot;can the three of us sit together?&quot;,
+          when: [],
+          effect: { kind: &quot;seating_together&quot;, partyId: &quot;lin-family&quot; },
+          strength: &quot;must&quot;,
+        },
+        {
+          id: &quot;bag&quot;,
+          evidence: &quot;We also need one extra checked bag&quot;,
+          when: [],
+          effect: { kind: &quot;baggage&quot;, extraPieces: 1 },
+          strength: &quot;must&quot;,
+        },
+
+      ],
+    };
+  throw new Error(&quot;Unknown authored story statement&quot;);
+}
+
+for (const step of storySteps)
+  if (step.action === &quot;intent_save&quot;) step.intent = { ...storyIntent(step.id) };
+</code></pre><a href="https://github.com/cathayflex/cathayflex.github.io/blob/main/technology/source/story.ts" target="_blank" rel="noopener">View this file on GitHub <span aria-hidden="true">↗</span></a></div></details>
+<details class="reader-provenance"><summary>Source verification</summary><p>The source shown above matches the published export manifest.</p><dl><dt>SHA-256</dt><dd><code>e458f26dfbde1a854d5d9cdab8751748508f7d01fef46605ded8b3a8b9f94c84</code></dd><dt>Platform source commit</dt><dd><code>3c792c47304ef6a3717ecd4e6c2735207e0363d2</code></dd></dl></details></main><footer class="site-footer"><div class="footer-main"><p>Team Globe · Cathay Hackathon 2026</p><a href="/technology/">Inside the system <span aria-hidden="true">↗</span></a></div></footer></body></html>

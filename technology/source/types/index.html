@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The domain model | Cathay Flex</title><meta name="description" content="Give resources, conditions, candidates, contracts and commands explicit shared structures."><meta name="theme-color" content="#006564"><link rel="canonical" href="https://cathayflex.github.io/technology/source/types/"><link rel="icon" href="/assets/cathay-brushwing.png"><link rel="stylesheet" href="/fonts.css?v=20261003-cathay"><link rel="stylesheet" href="/style.css?v=20261003-clear-headings"><link rel="stylesheet" href="/technology/source/reader.css?v=7d397c4928e7"><script src="/app.js?v=20261003-product" defer></script></head>
+<body><a class="skip-link" href="#main">Skip to content</a><header class="site-header">
+    <div class="brand-lockup"><a class="brand" href="/" aria-label="Cathay Flex home"><img class="brand-logo" src="/assets/cathay-flex-logo.svg?v=20261004-cargo" width="1164" height="200" alt="Cathay Flex"></a><span class="brand-note">For the Cathay Hackathon demo only</span></div>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav"><span>Menu</span><span class="menu-lines" aria-hidden="true"></span></button>
+    <nav id="site-nav" aria-label="Main navigation"><a href="/technology/">Inside the system <span aria-hidden="true">↗</span></a><a href="/technology/#evidence">Implementation &amp; evidence</a></nav>
+  </header>
+<main id="main" class="source-reader" tabindex="-1"><a class="reader-back" href="/technology/#market-model"><span aria-hidden="true">←</span> Back to the explanation</a><p class="reader-eyebrow">INSIDE THE IMPLEMENTATION</p><h1>The domain model</h1><p class="reader-intro">Give resources, conditions, candidates, contracts and commands explicit shared structures.</p><dl class="reader-facts"><div><dt>What it reads</dt><dd>The concepts represented by the matching and transaction system.</dd></div><div><dt>What it produces</dt><dd>TypeScript definitions used throughout the domain modules.</dd></div><div><dt>What to know</dt><dd>Static types describe valid structures. Runtime validation and transaction checks still enforce the actual state and authority.</dd></div></dl>
+<details class="reader-code"><summary><span>View TypeScript source</span><span class="reader-file">types.ts</span><span class="reader-plus" aria-hidden="true">+</span></summary><div class="reader-code-body"><p>TypeScript is the implementation language. This is the source exported with the public matching engine.</p><pre tabindex="0" aria-label="types.ts source"><code>import type { RequestQuote } from &quot;./request-quote-schema.ts&quot;;
+export type Person = {
+  id: string;
+  name: string;
+  initials: string;
+  note: string;
+  age?: number;
+};
+export type SeatChoice = &quot;any&quot; | &quot;aisle&quot; | &quot;window&quot;;
+export type IntentCondition =
+  | {
+      field: &quot;journeyId&quot; | &quot;origin&quot; | &quot;destination&quot; | &quot;cabin&quot; | &quot;partyId&quot;;
+      op: &quot;eq&quot; | &quot;ne&quot;;
+      value: string;
+    }
+  | {
+      field: &quot;durationMinutes&quot; | &quot;partySize&quot;;
+      op: &quot;eq&quot; | &quot;lt&quot; | &quot;lte&quot; | &quot;gt&quot; | &quot;gte&quot;;
+      value: number;
+    };
+/** A bounded Boolean tree. Missing facts stay unknown, including under negation. */
+export type PredicateTree&lt;T&gt; =
+  | { kind: &quot;atom&quot;; condition: T }
+  | { kind: &quot;and&quot; | &quot;or&quot;; terms: PredicateTree&lt;T&gt;[] }
+  | { kind: &quot;not&quot;; term: PredicateTree&lt;T&gt; };
+export type IntentPredicate = PredicateTree&lt;IntentCondition&gt;;
+export type IntentEffect =
+  | { kind: &quot;seat_position&quot;; positions: (&quot;aisle&quot; | &quot;window&quot; | &quot;middle&quot;)[] }
+  | { kind: &quot;seating_together&quot;; partyId?: string }
+  | {
+      kind: &quot;departure_window&quot;;
+      earliest?: string;
+      latest?: string;
+      maxDelayMinutes?: number;
+    }
+  | { kind: &quot;baggage&quot;; extraPieces: number; maxKgPerPiece?: number }
+  | { kind: &quot;gate_check&quot;; allowed: boolean }
+  | { kind: &quot;meal&quot;; receive: boolean }
+  | { kind: &quot;credit_budget&quot;; maxCredits: number };
+export type OutcomeCondition =
+  | Exclude&lt;IntentEffect, { kind: &quot;credit_budget&quot; }&gt;
+  | { kind: &quot;flight_unchanged&quot; };
+export type OutcomePredicate = PredicateTree&lt;OutcomeCondition&gt;;
+export type IntentRule = {
+  id: string;
+  evidence: string;
+  when: IntentCondition[];
+  condition?: IntentPredicate;
+  /** A conditional permission, checked against the complete proposed allocation. */
+  onlyIf?: OutcomePredicate;
+  sourceSpan?: { start: number; end: number };
+  effect: IntentEffect;
+  strength: &quot;must&quot; | &quot;prefer&quot; | &quot;flexible&quot;;
+};
+export type IntentPurpose = &quot;flexibility&quot; | &quot;request&quot;;
+export type LegacyRequestAuthorizationTerms = {
+  maxCredits: number;
+  validUntil: number;
+  allowPartial: boolean;
+};
+export type FixedRequestAuthorizationTerms = {
+  quote: RequestQuote;
+  validUntil: number;
+  allowPartial: false;
+};
+// Legacy terms remain readable for persisted workspaces. New publications must
+// carry a validated fixed quote and cannot inherit a legacy spending authority.
+export type RequestAuthorizationTerms = FixedRequestAuthorizationTerms | LegacyRequestAuthorizationTerms;
+export type RequestAuthorization = LegacyRequestAuthorizationTerms &amp; {
+  mode?: &quot;fixed_quote&quot;;
+  quote?: RequestQuote;
+  authorizedAt: number;
+  termsRevision: number;
+};
+export type IntentRecord = {
+  purpose?: IntentPurpose;
+  cancelled?: boolean;
+  id: string;
+  sourceText: string;
+  scope: { kind: &quot;all&quot; } | { kind: &quot;journey&quot;; journeyId: string };
+  rules: IntentRule[];
+  questions: string[];
+  confirmed: boolean;
+  revision: number;
+  authorization?: RequestAuthorization;
+};
+export type Journey = {
+  id: string;
+  origin: string;
+  destination: string;
+  flightNumber: string;
+  departureAt: string;
+  durationMinutes: number;
+  cabin: string;
+};
+export type BookingParty = {
+  id: string;
+  journeyId: string;
+  memberIds: string[];
+  guardianPairs: { child: string; adult: string }[];
+  bookingReference: string;
+};
+export type TravelNeed = {
+  journeyId: string;
+  sitTogether: boolean;
+  extraBags: number;
+  maxCredits: number;
+  confirmed: boolean;
+};
+export type Resource = {
+  id: string;
+  label: string;
+  kind: &quot;flight&quot; | &quot;seat&quot; | &quot;baggage&quot; | &quot;meal&quot; | &quot;handover&quot;;
+  journey: string;
+  serviceHour: number;
+  deadline: number;
+  capacity: number;
+  background: number;
+  protected: number;
+  product: string;
+  q: number;
+  eligible: string[];
+  seatPosition: &quot;aisle&quot; | &quot;middle&quot; | &quot;window&quot; | null;
+  serviceCost: number;
+  opportunityCost: number;
+  seatMap?: { row: number; column: number; block: string; exitRow: boolean };
+  source?: &quot;airline_inventory&quot; | &quot;allocated_seat&quot;;
+  baggage?: { pieces: number; maxKg: number; maxCm: number; passenger: string };
+};
+export type Allocation = {
+  key: string;
+  person: string;
+  resource: string | null;
+  version: number;
+  journeyId?: string;
+  resourceKind?: Resource[&quot;kind&quot;];
+  partyId?: string | null;
+};
+export type Change = {
+  key: string;
+  from: string | null;
+  to: string | null;
+  version: number;
+};
+export type Preference = {
+  maxDelayHours: number;
+  requireAisle: boolean;
+  allowMealSkip: boolean;
+  allowGateCheck: boolean;
+  confirmed: boolean;
+  contextualSeats?: {
+    soloShort: SeatChoice;
+    soloLong: SeatChoice;
+    familyTogether: boolean;
+  };
+};
+export type Candidate = {
+  manualPerson?: string;
+  requestRefs?: { person: string; intentId: string; revision: number }[];
+  id: string;
+  title: string;
+  description: string;
+  category: &quot;earn&quot; | &quot;exchange&quot; | &quot;redeem&quot;;
+  participants: string[];
+  changes: Change[];
+  dependencies: Change[];
+  pricingVersion: string;
+  credits: Record&lt;string, number&gt;;
+  issuance: number;
+  redemption: number;
+  budget?: string;
+  event?: string;
+  evidence?: &quot;baggage_handover&quot; | &quot;catering_plan&quot;;
+  gain: number;
+  value: number;
+  cost: number;
+  risk: number;
+  deadline: number;
+  prerequisites: string[];
+  conditions: string[];
+  experimental?: boolean;
+  availableFrom?: number;
+  partyId?: string;
+  requiredEvents?: string[];
+};
+export type Status =
+  | &quot;HELD&quot;
+  | &quot;ACCEPTED&quot;
+  | &quot;AWAITING_EVIDENCE&quot;
+  | &quot;RECONCILING&quot;
+  | &quot;SETTLED&quot;
+  | &quot;CANCELLED&quot;
+  | &quot;EXPIRED&quot;
+  | &quot;FAILED&quot;;
+export type Contract = Candidate &amp; {
+  readiness?: {
+    canAccept: boolean;
+    highImpact: boolean;
+    waitingForOthers: boolean;
+    mode: &quot;ready&quot; | &quot;coordination&quot; | &quot;authorized&quot; | &quot;accepted&quot; | &quot;closed&quot;;
+  };
+  legacyConsent?: Record&lt;
+    string,
+    {
+      preferences: Preference;
+      seatWishes: Record&lt;string, string[]&gt;;
+      need?: TravelNeed;
+    }
+  &gt;;
+  contractId: string;
+  status: Status;
+  accepted: string[];
+  created: number;
+  expires: number;
+  receipts: string[];
+  log: string[];
+  consentSummary?: { accepted: number; total: number };
+  authorizations?: Record&lt;
+    string,
+    {
+      intentId: string;
+      revision: number;
+      termsRevision: number;
+      authorizedAt: number;
+      validUntil: number;
+      maxCredits: number;
+      mode?: &quot;fixed_quote&quot;;
+      quote?: RequestQuote;
+      allowPartial: boolean;
+      debit: number;
+    }
+  &gt;;
+};
+export type LedgerEntry = {
+  id: string;
+  contract: string;
+  hour: number;
+  title: string;
+  credits: Record&lt;string, number&gt;;
+  issuance: number;
+  redemption: number;
+};
+export type Budget = {
+  id: string;
+  label: string;
+  limit: number;
+  issued: number;
+  stressCost: number;
+};
+export type AirlineCampaign = {
+  id: string;
+  journeyId: string;
+  budget: string;
+  releasePositions: (&quot;aisle&quot; | &quot;window&quot; | &quot;middle&quot;)[];
+  receivePositions: (&quot;aisle&quot; | &quot;window&quot; | &quot;middle&quot;)[];
+  reward: number;
+  value: number;
+  cost: number;
+  risk: number;
+};
+export type OperationalOffer = {
+  id: string;
+  title: string;
+  description: string;
+  changes: { allocationKey: string; to: string | null }[];
+  dependencies?: string[];
+  credits: Record&lt;string, number&gt;;
+  issuance: number;
+  redemption: number;
+  budget?: string;
+  evidence?: Candidate[&quot;evidence&quot;];
+  requiredEvents?: string[];
+  value: number;
+  cost: number;
+  risk: number;
+};
+export type SaveAvailability =
+  | { allowed: true }
+  | {
+      allowed: false;
+      code: &quot;RESERVED_OFFER_CONFLICT&quot;;
+      message: string;
+      contractIds: string[];
+    };
+export type AgentResult = {
+  provider: string;
+  model: string;
+  summary: string;
+  preferences: Preference;
+  need?: TravelNeed;
+  intent?: IntentRecord;
+  recommendations: string[];
+  questions: string[];
+  saveAvailability?: SaveAvailability;
+  trace: { step: string; detail: string }[];
+};
+export type State = {
+  schema: 3;
+  version: number;
+  hour: number;
+  people: Person[];
+  resources: Resource[];
+  allocations: Allocation[];
+  wallets: Record&lt;string, number&gt;;
+  budgets: Budget[];
+  preferences: Record&lt;string, Preference&gt;;
+  seatWishes: Record&lt;string, string[]&gt;;
+  economics: {
+    marginalValue: number;
+    executionCost: number;
+    riskReserve: number;
+    stressCost: number;
+  };
+  contracts: Contract[];
+  ledger: LedgerEntry[];
+  usedEvents: string[];
+  audit: { hour: number; message: string }[];
+  requests: Record&lt;string, string&gt;;
+  agent?: AgentResult;
+  scenarioId?: &quot;network&quot; | &quot;lin-family&quot;;
+  storyCursor?: number;
+  journeys?: Journey[];
+  parties?: BookingParty[];
+  needs?: Record&lt;string, TravelNeed&gt;;
+  intents?: Record&lt;string, IntentRecord[]&gt;;
+  campaigns?: AirlineCampaign[];
+  operationalOffers?: OperationalOffer[];
+};
+export type Command = {
+  action:
+    | &quot;quote&quot;
+    | &quot;accept&quot;
+    | &quot;execute&quot;
+    | &quot;reconcile&quot;
+    | &quot;evidence&quot;
+    | &quot;cancel&quot;
+    | &quot;advance&quot;
+    | &quot;reset&quot;
+    | &quot;preferences&quot;
+    | &quot;seat_preferences&quot;
+    | &quot;policy&quot;
+    | &quot;inventory&quot;
+    | &quot;budget&quot;
+    | &quot;travel_need&quot;
+    | &quot;intent_save&quot;
+    | &quot;intent_remove&quot;
+    | &quot;story_advance&quot;;
+  candidateId?: string;
+  manualPerson?: string;
+  contractId?: string;
+  person?: string;
+  fault?: &quot;none&quot; | &quot;before_write&quot; | &quot;after_write&quot; | &quot;reject&quot;;
+  hour?: number;
+  preferences?: Preference;
+  need?: TravelNeed;
+  intent?: IntentRecord;
+  requestAuthorization?: RequestAuthorizationTerms;
+  intentId?: string;
+  allocationKey?: string;
+  wishes?: string[];
+  economics?: State[&quot;economics&quot;];
+  budgetId?: string;
+  limit?: number;
+  resourceId?: string;
+  capacity?: number;
+  protected?: number;
+  requestId: string;
+  expectedVersion: number;
+};
+</code></pre><a href="https://github.com/cathayflex/cathayflex.github.io/blob/main/technology/source/types.ts" target="_blank" rel="noopener">View this file on GitHub <span aria-hidden="true">↗</span></a></div></details>
+<details class="reader-provenance"><summary>Source verification</summary><p>The source shown above matches the published export manifest.</p><dl><dt>SHA-256</dt><dd><code>b678ded4f0e23270a42a969a67fdbbbed83d198d1335722348b5714e0af20692</code></dd><dt>Platform source commit</dt><dd><code>3c792c47304ef6a3717ecd4e6c2735207e0363d2</code></dd></dl></details></main><footer class="site-footer"><div class="footer-main"><p>Team Globe · Cathay Hackathon 2026</p><a href="/technology/">Inside the system <span aria-hidden="true">↗</span></a></div></footer></body></html>
