@@ -10,7 +10,7 @@
   margin-bottom: 46px;
 }
 .technology-heading > .eyebrow { grid-column: 1 / -1; margin-bottom: 22px; }
-.technology-heading > h2 { font-size: clamp(36px, 3.7vw, 55px); }
+.technology-heading > h2 { font-size: clamp(36px, 3.7vw, 55px); max-width: 480px; text-wrap: balance; }
 .technology-heading > p:last-child { max-width: 430px; font-size: 17px; color: var(--muted); }
 .technology-tabs { display: flex; gap: 36px; border-bottom: 1px solid var(--line); }
 .technology-tabs > button {

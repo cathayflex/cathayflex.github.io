@@ -6,9 +6,9 @@ The public product website for Team Globe’s Cathay Hackathon 2026 project, pub
 
 The page introduces the product through traveller experience, the technology behind a match and the value of portable credits. It develops three connected ideas. Different passenger priorities make useful voluntary changes possible. Flex credits carry their value across flights, seats, travel services and journeys. Travellers control the offers they accept and the terms of requests they publish.
 
-The hero and section headings describe this broad proposition. A compact interaction separates six moments of one journey. A flexibility statement leads to an offer and an earned balance. A later request leads to a terms review and a confirmed arrangement. Each screen has one purpose. A separate technology section connects prepared language interpretation to computed matching results for the same examples. Its destinations, dates and credit amounts stay inside the illustration. Advancing the example does not change the product headings or surrounding explanation.
+The desktop hero keeps each complete sentence on its own line beside the photograph. Section headings explain the product without relying on slogans. A compact interaction separates six moments of one journey. A flexibility statement leads to an offer and an earned balance. A later request leads to a terms review and a confirmed arrangement. Each screen has one purpose. A separate technology section connects prepared language interpretation to computed matching results for the same examples. Its destinations, dates and credit amounts stay inside the illustration. Advancing the example does not change the product headings or surrounding explanation.
 
-Navigation follows the same structure through The idea, Behind Flex, Flex credits and Your choices. The pale network illustration connects resource types and future journeys. The page closes with the original centred line, “Let your flexibility take you further.”
+Navigation follows the same structure through The idea, Behind Flex, Flex credits and Your choices. The pale network illustration connects resource types and future journeys. Section headings state the action or benefit directly. The page closes by pairing acceptance with earning credits and requests with using them.
 
 ## Maintenance
 
