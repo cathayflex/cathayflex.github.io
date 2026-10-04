@@ -1,4 +1,4 @@
-import { storyState, transition, market, optimize, invariants, held, available, validate, requestAuthorizationStatus, projectOrderBook } from './engine.mjs?v=6743582eea26';
+import { storyState, transition, market, optimize, invariants, held, available, validate, requestAuthorizationStatus, projectOrderBook } from './engine.mjs?v=55303e9c712c';
 
 export function act(state, command) {
   return transition(state, {...command, expectedVersion:state.version, requestId:crypto.randomUUID()});

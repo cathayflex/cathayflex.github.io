@@ -1,3 +1,4 @@
+import { seatNumber } from "./resource-label.ts";
 import { conditionalOutcomeIssues, rulesFor } from "./intent.ts";
 import { bookedJourney, confirmedAllocations } from "./booking-view.ts";
 import type {
@@ -461,7 +462,7 @@ export function cabinMealManifest(s: State) {
         journey,
         flight,
         flightKey: JSON.stringify([flight?.origin, flight?.destination, flight?.flightNumber, flight?.departureAt]),
-        seat: seat?.label.split(" · ")[0] || "Unassigned",
+        seat: seatNumber(seat?.label) || "Unassigned",
         meal:
           resource(s, a.resource)?.mealName ||
           resource(s, original?.resourceId || null)?.mealName ||

@@ -14,6 +14,7 @@ const chapters = {
   'capacity.ts': 'match',
   'allocation-policy.ts': 'match',
   'resource-model.ts': 'match',
+  'resource-label.ts': 'understand',
   'service-catalogue.ts': 'match',
   'services.ts': 'commit',
   'booking-view.ts': 'commit',

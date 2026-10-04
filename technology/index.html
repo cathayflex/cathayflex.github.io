@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#006564"><link rel="canonical" href="https://cathayflex.github.io/technology/">
   <link rel="icon" href="/assets/cathay-brushwing.png"><link rel="stylesheet" href="/fonts.css?v=20261003-cathay">
   <link rel="stylesheet" href="/style.css?v=20261003-clear-headings"><link rel="stylesheet" href="system.css?v=21fb39c8500b"><link rel="stylesheet" href="match.css?v=dfdf0abf0da9">
-  <script src="/app.js?v=20261003-product" defer></script><script src="system.js?v=b02c0c5af693" type="module"></script><script src="match.js?v=3534dfacbb14" type="module"></script>
+  <script src="/app.js?v=20261003-product" defer></script><script src="system.js?v=fcb5819f911c" type="module"></script><script src="match.js?v=8ecf3f2a3d88" type="module"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -25,13 +25,13 @@
     <nav class="chapter-nav system-shell" aria-label="On this page"><a href="#understand"><span>01</span> Interpret</a><span class="route-arrow" aria-hidden="true">→</span><a href="#match"><span>02</span> Allocate</a><span class="route-arrow" aria-hidden="true">→</span><a href="#commit"><span>03</span> Settle</a></nav>
     <div class="system-shell">
       <section class="chapter" id="understand" aria-labelledby="understand-title">
-        <div class="chapter-heading"><div><p class="eyebrow">01 · AI INTERPRETATION</p><h2 id="understand-title">Travel needs become<br>precise conditions.</h2></div><p>AI connects a traveller’s words to their booking and structures the requirements for matching.</p></div>
+        <div class="chapter-heading"><div><p class="eyebrow">01 AI INTERPRETATION</p><h2 id="understand-title">Travel needs become<br>precise conditions.</h2></div><p>AI connects a traveller’s words to their booking and structures the requirements for matching.</p></div>
         <div class="interpretation-visual">
           <div class="example-switch" role="group" aria-label="Interpretation example"><button type="button" data-interpret="request" aria-pressed="true">Travel request</button><button type="button" data-interpret="flexibility" aria-pressed="false">Saved flexibility</button></div>
           <div class="interpretation-grid" id="interpretation-content">
             <div class="spoken"><blockquote id="spoken-words">“For <em>Tokyo</em>, can the <em>three of us sit together</em>? We also need <em>one extra checked bag</em>.”</blockquote></div>
             <div class="translation-arrow" aria-hidden="true"><svg viewBox="0 0 48 20"><path d="M1 10h44m-8-8 8 8-8 8"/></svg></div>
-            <div class="interpreted"><span class="visual-label">STRUCTURED REQUIREMENTS</span><dl id="interpreted-rules"><div><dt>Flight</dt><dd>CX 520 · Tokyo</dd></div><div><dt>Seats</dt><dd>3 adjacent seats<small>Same row and seat block</small></dd></div><div><dt>Baggage</dt><dd>1 extra checked bag<small>Up to 23 kg</small></dd></div></dl></div>
+            <div class="interpreted"><span class="visual-label">STRUCTURED REQUIREMENTS</span><dl id="interpreted-rules"><div><dt>Flight</dt><dd>CX 520 to Tokyo</dd></div><div><dt>Seats</dt><dd>3 adjacent seats<small>Same row and seat block</small></dd></div><div><dt>Baggage</dt><dd>1 extra checked bag<small>Up to 23 kg</small></dd></div></dl></div>
           </div>
           <p class="sr-only" id="interpretation-status" role="status" aria-live="polite"></p>
         </div>
@@ -43,7 +43,7 @@
       </section>
       <section class="chapter" id="match" aria-labelledby="match-title">
         <span id="market-model" class="legacy-anchor" aria-hidden="true"></span>
-        <div class="chapter-heading"><div><p class="eyebrow">02 · CONSTRAINED OPTIMIZATION</p><h2 id="match-title">Coordinate the whole<br>arrangement.</h2></div><p>A family needs seats together and an extra bag. Another traveller can change seats. The engine combines both resources into one plan.</p></div>
+        <div class="chapter-heading"><div><p class="eyebrow">02 CONSTRAINED OPTIMIZATION</p><h2 id="match-title">Coordinate the whole<br>arrangement.</h2></div><p>A family needs seats together and an extra bag. Another traveller can change seats. The engine combines both resources into one plan.</p></div>
         <div id="matching-visual" class="matching-visual"><p class="loading-note">Loading the matching example…</p></div>
         <noscript><p class="example-note">JavaScript is required for the interactive matching example.</p></noscript>
         <details class="system-details"><summary><span class="disclosure-label"><strong>Conditional order book and allocation method</strong></span><span class="disclosure-icon" aria-hidden="true">+</span></summary><div class="detail-body reading-body">
@@ -55,7 +55,7 @@
         </div></details>
       </section>
       <section class="chapter" id="commit" aria-labelledby="commit-title">
-        <div class="chapter-heading"><div><p class="eyebrow">03 · TRANSACTION COORDINATION</p><h2 id="commit-title">An agreed plan becomes<br>a confirmed booking.</h2></div><p>Publishing the request approves its fixed terms. The traveller making the change accepts the offer, then Flex verifies fulfilment and settles the credits.</p></div>
+        <div class="chapter-heading"><div><p class="eyebrow">03 TRANSACTION COORDINATION</p><h2 id="commit-title">An agreed plan becomes<br>a confirmed booking.</h2></div><p>Publishing the request approves its fixed terms. The traveller making the change accepts the offer, then Flex verifies fulfilment and settles the credits.</p></div>
         <ol class="settlement-flow" aria-label="Credit reservation, booking confirmation and settlement">
           <li><span class="settlement-number">01</span><h3>Reserve</h3><strong class="settlement-value">360 <small>credits held</small></strong><p>The request is funded when published.</p></li>
           <li><span class="settlement-number">02</span><h3>Confirm</h3><div class="settlement-checks"><span>✓ Seat exchange</span><span>✓ Extra bag</span></div><p>Accepted changes are verified with booking services.</p></li>
@@ -73,12 +73,12 @@
           <div id="benchmark-results"><p>Loading recorded search results…</p></div>
           <p id="build-evidence"></p>
           <a class="source-link" href="https://github.com/cathayflex/cathayflex.github.io/tree/main/technology" target="_blank" rel="noopener">Source code and measurement data <span aria-hidden="true">↗</span></a>
-          <ul class="reference-list"><li><a href="https://www.janestreet.com/tech-talks/building-an-exchange/" target="_blank" rel="noopener">Jane Street · Exchange architecture ↗</a></li><li><a href="https://blog.janestreet.com/getting-from-tested-to-battle-tested/" target="_blank" rel="noopener">Jane Street · Deterministic testing ↗</a></li><li><a href="https://arxiv.org/abs/2310.15164" target="_blank" rel="noopener">LINC · Language and formal reasoning ↗</a></li><li><a href="https://developers.google.com/optimization/cp/cp_solver" target="_blank" rel="noopener">OR-Tools · Constraint optimization ↗</a></li></ul>
+          <ul class="reference-list"><li><a href="https://www.janestreet.com/tech-talks/building-an-exchange/" target="_blank" rel="noopener">Jane Street on exchange architecture ↗</a></li><li><a href="https://blog.janestreet.com/getting-from-tested-to-battle-tested/" target="_blank" rel="noopener">Jane Street on deterministic testing ↗</a></li><li><a href="https://arxiv.org/abs/2310.15164" target="_blank" rel="noopener">LINC on language and formal reasoning ↗</a></li><li><a href="https://developers.google.com/optimization/cp/cp_solver" target="_blank" rel="noopener">OR-Tools for constraint optimization ↗</a></li></ul>
         </div></details>
         <p class="example-provenance">Interactive examples use the Flex engine with synthetic bookings and prepared language interpretations.</p>
       </section>
     </div>
     <section class="system-end system-shell"><h2>Complex decisions.<br>A simpler journey.</h2><a class="text-link" href="/#exchanges">Return to the Flex experience <span aria-hidden="true">→</span></a></section>
   </main>
-  <footer class="site-footer"><div class="footer-main"><p>Team Globe · Cathay Hackathon 2026</p><a class="back-top" href="#top">Back to top ↑</a></div></footer>
+  <footer class="site-footer"><div class="footer-main"><p>Team Globe at Cathay Hackathon 2026</p><a class="back-top" href="#top">Back to top ↑</a></div></footer>
 </body></html>

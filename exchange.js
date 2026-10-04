@@ -46,7 +46,7 @@ function render() {
   $('experience-counter').setAttribute('aria-label', `Step ${index + 1} of 6`);
   $('journey-context').hidden = configuring;
   text('app-context', future ? 'Hong Kong to Tokyo' : 'Hong Kong to Taipei');
-  text('journey-date', future ? '2 Nov' : '7 Oct · 1 h 45 min');
+  text('journey-date', future ? '2 Nov' : '1 h 45 min flight on 7 Oct');
   text('card-title', copy.title);
   $('scene-terms').hidden = !copy.amount;
   text('scene-amount', copy.amount || '');
@@ -62,7 +62,7 @@ function render() {
   seatMap.classList.toggle('seat-moved', earned);
   seatMap.setAttribute('aria-label', `Your seat is ${earned ? '22A, by the window' : '22C, on the aisle'}`);
   text('seat-change-label', earned ? 'Confirmed seat' : 'Proposed change');
-  text('seat-change-value', earned ? '22A · Window' : '22C → 22A');
+  text('seat-change-value', earned ? 'Window seat 22A' : '22C → 22A');
   text('seat-change-note', earned ? '' : 'Aisle to window');
   $('credit-award').hidden = true;
   root.querySelectorAll('.service-state').forEach(node => { node.hidden = !completed; node.textContent = 'Confirmed'; });

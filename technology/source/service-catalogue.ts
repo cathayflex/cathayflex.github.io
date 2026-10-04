@@ -1,3 +1,4 @@
+import { resourceLabel, seatNumber } from "./resource-label.ts";
 import type { Resource, ServiceProduct, State } from "./types.ts";
 
 /** Explicit synthetic inventory provisioning. Calling this never alters booked entitlements. */
@@ -136,7 +137,7 @@ export function installServiceCatalogue(s: State) {
       add({
         ...base,
         id,
-        label: `${label} · Business ${position}`,
+        label: `Business ${position} seat ${label}`,
         kind: "seat",
         product: "business",
         cabin: "Business",
@@ -219,7 +220,7 @@ export function installServiceCatalogue(s: State) {
     if (!s.capacityPools.some((p) => p.id === poolId))
       s.capacityPools.push({
         id: poolId,
-        label: `${seat.label} physical seat`,
+        label: `${resourceLabel(seat.label)} physical seat`,
         capacity: seat.capacity,
         background: seat.background,
         protected: seat.protected,
@@ -232,7 +233,7 @@ export function installServiceCatalogue(s: State) {
     add({
       ...seat,
       id,
-      label: `Seat ${seat.label.split(" · ")[0]} kept free`,
+      label: `Seat ${seatNumber(seat.label)} kept free`,
       kind: "service",
       product: "neighbour_free",
       source: undefined,

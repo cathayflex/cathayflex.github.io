@@ -585,7 +585,7 @@ export function quoteRequest(
       const pieces = product.baggage!.pieces * quantity;
       lineItems.push({
         kind: "baggage",
-        label: `${pieces} extra checked ${pieces === 1 ? "bag" : "bags"} · Up to ${product.baggage!.maxKg} kg each`,
+        label: `${pieces} extra checked ${pieces === 1 ? "bag" : "bags"} up to ${product.baggage!.maxKg} kg each`,
         ruleIds: bagGoals.map(rule => rule.id).sort(),
         resourceIds: tier.map(entry => entry.id).sort(),
         catalogKey: catalogKey(s, tier.map(entry => entry.id)),

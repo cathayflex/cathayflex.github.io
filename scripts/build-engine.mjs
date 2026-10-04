@@ -23,7 +23,7 @@ const result = await build({
 const inputs = Object.keys(result.metafile.inputs).map(path => resolve(path));
 const sources = inputs.filter(path => path.startsWith(resolve(platform,'lib/flex') + '/')).sort();
 const allowed = new Set(['seed.ts','story.ts','engine.ts','intent.ts','generic-market.ts','predicates.ts','request-quote.ts','request-quote-schema.ts','selection.ts','time.ts','types.ts','order-book.ts',
-  'baggage.ts','baggage-plans.ts','booking-view.ts','capacity.ts','allocation-policy.ts','resource-model.ts','service-catalogue.ts','services.ts']);
+  'baggage.ts','baggage-plans.ts','booking-view.ts','capacity.ts','allocation-policy.ts','resource-model.ts','resource-label.ts','service-catalogue.ts','services.ts']);
 if (sources.some(path => !allowed.has(basename(path)))) throw new Error('Review new platform dependency before publishing its source.');
 // Only pure domain modules and synthetic fixtures are exported. No API, authentication or environment modules.
 await mkdir(resolve(root,'technology/source'), {recursive:true});

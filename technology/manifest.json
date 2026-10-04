@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-04T13:16:31.847Z",
-  "platformBaseCommit": "7943bb9cec55263e844aaebc6f93c64fa6556024",
-  "sourceTreeDigest": "06d862292bbab5550fa52be140399b29f7114d15548d11c706f3a6adb42b938d",
+  "generatedAt": "2026-10-04T13:37:14.868Z",
+  "platformBaseCommit": "f92a37408bba5fdf6b4a20dfa28f7cb77545e632",
+  "sourceTreeDigest": "908b567649ddbe8b7deb6402d34af9792575f79218e724df7214d8f330ec81da",
   "files": [
     {
       "file": "allocation-policy.ts",
@@ -25,7 +25,7 @@
     },
     {
       "file": "engine.ts",
-      "sha256": "ba9b822e4be9d3f4ce0c39e7264dd56007667fede7b29b9f5e3e7c5dc24f1fd6"
+      "sha256": "0b3c2cb822676764620747c342d68052883346921d37ddc234f4e1f81509e081"
     },
     {
       "file": "generic-market.ts",
@@ -49,7 +49,11 @@
     },
     {
       "file": "request-quote.ts",
-      "sha256": "462dd98f062d40da7c3583711c22f9a37c9523a35fd31f516444ada2263d40b6"
+      "sha256": "13e63b4e9d9543695294b7e24f4be0e0aea666c5e0cee52be6684e2b6e5c3838"
+    },
+    {
+      "file": "resource-label.ts",
+      "sha256": "672264cef2fa5ba8cd6e0f9f85a82ca1130b891451a7906a5f8ea851975798ff"
     },
     {
       "file": "resource-model.ts",
@@ -57,7 +61,7 @@
     },
     {
       "file": "seed.ts",
-      "sha256": "3b523c30db985d1fcf1ececdfab500306dc9ca274192bdfd9ed6a80a8d3b0ca1"
+      "sha256": "87bcc9025ddf3be0aa0c38b19e32ecd140abb78335f7abdb71cc554c06029651"
     },
     {
       "file": "selection.ts",
@@ -65,11 +69,11 @@
     },
     {
       "file": "service-catalogue.ts",
-      "sha256": "863054466531df66ec620c9ffe767b6dc4c83744e284496da2a3896cc958d0f1"
+      "sha256": "f8ddf1ad4ce34f8d3bea4dac84538994a84216438afc1ccbbd53c4a41f3ebefd"
     },
     {
       "file": "services.ts",
-      "sha256": "0f6e76784551a33749752903d180b4aa62ff52219ab1d64cf68c9b4847a054a1"
+      "sha256": "e52e89604b60413fdd111cc7edc47b9c9ce10f26e0ddbfd6e5c26314c0f84c39"
     },
     {
       "file": "story.ts",
@@ -84,7 +88,7 @@
       "sha256": "1db3022cffa997aa633fd7b94eb50ee78a7591fa0163996f04ea0977c822752d"
     }
   ],
-  "engineBytes": 236130,
-  "engineSha256": "6743582eea268fa6d6e265fb5fb07a3d3f7e1e4afb84bbcc078b8db70708dc41",
+  "engineBytes": 236599,
+  "engineSha256": "55303e9c712c946b464ed7c51ecdb76a7a79b5156bee987888aebf8bde8ccde5",
   "runtime": "Browser JavaScript. Same pure domain functions as the platform. Synthetic bookings. No live AI or airline connection."
 }

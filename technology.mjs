@@ -39,10 +39,10 @@ export function technologyExamples(overrides = {}) {
         {text: 'and take one extra checked bag.', rules: ['bag']},
       ],
       rules: [
-        {id: 'journey', label: 'Booked flight', value: `${tokyoFlight.number} · ${tokyoFlight.origin} → ${tokyoFlight.destination}`, detail: dateLabel(tokyoFlight.departure)},
+        {id: 'journey', label: 'Booked flight', value: `${tokyoFlight.number} from ${tokyoFlight.origin} to ${tokyoFlight.destination}`, detail: dateLabel(tokyoFlight.departure)},
         {id: 'party', label: `${bookedParty.travellers.length} travellers on this booking`, value: partyNames(bookedParty.travellers)},
         {id: 'seats', label: 'Seats together', value: 'Same row, consecutive seats', detail: 'No aisle between you'},
-        {id: 'bag', label: 'Extra baggage', value: `${request.baggage.pieces} checked bag · Up to ${request.baggage.maxKg} kg`},
+        {id: 'bag', label: 'Extra baggage', value: `${request.baggage.pieces} checked bag up to ${request.baggage.maxKg} kg`},
       ],
       structured: {
         entities: {

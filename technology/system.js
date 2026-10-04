@@ -2,12 +2,12 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const interpretations = {
   request: {
     words:'“For <em>Tokyo</em>, can the <em>three of us sit together</em>? We also need <em>one extra checked bag</em>.”',
-    rules:[['Flight','CX 520 · Tokyo',''],['Seats','3 adjacent seats','Same row and seat block'],['Baggage','1 extra checked bag','Up to 23 kg']],
+    rules:[['Flight','CX 520 to Tokyo',''],['Seats','3 adjacent seats','Same row and seat block'],['Baggage','1 extra checked bag','Up to 23 kg']],
     announcement:'Travel request. The Tokyo booking, three adjacent seats and one extra bag become matching requirements.',
   },
   flexibility: {
     words:'“When I travel <em>alone</em>, any seat is fine on flights <em>up to six hours</em>. On longer flights, I need an <em>aisle</em>. With my family, I’d like us to <em>sit together</em>.”',
-    rules:[['Acceptable','Any seat','Solo · Flight ≤ 6 hours'],['Required','Aisle seat','Solo · Flight > 6 hours'],['Preferred','Seats together','Family journey']],
+    rules:[['Acceptable','Any seat','Alone on flights up to 6 hours'],['Required','Aisle seat','Alone on flights over 6 hours'],['Preferred','Seats together','Family journey']],
     announcement:'Saved flexibility. Solo short flights allow any seat. Solo long flights require an aisle. Family journeys prefer seats together.',
   },
 };
@@ -33,9 +33,9 @@ function updateChapter(){
 }
 addEventListener('scroll',updateChapter,{passive:true});updateChapter();
 fetch('manifest.json').then(r=>{if(!r.ok)throw new Error();return r.json();}).then(manifest=>{
-  document.getElementById('build-evidence').textContent=`${manifest.files.length} domain modules · Source digest ${manifest.sourceTreeDigest.slice(0,12)} · Exported ${new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'Asia/Hong_Kong'}).format(new Date(manifest.generatedAt))}`;
+  document.getElementById('build-evidence').textContent=`${manifest.files.length} domain modules exported on ${new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'Asia/Hong_Kong'}).format(new Date(manifest.generatedAt))}. Source digest ${manifest.sourceTreeDigest.slice(0,12)}.`;
 }).catch(()=>{document.getElementById('build-evidence').textContent='Source hashes and export details are included in the repository manifest.';});
 fetch('benchmark.json').then(r=>{if(!r.ok)throw new Error();return r.json();}).then(report=>{
   const rows=report.rows.filter(row=>row.nodeLimit===20000);
-  document.getElementById('benchmark-results').innerHTML=`<p class="benchmark-context">Recorded selection runs · 20,000-node search budget</p><div class="benchmark-scroll" tabindex="0" aria-label="Measured search results"><table><thead><tr><th>Candidates</th><th>Nodes visited</th><th>Result</th><th>Time</th></tr></thead><tbody>${rows.map(row=>`<tr><td>${row.suppliedCandidates}</td><td>${row.visited.toLocaleString('en')}</td><td>${row.complete?'Search complete':'Feasible at limit'}</td><td>${row.elapsedMs.toFixed(1)} ms</td></tr>`).join('')}</tbody></table></div>`;
+  document.getElementById('benchmark-results').innerHTML=`<p class="benchmark-context">Selection runs with a 20,000-node search budget</p><div class="benchmark-scroll" tabindex="0" aria-label="Measured search results"><table><thead><tr><th>Candidates</th><th>Nodes visited</th><th>Result</th><th>Time</th></tr></thead><tbody>${rows.map(row=>`<tr><td>${row.suppliedCandidates}</td><td>${row.visited.toLocaleString('en')}</td><td>${row.complete?'Search complete':'Feasible at limit'}</td><td>${row.elapsedMs.toFixed(1)} ms</td></tr>`).join('')}</tbody></table></div>`;
 }).catch(()=>{document.getElementById('benchmark-results').innerHTML='<p>The recorded search results are available in the repository’s benchmark data.</p>';});

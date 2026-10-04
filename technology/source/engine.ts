@@ -1,3 +1,4 @@
+import { resourceLabel } from "./resource-label.ts";
 import { effectiveServiceProduct, serviceCandidate, serviceErrors, serviceQuoteKey, ensureServiceSlot } from "./services.ts";
 import { preservesFlightEntitlement } from "./booking-view.ts";
 import { upgradeResourceModel } from "./resource-model.ts";
@@ -390,7 +391,7 @@ export function candidates(s: State): Candidate[] {
         cost: r.serviceCost + r.opportunityCost,
         experimental: true,
         conditions: [
-          `Confirm ${r.label} before redeeming ${r.q} Flex`,
+          `Confirm ${resourceLabel(r.label)} before redeeming ${r.q} Flex`,
         ],
         prerequisites: [`At least ${r.q} Flex available`],
       });
@@ -1343,7 +1344,7 @@ export function validate(s: State, c: Candidate, except?: string): string[] {
     const n =
       r.background + projected.filter((a) => a.resource === r.id).length;
     if (n + reserved > r.capacity - r.protected)
-      errors.push(`${r.label} has insufficient allocatable capacity`);
+      errors.push(`${resourceLabel(r.label)} has insufficient allocatable capacity`);
   }
   return [...new Set(errors)];
 }
@@ -2279,7 +2280,7 @@ export function transition(input: State, cmd: Command): State {
     r.protected = cmd.protected!;
     const physical = s.capacityPools?.find(pool => pool.id === `physical:${r.id}`);
     if (physical) { physical.capacity = r.capacity; physical.protected = r.protected; }
-    audit(s, `Operations updated capacity for ${r.label}.`);
+    audit(s, `Operations updated capacity for ${resourceLabel(r.label)}.`);
   } else if (cmd.action === "quote") {
     if (cmd.manualPerson)
       assert(

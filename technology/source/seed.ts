@@ -42,7 +42,7 @@ export function initialState(): State {
     });
   add(
     "flight-early",
-    "CX 548 · HKG → HND · 09:00",
+    "CX 548 HKG to HND at 09:00",
     "flight",
     "oct-tokyo",
     2,
@@ -52,7 +52,7 @@ export function initialState(): State {
   );
   add(
     "flight-late",
-    "CX 550 · HKG → HND · 11:00",
+    "CX 550 HKG to HND at 11:00",
     "flight",
     "oct-tokyo",
     4,
@@ -60,14 +60,14 @@ export function initialState(): State {
     95,
     "economy",
   );
-  add("oct-32B", "32B · Middle", "seat", "oct-tokyo", 2);
-  add("oct-34B", "34B · Middle", "seat", "oct-tokyo", 4, 1, 0, "regular", 40);
-  add("oct-34C", "34C · Aisle", "seat", "oct-tokyo", 4, 1, 0, "regular", 140);
-  add("nov-32B", "32B · Middle", "seat", "nov-seoul", 600, 1, 0, "regular", 40);
-  add("nov-32C", "32C · Aisle", "seat", "nov-seoul", 600, 1, 0, "regular", 160);
+  add("oct-32B", "Middle seat 32B", "seat", "oct-tokyo", 2);
+  add("oct-34B", "Middle seat 34B", "seat", "oct-tokyo", 4, 1, 0, "regular", 40);
+  add("oct-34C", "Aisle seat 34C", "seat", "oct-tokyo", 4, 1, 0, "regular", 140);
+  add("nov-32B", "Middle seat 32B", "seat", "nov-seoul", 600, 1, 0, "regular", 40);
+  add("nov-32C", "Aisle seat 32C", "seat", "nov-seoul", 600, 1, 0, "regular", 160);
   add(
     "nov-extra-bag",
-    "Seoul · One additional 23 kg checked bag",
+    "One additional 23 kg checked bag for Seoul",
     "baggage",
     "nov-seoul",
     600,
@@ -77,10 +77,10 @@ export function initialState(): State {
     200,
     ["A"],
   );
-  add("dec-regular", "42B · Regular middle seat", "seat", "dec-taipei", 1200);
+  add("dec-regular", "Regular middle seat 42B", "seat", "dec-taipei", 1200);
   add(
     "dec-preferred",
-    "20C · Preferred aisle seat",
+    "Preferred aisle seat 20C",
     "seat",
     "dec-taipei",
     1200,
@@ -92,14 +92,14 @@ export function initialState(): State {
   );
   add(
     "c-future-regular",
-    "42B · Hong Kong to Taipei",
+    "Seat 42B on Hong Kong to Taipei",
     "seat",
     "dec-taipei-c",
     1350,
   );
   add(
     "c-future-preferred",
-    "20C · Preferred aisle · Taipei",
+    "Preferred aisle seat 20C for Taipei",
     "seat",
     "dec-taipei-c",
     1350,
@@ -114,14 +114,14 @@ export function initialState(): State {
   resources.at(-1)!.opportunityCost = 9;
   add(
     "d-future-regular",
-    "32B · Hong Kong to Seoul",
+    "Seat 32B on Hong Kong to Seoul",
     "seat",
     "dec-seoul-d",
     1416,
   );
   add(
     "d-future-aisle",
-    "32C · Advance aisle reservation · Seoul",
+    "Advance aisle reservation 32C for Seoul",
     "seat",
     "dec-seoul-d",
     1416,
@@ -135,14 +135,14 @@ export function initialState(): State {
   resources.at(-1)!.serviceCost = 1;
   resources.at(-1)!.opportunityCost = 2;
   for (const [id, label] of [
-    ["ring-A", "40A · Window"],
-    ["ring-B", "40C · Aisle"],
-    ["ring-C", "30A · Forward window"],
+    ["ring-A", "Window seat 40A"],
+    ["ring-B", "Aisle seat 40C"],
+    ["ring-C", "Forward window seat 30A"],
   ])
     add(id, label, "seat", "nov-osaka", 650, 1, 0, "regular", 100);
   add(
     "meal-d",
-    "Osaka · Standard meal production plan",
+    "Standard meal production plan for Osaka",
     "meal",
     "nov-osaka",
     650,
@@ -545,28 +545,28 @@ export function storyState(): State {
       partyId,
     });
   };
-  seat("tpe-22C", "22C · Aisle", "story-taipei", 50, 22, 2, "aisle");
-  seat("tpe-22A", "22A · Window", "story-taipei", 50, 22, 0, "window");
+  seat("tpe-22C", "Aisle seat 22C", "story-taipei", 50, 22, 2, "aisle");
+  seat("tpe-22A", "Window seat 22A", "story-taipei", 50, 22, 0, "window");
   own("A-seat-taipei", "A", "tpe-22C");
   own("B-seat-taipei", "B", "tpe-22A");
   s.seatWishes["A-seat-taipei"] = ["tpe-22A"];
   s.seatWishes["B-seat-taipei"] = [];
-  seat("hnd-34C", "34C · Aisle", "story-tokyo", 674, 34, 2, "aisle", 40);
-  seat("hnd-32A", "32A · Window", "story-tokyo", 674, 32, 0, "window", 40);
-  seat("hnd-32B", "32B · Middle", "story-tokyo", 674, 32, 1, "middle", 40);
-  seat("hnd-32C", "32C · Aisle", "story-tokyo", 674, 32, 2, "aisle", 200);
+  seat("hnd-34C", "Aisle seat 34C", "story-tokyo", 674, 34, 2, "aisle", 40);
+  seat("hnd-32A", "Window seat 32A", "story-tokyo", 674, 32, 0, "window", 40);
+  seat("hnd-32B", "Middle seat 32B", "story-tokyo", 674, 32, 1, "middle", 40);
+  seat("hnd-32C", "Aisle seat 32C", "story-tokyo", 674, 32, 2, "aisle", 200);
   own("A-seat-tokyo", "A", "hnd-34C");
   own("G-seat-tokyo", "G", "hnd-32A");
   own("H-seat-tokyo", "H", "hnd-32B");
   own("C-seat-tokyo", "C", "hnd-32C");
   s.seatWishes["A-seat-tokyo"] = [];
   s.seatWishes["C-seat-tokyo"] = ["hnd-34C"];
-  seat("lhr-41C", "41C · Aisle", "story-london", 1191, 41, 2, "aisle");
-  seat("lhr-41A", "41A · Window", "story-london", 1191, 41, 0, "window");
+  seat("lhr-41C", "Aisle seat 41C", "story-london", 1191, 41, 2, "aisle");
+  seat("lhr-41A", "Window seat 41A", "story-london", 1191, 41, 0, "window");
   own("A-seat-london", "A", "lhr-41C");
   s.resources.push({
     id: "tokyo-extra-bag",
-    label: "Tokyo · One additional 23 kg checked bag",
+    label: "One additional 23 kg checked bag for Tokyo",
     kind: "baggage",
     journey: "story-tokyo",
     serviceHour: 674,
@@ -593,7 +593,7 @@ export function storyState(): State {
   ];
   for (const person of ["A", "C"]) {
     const id = `hnd-included-${person}`;
-    s.resources.push({id, label: "One included checked bag · Up to 23 kg", kind: "baggage", journey: "story-tokyo",
+    s.resources.push({id, label: "One included checked bag up to 23 kg", kind: "baggage", journey: "story-tokyo",
       serviceHour: 674, deadline: 650, capacity: 1, background: 0, protected: 0, product: "fare-included-bag",
       q: 0, eligible: [person], seatPosition: null, serviceCost: 0, opportunityCost: 0,
       baggage: {pieces: 1, maxKg: 23, maxCm: 158, passenger: person, role: "included", entitlementId: id,
@@ -612,7 +612,7 @@ export function storyState(): State {
   // A separate market remains available for demonstrating a genuine three-party cycle.
   seat(
     "story-ring-A",
-    "40A · Window",
+    "Window seat 40A",
     "story-osaka",
     772,
     40,
@@ -620,10 +620,10 @@ export function storyState(): State {
     "window",
     100,
   );
-  seat("story-ring-B", "40C · Aisle", "story-osaka", 772, 40, 2, "aisle", 100);
+  seat("story-ring-B", "Aisle seat 40C", "story-osaka", 772, 40, 2, "aisle", 100);
   seat(
     "story-ring-C",
-    "30A · Forward window",
+    "Forward window seat 30A",
     "story-osaka",
     772,
     30,
@@ -641,7 +641,7 @@ export function storyState(): State {
   }
   seat(
     "daniel-regular",
-    "42B · Middle",
+    "Middle seat 42B",
     "story-daniel-future",
     1346,
     42,
@@ -650,7 +650,7 @@ export function storyState(): State {
   );
   seat(
     "daniel-preferred",
-    "20C · Preferred aisle",
+    "Preferred aisle seat 20C",
     "story-daniel-future",
     1346,
     20,

@@ -1,4 +1,4 @@
-import { prepareExample, commitExample, reconcileExample, walletSummary } from './lab.mjs?v=5d0d8be85732';
+import { prepareExample, commitExample, reconcileExample, walletSummary } from './lab.mjs?v=397fc4d8318a';
 
 const root = document.getElementById('matching-visual');
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
@@ -35,7 +35,7 @@ if (root) {
   const stateOf = current => current.execution?.state ?? current.example.state;
   const resource = (state, id) => state.resources.find(entry => entry.id === id);
   const personName = (state, person) => state.people.find(entry => entry.id === person)?.name.split(' ')[0] ?? person;
-  const seatName = (state, id) => resource(state, id)?.label.split(' · ')[0] ?? 'Unassigned';
+  const seatName = (state, id) => resource(state, id)?.label.match(/\b\d{1,3}[A-Z]\b/)?.[0] ?? 'Unassigned';
   const allocationFor = (state, person) => state.allocations.find(allocation => allocation.person === person && resource(state, allocation.resource)?.kind === 'seat' && allocation.journeyId === 'story-tokyo');
 
   function seatMap(current, showingResult) {
@@ -75,7 +75,7 @@ if (root) {
     const title = settled ? 'Booking confirmed' : example.chosen ? showingResult ? 'The family sits together.' : 'A complete plan is available.' : scenario === 'expired' ? 'Request expired.' : 'Waiting for an extra bag.';
     const explanation = settled ? 'Seats and baggage are confirmed.' : example.chosen ? showingResult ? 'Lin joins Mia and Jamie in row 32.' : 'One seat exchange brings the family together.' : scenario === 'expired' ? 'The credit hold has been released.' : 'The request includes both seats and baggage.';
 
-    element('flight').textContent = `${journey.flightNumber} · ${journey.destination} · Lin’s request`;
+    element('flight').textContent = `Lin’s request for ${journey.flightNumber} to ${journey.destination}`;
     element('current').textContent = settled ? 'Original seats' : 'Current seats';
     element('proposed').textContent = settled ? 'Confirmed seats' : 'Matching plan';
     element('proposed').disabled = !example.chosen;
@@ -83,8 +83,8 @@ if (root) {
     element('map').innerHTML = seatMap(current, showingResult);
     element('map-caption').textContent = showingResult ? 'Lin, Mia and Jamie together' : 'Lin is two rows behind Mia and Jamie';
     element('outcome').innerHTML = `<h3>${title}</h3><p>${explanation}</p>
-      ${example.chosen ? `<div class="match-benefit"><span class="match-outcome-symbol" aria-hidden="true">⇄</span><div><strong>Daniel keeps an aisle</strong><small>${escape(seatName(state, nextDanielSeat))} · +${danielCredits} credits</small></div></div>` : ''}
-      <div class="match-benefit ${!example.chosen ? 'match-benefit-muted' : ''}">${bagIcon}<div><strong>${bagLine.quantity} extra checked bag</strong><small>${settled ? 'Confirmed' : scenario === 'expired' ? 'Request closed' : scenario === 'bag-full' ? 'Currently unavailable' : 'Available'} · ${bag.baggage.maxKg} kg</small></div></div>`;
+      ${example.chosen ? `<div class="match-benefit"><span class="match-outcome-symbol" aria-hidden="true">⇄</span><div><strong>Daniel keeps an aisle</strong><small>Seat ${escape(seatName(state, nextDanielSeat))}</small><small>+${danielCredits} credits</small></div></div>` : ''}
+      <div class="match-benefit ${!example.chosen ? 'match-benefit-muted' : ''}">${bagIcon}<div><strong>${bagLine.quantity} extra checked bag</strong><small>Up to ${bag.baggage.maxKg} kg</small><small>${settled ? 'Confirmed' : scenario === 'expired' ? 'Request closed' : scenario === 'bag-full' ? 'Currently unavailable' : 'Available'}</small></div></div>`;
     element('wallet').innerHTML = settled ? `<span>Remaining balance</span><strong>${wallet.balance}<small> credits</small></strong>` : `<span>${scenario === 'expired' ? 'Available balance' : 'Approved total'}</span><strong>${scenario === 'expired' ? wallet.available : quote.debit}<small> credits</small></strong>`;
     element('confirm').hidden = !example.chosen;
     element('confirm').disabled = false;

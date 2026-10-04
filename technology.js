@@ -1,4 +1,4 @@
-import { technologyExamples, capitalize, durationLabel } from './technology.mjs?v=20261004-quote3';
+import { technologyExamples, capitalize, durationLabel } from './technology.mjs?v=20261004-copy';
 
 const mount = document.getElementById('technology-visual');
 const arrow = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6"/></svg>';
@@ -7,8 +7,8 @@ const escape = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;',
 function rules(example, key) {
   const rows = key === 'flexibility' ? example.rules : [
     {label:'Booked flight', value:example.rules.find(rule => rule.id === 'journey').value},
-    {label:`${example.structured.entities.partySize} travellers`, value:'Same row · Adjacent seats'},
-    {label:'Extra baggage', value:'1 bag · Up to 23 kg'},
+    {label:`${example.structured.entities.partySize} travellers`, value:'Adjacent seats in one row'},
+    {label:'Extra baggage', value:'1 bag up to 23 kg'},
   ];
   return `<dl class="technology-rules">${rows.map(rule => `<div><dt>${escape(rule.label)}</dt><dd>${escape(rule.value)}</dd></div>`).join('')}</dl>`;
 }
