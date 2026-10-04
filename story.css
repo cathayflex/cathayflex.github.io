@@ -55,3 +55,11 @@
 .resource-directory{grid-column:2;grid-row:1}
 @media(max-width:800px){.product-credits .airline-copy,.resource-directory{grid-column:auto;grid-row:auto}.product-credits .airline-copy{order:-1}.resource-directory{width:100%}.resource-row h3{font-size:22px}.resource-row p{max-width:540px}}
 @media(max-width:440px){.resource-row{padding-block:21px}.resource-row h3{font-size:21px}.resource-row p{font-size:15px}}
+
+/* Each resource keeps its own symbol across the website, platform and film. */
+.resource-pair{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.resource-row .resource-pair h3{display:flex;align-items:center;gap:11px;font-size:18px;line-height:1.35;font-weight:400;min-width:0}
+.resource-pair img{display:block;flex:0 0 26px;width:26px;height:26px}
+.bag-drawing .resource-bag-icon{display:block;width:40px;height:46px;flex:0 0 40px}
+@media(max-width:1100px) and (min-width:801px){.resource-pair{grid-template-columns:1fr;gap:12px}}
+@media(max-width:440px){.resource-pair{gap:18px}.resource-row .resource-pair h3{font-size:16px;gap:8px}.resource-pair img{width:24px;height:24px;flex-basis:24px}}

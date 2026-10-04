@@ -21,7 +21,7 @@
   <link rel="preload" href="assets/flight.jpg" as="image" fetchpriority="high">
   <link rel="stylesheet" href="style.css?v=20261003-clear-headings">
   <link rel="stylesheet" href="exchange.css?v=20261004-publication">
-  <link rel="stylesheet" href="story.css?v=20261004-resources">
+  <link rel="stylesheet" href="story.css?v=20261005-resource-icons">
   <link rel="stylesheet" href="technology.css?v=20261004-focused">
   <script src="app.js?v=20261003-product" defer></script>
   <script src="exchange.js?v=20261004-copy" type="module"></script>
@@ -78,7 +78,7 @@
               </div>
               <div class="tokyo-booking" id="tokyo-booking" hidden>
                 <div class="service-visual" id="family-service"><div class="service-title"><span>Seats together</span><span class="service-state">Requested</span></div><div class="family-seats"><div><strong><span class="assigned-seat">32A</span><svg class="seat-person" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><path d="M5 21v-3a7 7 0 0 1 14 0v3"/></svg></strong><span>Mia</span></div><div><strong><span class="assigned-seat">32B</span><svg class="seat-person" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><path d="M5 21v-3a7 7 0 0 1 14 0v3"/></svg></strong><span>Jamie</span></div><div class="your-seat"><strong><span class="assigned-seat">32C</span><svg class="seat-person" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><path d="M5 21v-3a7 7 0 0 1 14 0v3"/></svg></strong><span>You</span></div></div></div>
-                <div class="service-visual bag-service" id="bag-service"><div class="service-title"><span>Extra baggage</span><span class="service-state">Requested</span></div><div class="bag-drawing"><svg viewBox="0 0 40 46" aria-hidden="true"><path d="M14 12V7a6 6 0 0 1 12 0v5M13 21v15m14-15v15M12 43v2m16-2v2"/><rect x="6" y="12" width="28" height="30" rx="5"/></svg><p><strong>1 checked bag</strong><span>Up to 23 kg</span></p></div></div>
+                <div class="service-visual bag-service" id="bag-service"><div class="service-title"><span>Extra baggage</span><span class="service-state">Requested</span></div><div class="bag-drawing"><img class="resource-bag-icon" src="assets/resources/checked-baggage.svg" width="40" height="46" alt="" aria-hidden="true"><p><strong>1 checked bag</strong><span>Up to 23 kg</span></p></div></div>
               </div>
               <div class="scene-terms" id="scene-terms" hidden><span id="scene-amount"></span><span id="scene-expiry"></span></div>
             </div>
@@ -111,10 +111,10 @@
           <p class="product-value-note">For Cathay, flexibility reveals alternatives beyond the original booking, helping fulfil more travel needs within existing capacity.</p>
         </div>
         <div class="resource-directory" aria-label="Eight resources in four groups">
-          <div class="resource-row"><h3>Seat and flight changes</h3><p>Earn for accepting a change. Spend to request one.</p></div>
-          <div class="resource-row"><h3>Checked baggage and meals</h3><p>Earn for releasing eligible baggage allowance or declining a meal before cutoff. Redeem credits for extra baggage.</p></div>
-          <div class="resource-row"><h3>Upgrades and neighbour-free seats</h3><p>Credits are held until the airline confirms availability.</p></div>
-          <div class="resource-row"><h3>Lounge access and Wi-Fi</h3><p>Redeem access at a fixed credit price.</p></div>
+          <div class="resource-row"><div class="resource-pair"><h3><img src="assets/resources/seat-changes.svg" width="26" height="26" alt="" aria-hidden="true"><span>Seat changes</span></h3><h3><img src="assets/resources/flight-changes.svg" width="26" height="26" alt="" aria-hidden="true"><span>Flight changes</span></h3></div><p>Earn for accepting a change. Spend to request one.</p></div>
+          <div class="resource-row"><div class="resource-pair"><h3><img src="assets/resources/checked-baggage.svg" width="26" height="26" alt="" aria-hidden="true"><span>Checked baggage</span></h3><h3><img src="assets/resources/meal-choice.svg" width="26" height="26" alt="" aria-hidden="true"><span>Meal choice</span></h3></div><p>Earn for releasing eligible baggage allowance or declining a meal before cutoff. Redeem credits for extra baggage.</p></div>
+          <div class="resource-row"><div class="resource-pair"><h3><img src="assets/resources/cabin-upgrade.svg" width="26" height="26" alt="" aria-hidden="true"><span>Cabin upgrades</span></h3><h3><img src="assets/resources/neighbour-free-seat.svg" width="26" height="26" alt="" aria-hidden="true"><span>Neighbour-free seats</span></h3></div><p>Credits are held until the airline confirms availability.</p></div>
+          <div class="resource-row"><div class="resource-pair"><h3><img src="assets/resources/lounge-access.svg" width="26" height="26" alt="" aria-hidden="true"><span>Lounge access</span></h3><h3><img src="assets/resources/inflight-wifi.svg" width="26" height="26" alt="" aria-hidden="true"><span>Inflight Wi-Fi</span></h3></div><p>Redeem access at a fixed credit price.</p></div>
         </div>
       </div>
     </section>

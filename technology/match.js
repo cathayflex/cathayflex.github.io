@@ -2,7 +2,7 @@ import { prepareExample, commitExample, reconcileExample, walletSummary } from '
 
 const root = document.getElementById('matching-visual');
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
-const bagIcon = '<svg viewBox="0 0 28 32" fill="none" aria-hidden="true"><rect x="4.5" y="7.5" width="19" height="20" rx="3"/><path d="M10 7V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3M10 13v9m8-9v9M9 28v2m10-2v2"/></svg>';
+const bagIcon = '<img src="../assets/resources/checked-baggage.svg" width="28" height="28" alt="" aria-hidden="true">';
 
 if (root) {
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');

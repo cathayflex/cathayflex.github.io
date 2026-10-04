@@ -34,6 +34,8 @@ The design uses Cathay Jade, white space, GT Walsheim Regular headings, Cathay S
 
 The photograph is credited on the page. Team Globe and the hackathon context are identified in the footer.
 
+The eight resource symbols in `assets/resources/` share a 24-unit grid, a 1.6-unit stroke and rounded terminals. Each resource has a distinct silhouette. The platform uses the same paths in `ResourceIcon`, and the film receives identical SVG exports. The canonical path definitions live in the platform’s `public/resources/icons.json`. Run its `scripts/build-resource-icons.mjs` with this site’s `assets/resources` directory to refresh the exports.
+
 The font families and roles were verified against the [Cathay homepage](https://www.cathaypacific.com/cx/en_HK.html) and its [production font stylesheet](https://assets.cathaypacific.com/fonts/css/prod/fonts.css) on 3 October 2026. `fonts.css` references the first-party hosted font files. Display sizes are adapted for this product page. Regular heading weight, natural tracking and body text follow the observed roles. The authenticated platform retains its existing layout with the same font families and a local fallback.
 
 The credit narrative draws on the exchange coordination problem illustrated in the Bank of England’s [explanation of barter and trust](https://www.bankofengland.co.uk/explainers/why-does-money-depend-on-trust). Applying that idea to Flex is a product design interpretation. Flex credits are a platform accounting unit and this analogy makes no claim about legal tender, cash conversion, guaranteed future availability or price stability.
