@@ -153,26 +153,6 @@ export function initialState(): State {
     ["D"],
   );
   resources[resources.length - 1].deadline = 602;
-  add(
-    "carry-a",
-    "Cabin bag · In traveller custody",
-    "handover",
-    "oct-tokyo",
-    4,
-    1,
-    0,
-    "cabin-bag",
-  );
-  add(
-    "checked-a",
-    "Checked bag · 7 kg accepted",
-    "handover",
-    "oct-tokyo",
-    4,
-    1,
-    0,
-    "checked-bag",
-  );
   const own = (key: string, person: string, resource: string | null) =>
     allocations.push({ key, person, resource, version: 0 });
   own("A-flight-oct", "A", "flight-early");
@@ -186,7 +166,6 @@ export function initialState(): State {
   own("E-ring", "E", "ring-B");
   own("F-ring", "F", "ring-C");
   own("D-meal", "D", "meal-d");
-  own("A-handover", "A", "carry-a");
   own("C-seat-future", "C", "c-future-regular");
   own("D-seat-future", "D", "d-future-regular");
   const people = [
@@ -235,6 +214,12 @@ export function initialState(): State {
     resources,
     allocations,
     wallets: Object.fromEntries(people.map((p) => [p.id, 0])),
+    operationalOffers: [
+      {id: "meal-release", title: "Skip the main meal before the catering cutoff", description: "Airline catering programme",
+        changes: [{allocationKey: "D-meal", to: null}], credits: {D: 30}, issuance: 30, redemption: 0,
+        budget: "catering", evidence: "catering_plan", value: 15, cost: 3, risk: 1},
+
+    ],
     budgets: [
       {
         id: "recovery",
@@ -250,13 +235,7 @@ export function initialState(): State {
         issued: 0,
         stressCost: 0.1,
       },
-      {
-        id: "baggage",
-        label: "Physical baggage acceptance",
-        limit: 200,
-        issued: 0,
-        stressCost: 0.1,
-      },
+
     ],
     preferences: Object.fromEntries(
       people.map((p) => [
@@ -304,6 +283,7 @@ export function storyState(): State {
   const s = initialState();
   s.scenarioId = "lin-family";
   s.storyCursor = 0;
+  s.operationalOffers = [];
   s.resources = [];
   s.allocations = [];
   s.seatWishes = {};
@@ -603,6 +583,27 @@ export function storyState(): State {
     source: "airline_inventory",
     baggage: { pieces: 1, maxKg: 23, maxCm: 158, passenger: "A" },
   });
+  Object.assign(s.resources.at(-1)!, {
+    capacityUses: [{poolId: "hnd-extra-pieces", units: 1}, {poolId: "hnd-extra-kg", units: 23}],
+    baggage: {pieces: 1, maxKg: 23, maxCm: 158, passenger: "A", role: "extra", checkedThroughKey: "HKG-HND-20261102"},
+  });
+  s.capacityPools = [
+    {id: "hnd-extra-pieces", label: "Tokyo additional bags (pieces)", capacity: 1, background: 0, protected: 0},
+    {id: "hnd-extra-kg", label: "Tokyo additional baggage load (kg)", capacity: 23, background: 0, protected: 0},
+  ];
+  for (const person of ["A", "C"]) {
+    const id = `hnd-included-${person}`;
+    s.resources.push({id, label: "One included checked bag · Up to 23 kg", kind: "baggage", journey: "story-tokyo",
+      serviceHour: 674, deadline: 650, capacity: 1, background: 0, protected: 0, product: "fare-included-bag",
+      q: 0, eligible: [person], seatPosition: null, serviceCost: 0, opportunityCost: 0,
+      baggage: {pieces: 1, maxKg: 23, maxCm: 158, passenger: person, role: "included", entitlementId: id,
+        checkedThroughKey: "HKG-HND-20261102", checkedIn: false}});
+    own(`${person}-included-bag-tokyo`, person, id);
+    Object.assign(s.allocations.at(-1)!, {baggageRole: "included", resourceKind: "baggage"});
+  }
+  s.baggageReturnProgrammes = [{id: "tokyo-bag-return", revision: 1, journeyId: "story-tokyo",
+    checkedThroughKey: "HKG-HND-20261102", deadline: 650, reward: 80,
+    eligibleEntitlementIds: ["hnd-included-C"], value: 15, cost: 8, risk: 2}];
   own("A-bag-tokyo", "A", null);
   Object.assign(s.allocations.at(-1)!, {
     journeyId: "story-tokyo",

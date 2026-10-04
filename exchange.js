@@ -1,16 +1,22 @@
-import { preferenceWords, needWords, publishRequest } from './offers.mjs?v=20261004-fixed2';
-import { snapshotAt, nextIndex, previousIndex } from './experience.mjs?v=20261004-flow3';
+import { preferenceWords, needWords, publishRequest, requestQuote, requestTerms, reward } from './offers.mjs?v=20261004-quote3';
+import { snapshotAt, nextIndex, previousIndex } from './experience.mjs?v=20261004-flow4';
 
 const root = document.getElementById('flex-journey');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const $ = id => document.getElementById(id);
+function expiryLabel(value) {
+  const date = new Date(value);
+  const day = new Intl.DateTimeFormat('en-GB', {timeZone:'Asia/Hong_Kong', day:'numeric', month:'short'}).format(date);
+  const time = new Intl.DateTimeFormat('en-GB', {timeZone:'Asia/Hong_Kong', hour:'numeric', hourCycle:'h12'}).format(date);
+  return `${day}, ${time} HKT`;
+}
 const descriptions = {
   flexibility: {title: 'Your travel preferences.', action: 'Save preferences'},
-  offer: {title: 'Earn 400 credits for a seat change.', action: 'Accept change', explanation: 'Another traveller needs an aisle. The window seat fits your preferences.'},
-  earned: {title: '400 credits earned.', action: 'Use credits', explanation: 'Your window seat is confirmed.'},
+  offer: {title: `Earn ${reward} credits for a seat change.`, action: 'Accept change', explanation: 'Another traveller needs an aisle. The window seat fits your preferences.'},
+  earned: {title: `${reward} credits earned.`, action: 'Use credits', explanation: 'Your window seat is confirmed.'},
   need: {title: 'Your next journey.', action: 'Review request'},
-  review: {title: 'Review your request.', action: 'Confirm request', amount: '360 credits', expiry: 'Request valid until 1 Nov, 9 am HKT'},
-  complete: {title: 'Your family trip, confirmed.', action: 'Experience again', amount: '360 credits used'},
+  review: {title: 'Review your request.', action: 'Publish request', amount: `${requestQuote.quotedCredits} credits`, expiry: `Request open until ${expiryLabel(requestTerms.validUntil)}`},
+  complete: {title: 'Your family trip, confirmed.', action: 'Replay', amount: `${requestQuote.quotedCredits} credits used`},
 };
 let index = 0, current = snapshotAt(0), animations = [], epoch = 0, pendingMatch = null;
 const text = (id, value) => { $(id).textContent = value; };
@@ -71,7 +77,9 @@ function render() {
   const forward = root.querySelector('[data-action="forward"]');
   forward.disabled = false;
   forward.querySelector('span').textContent = copy.action;
-  forward.setAttribute('aria-label', copy.action);
+  forward.setAttribute('aria-label', completed ? 'Replay the journey' : copy.action);
+  forward.classList.toggle('is-replay', completed);
+  forward.querySelector('use').setAttribute('href', completed ? '#replay' : '#arrow');
   for (const part of ['earn','use']) {
     const node = root.querySelector(`[data-part="${part}"]`);
     if ((part === 'use') === future) node.setAttribute('aria-current', 'step');
@@ -86,7 +94,7 @@ function animateBalance(before, after, source, reverse = false) {
   const pill = document.createElement('span');
   pill.className = 'credit-flight';
   pill.setAttribute('aria-hidden', 'true');
-  pill.textContent = after > before ? '+400' : '−360';
+  pill.textContent = `${after > before ? '+' : '−'}${Math.abs(after - before)}`;
   const start = after > before ? from : to, end = after > before ? to : from;
   pill.style.left = `${start.left - board.left + start.width / 2}px`;
   pill.style.top = `${start.top - board.top + start.height / 2}px`;
@@ -117,14 +125,14 @@ function showMatch(keyboard) {
   if (published.stage !== 'published') return;
   current = {screen: current.screen, state: published};
   root.setAttribute('aria-busy', 'true');
-    text('card-title', 'Finding your changes.');
+  text('card-title', 'Request published.');
   $('wallet-held').hidden = false;
   text('wallet-held', `${published.creditHold} held`);
   $('journey-wallet').setAttribute('aria-label', `${published.balance} Flex credits, including ${published.creditHold} reserved for this request`);
   const forward = root.querySelector('[data-action="forward"]');
   forward.disabled = true;
-  forward.querySelector('span').textContent = 'Matching';
-  forward.setAttribute('aria-label', 'Matching');
+  forward.querySelector('span').textContent = 'Finding a match';
+  forward.setAttribute('aria-label', 'Finding a match');
   text('journey-announcement', 'Request published. Finding both changes at the confirmed price.');
   // A brief authored passage connects publication to the later matching result.
   // Back cancels it immediately. Keyboard and reduced-motion users skip it.

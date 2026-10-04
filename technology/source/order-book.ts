@@ -151,7 +151,7 @@ export type OrderBook = {
 const compare = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const sorted = (values: string[]) => [...new Set(values)].sort(compare);
 const active = (contract: Contract) =>
-  ["HELD", "ACCEPTED", "AWAITING_EVIDENCE", "RECONCILING"].includes(
+  ["QUEUED", "HELD", "ACCEPTED", "AWAITING_EVIDENCE", "RECONCILING"].includes(
     contract.status,
   );
 const debit = (contract: Contract, person: string) =>
@@ -258,6 +258,7 @@ function contractProjection(state: State, contract: Contract): BookContract {
   // These are the existing engine's expiry conditions. Reporting a due release
   // does not apply that transition or reduce the engine's recorded wallet hold.
   const expiryDue =
+    (contract.status === "QUEUED" && state.hour >= contract.serviceOrder!.product.confirmBy) ||
     ((contract.status === "HELD" || contract.status === "ACCEPTED") &&
       state.hour >= contract.expires &&
       !(contract.authorizations && allAccepted)) ||
@@ -266,7 +267,7 @@ function contractProjection(state: State, contract: Contract): BookContract {
         (authorization) => authorization.validUntil <= state.hour,
       )) ||
     (contract.status === "AWAITING_EVIDENCE" &&
-      state.hour >= contract.deadline);
+      state.hour >= (contract.serviceOrder?.product.confirmBy ?? contract.deadline));
   let validationErrors: string[] = [];
   if (reservationRetained) {
     // Match the engine's reconciliation view. Restore only changed allocations,
@@ -295,6 +296,10 @@ function contractProjection(state: State, contract: Contract): BookContract {
   let status: BookContract["status"];
   let reason: string;
   switch (contract.status) {
+    case "QUEUED":
+      status = "reserved";
+      reason = "Fixed-price request waiting for airline inventory. Credits are held and seats remain available for normal booking.";
+      break;
     case "SETTLED":
       status = "settled";
       reason =

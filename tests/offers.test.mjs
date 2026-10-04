@@ -29,6 +29,15 @@ test('a seat match needs the correct flight and an active counterparty request',
   assert.equal(findSeatOffer(preferences, journey, otherTravellers, journey.changesClose), null);
   assert.equal(findSeatOffer(preferences, journey, [{...otherTravellers[0], authorization: {...otherTravellers[0].authorization, validUntil: timeline.start}}]), null);
 });
+test('seat rewards equal the fixed quote the requesting traveller authorised', () => {
+  const quote = otherTravellers[0].authorization.quotedCredits;
+  assert.equal(findSeatOffer().reward, quote);
+  const withQuote = quotedCredits => [{...otherTravellers[0], authorization: {...otherTravellers[0].authorization, quotedCredits}}];
+  assert.equal(findSeatOffer(preferences, journey, withQuote(250)).reward, 250);
+  for (const amount of [-1, 0.5, NaN, Number.MAX_SAFE_INTEGER + 1]) {
+    assert.equal(findSeatOffer(preferences, journey, withQuote(amount)), null);
+  }
+});
 test('acceptance earns credits once and leaves the later journey unchanged', () => {
   const before = initialState();
   const earned = accept(before);

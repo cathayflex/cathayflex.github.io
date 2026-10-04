@@ -20,17 +20,18 @@
   <link rel="stylesheet" href="/fonts.css?v=20261003-cathay">
   <link rel="preload" href="assets/flight.jpg" as="image" fetchpriority="high">
   <link rel="stylesheet" href="style.css?v=20261003-clear-headings">
-  <link rel="stylesheet" href="exchange.css?v=20261004-focused">
+  <link rel="stylesheet" href="exchange.css?v=20261004-publication">
   <link rel="stylesheet" href="story.css?v=20261004-resources">
   <link rel="stylesheet" href="technology.css?v=20261004-focused">
   <script src="app.js?v=20261003-product" defer></script>
-  <script src="exchange.js?v=20261004-focused" type="module"></script>
-  <script src="technology.js?v=20261004-focused" type="module"></script>
+  <script src="exchange.js?v=20261004-publication" type="module"></script>
+  <script src="technology.js?v=20261004-quote3" type="module"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
   <svg class="symbol-library" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
     <symbol id="arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></symbol>
+    <symbol id="replay" viewBox="0 0 24 24"><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/></symbol>
     <symbol id="check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
   </svg>
   <header class="site-header">
@@ -83,7 +84,7 @@
             </div>
 
           </div>
-          <div class="experience-controls"><button class="journey-back" type="button" data-action="back" disabled><svg aria-hidden="true"><use href="#arrow"/></svg><span>Back</span></button><span class="experience-position" id="experience-counter" aria-label="Step 1 of 6">01 / 06</span><button class="journey-action" type="button" data-action="forward"><span>Save flexibility</span><svg aria-hidden="true"><use href="#arrow"/></svg></button></div>
+          <div class="experience-controls"><button class="journey-back" type="button" data-action="back" disabled><svg aria-hidden="true"><use href="#arrow"/></svg><span>Back</span></button><span class="experience-position" id="experience-counter" aria-label="Step 1 of 6">01 / 06</span><button class="journey-action" type="button" data-action="forward"><span>Save preferences</span><svg aria-hidden="true"><use href="#arrow"/></svg></button></div>
         </div>
       </div>
       <p id="journey-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
@@ -92,7 +93,7 @@
       <div class="technology-heading">
         <p class="eyebrow">BEHIND THE MATCH</p>
         <h2 id="technology-title">How Flex finds a match.</h2>
-        <p>AI interprets what matters to you. Constrained optimisation finds arrangements that satisfy passenger preferences and airline limits together.</p>
+        <p>AI turns travel needs into structured conditions, so Flex can match passenger exchanges with available airline services and confirm the complete arrangement before settling credits.</p>
       </div>
       <div id="technology-visual"></div>
       <div class="technology-more"><a class="text-link" href="/technology/">Explore the technology <svg aria-hidden="true"><use href="#arrow"/></svg></a></div>
@@ -107,12 +108,12 @@
           <p class="eyebrow">FLEX CREDITS</p>
           <h2 id="credits-title">Credits make more<br> exchanges possible.</h2>
           <p>The traveller you help may want something different from you. Credits let you contribute through one resource and benefit through another, across services and journeys.</p>
-          <p class="product-value-note">For Cathay, passenger flexibility opens more ways to fulfil demand within existing capacity.</p>
+          <p class="product-value-note">For Cathay, flexibility reveals alternatives beyond the original booking, helping fulfil more travel needs within existing capacity.</p>
         </div>
         <div class="resource-directory" aria-label="Eight resources in four groups">
           <div class="resource-row"><h3>Seat and flight changes</h3><p>Earn for accepting a change. Spend to request one.</p></div>
-          <div class="resource-row"><h3>Checked baggage and meals</h3><p>Earn by releasing unused allowance or declining a meal early. Use credits for extra baggage.</p></div>
-          <div class="resource-row"><h3>Upgrades and neighbour-free seats</h3><p>Reserve with credits. Pay when confirmed.</p></div>
+          <div class="resource-row"><h3>Checked baggage and meals</h3><p>Earn for releasing eligible baggage allowance or declining a meal before cutoff. Redeem credits for extra baggage.</p></div>
+          <div class="resource-row"><h3>Upgrades and neighbour-free seats</h3><p>Credits are held until the airline confirms availability.</p></div>
           <div class="resource-row"><h3>Lounge access and Wi-Fi</h3><p>Redeem access at a fixed credit price.</p></div>
         </div>
       </div>
@@ -124,7 +125,7 @@
       </div>
       <div class="choices-detail reveal">
         <p>Every offer shows the exact change and reward. Every request has an agreed price and deadline.</p>
-        <p>You choose the offers you accept and the terms of your requests. Track each arrangement and see when your booking and balance are updated.</p>
+        <p>Publishing a request authorises its terms until the deadline. Track the result in your booking and credit balance.</p>
       </div>
     </section>
     <section class="closing section-shell" aria-labelledby="closing-title">

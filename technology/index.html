@@ -6,8 +6,8 @@
   <meta name="description" content="See how Flex interprets requests, compares possible booking changes and records the resulting credit payments.">
   <meta name="theme-color" content="#006564"><link rel="canonical" href="https://cathayflex.github.io/technology/">
   <link rel="icon" href="/assets/cathay-brushwing.png"><link rel="stylesheet" href="/fonts.css?v=20261003-cathay">
-  <link rel="stylesheet" href="/style.css?v=20261003-clear-headings"><link rel="stylesheet" href="system.css?v=20261004-clean"><link rel="stylesheet" href="match.css?v=20261004-clean">
-  <script src="/app.js?v=20261003-product" defer></script><script src="system.js?v=20261004-clean" type="module"></script><script src="match.js?v=20261004-clean" type="module"></script>
+  <link rel="stylesheet" href="/style.css?v=20261003-clear-headings"><link rel="stylesheet" href="system.css?v=21fb39c8500b"><link rel="stylesheet" href="match.css?v=dfdf0abf0da9">
+  <script src="/app.js?v=20261003-product" defer></script><script src="system.js?v=b02c0c5af693" type="module"></script><script src="match.js?v=c4c6470a8800" type="module"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -16,7 +16,7 @@
     <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav"><span>Menu</span><span class="menu-lines" aria-hidden="true"></span></button>
     <nav id="site-nav" aria-label="Main navigation"><a href="/#intelligence">Back to the idea <span aria-hidden="true">↗</span></a><a href="#evidence">Engineering notes</a></nav>
   </header>
-  <main id="main">
+  <main id="main" tabindex="-1">
     <section class="system-hero system-shell" id="top">
       <p class="eyebrow">INSIDE THE SYSTEM</p>
       <h1>Intelligent matching.<br><span>Coordinated execution.</span></h1>
@@ -49,9 +49,9 @@
         <details class="system-details"><summary><span class="disclosure-label"><strong>Conditional order book and allocation method</strong></span><span class="disclosure-icon" aria-hidden="true">+</span></summary><div class="detail-body reading-body">
           <p>The conditional order book holds published requests, saved flexibility and their current status. Candidate generation searches exchange cycles, chains and service bundles, checking the complete outcome against each traveller’s conditions.</p>
           <div id="matching-diagnostics"></div>
-          <figure class="selection-model"><figcaption>Each resource can support one compatible allocation.</figcaption><div class="selection-options"><div><span>Plan A</span><strong>Seat X + Seat Y</strong></div><span class="selection-or">or</span><div><span>Plan B</span><strong>Seat X + Seat Z</strong></div><span class="selection-plus">+</span><div><span>Plan C</span><strong>Separate resources</strong></div></div><p>A and B compete for seat X. C can accompany either.</p></figure>
-          <p>Branch-and-bound compares compatible combinations, pruning branches that cannot improve the best result. The objective prioritises total benefit, then net operational value and lower new credit issuance. Capacity, reserved funds and booking versions constrain the choice, while accepted passenger prices stay fixed.</p>
-          <p class="method-limit">The current search supports up to four travellers per exchange and three-part bundles. Each result records its candidate coverage, search bound and completion status.</p>
+          <figure class="selection-model"><figcaption>Competing plans cannot use the same seat.</figcaption><div class="selection-options"><div><span>Plan A</span><strong>Seat X + Seat Y</strong></div><span class="selection-or">or</span><div><span>Plan B</span><strong>Seat X + Seat Z</strong></div><span class="selection-plus">+</span><div><span>Plan C</span><strong>Separate resources</strong></div></div><p>A and B compete for seat X. C can accompany either.</p></figure>
+          <p>Branch-and-bound prunes combinations that cannot improve the best result. Selection first maximises newly completed requests, then the net gain in satisfied standing preferences. Further ties favour higher stress-adjusted operational value, lower new credit issuance and fewer booking changes, in that order. Capacity, reserved funds and booking versions constrain selection. Accepted passenger prices stay fixed.</p>
+          <p class="method-limit">Candidate generation searches seat cycles and chains of up to four travellers and combines up to three compatible parts. Each result records its candidate coverage, search bound and completion status.</p>
         </div></details>
       </section>
       <section class="chapter" id="commit" aria-labelledby="commit-title">
@@ -69,7 +69,7 @@
       <section class="evidence-section" id="evidence" aria-labelledby="evidence-title">
         <div class="evidence-heading"><div><p class="eyebrow">ENGINEERING</p><h2 id="evidence-title">Reproducible decisions.</h2></div><p>Reference-solver comparisons and deterministic replay test allocation and settlement.</p></div>
         <details class="system-details"><summary><span class="disclosure-label"><strong>Verification, source code and research</strong></span><span class="disclosure-icon" aria-hidden="true">+</span></summary><div class="detail-body reading-body">
-          <p>An independent solver checks small markets by enumerating every candidate subset. Transaction tests replay 48 fixed seeds and 440 scheduled commands, covering expiry, concurrent changes and interrupted booking writes.</p>
+          <p>An independent solver checks small markets by enumerating every candidate subset. Transaction tests replay schedules across 48 fixed seeds, covering expiry, concurrent changes and interrupted booking writes.</p>
           <div id="benchmark-results"><p>Loading recorded search results…</p></div>
           <p id="build-evidence"></p>
           <a class="source-link" href="https://github.com/cathayflex/cathayflex.github.io/tree/main/technology" target="_blank" rel="noopener">Source code and measurement data <span aria-hidden="true">↗</span></a>

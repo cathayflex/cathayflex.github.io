@@ -1,8 +1,15 @@
+import { effectiveServiceProduct, serviceCandidate, serviceErrors, serviceQuoteKey, ensureServiceSlot } from "./services.ts";
+import { preservesFlightEntitlement } from "./booking-view.ts";
+import { upgradeResourceModel } from "./resource-model.ts";
+import { installServiceCatalogue } from "./service-catalogue.ts";
+import { capacityPoolErrors, poolUsage } from "./capacity.ts";
+import { baggageReturnErrors, isExtraBaggage, isExtraBagSlot } from "./baggage.ts";
 import { initialState, storyState } from "./seed.ts";
 import { nextStoryCommand, storySteps } from "./story.ts";
 import { simulationEpoch } from "./time.ts";
 import { candidatePlansConflict, outstandingCapacityDemand, solveCandidateSelection, type SelectionOptions } from "./selection.ts";
 import { acceptedQuoteContextCurrent, quoteCoversCandidate, validateRequestQuote } from "./request-quote.ts";
+import { createAllocationPolicy } from "./allocation-policy.ts";
 import {
   bookedJourneys,
   IntentAvailabilityError,
@@ -43,7 +50,7 @@ function assert(value: unknown, code: string, message: string): asserts value {
   if (!value) throw new FlexError(code, message);
 }
 const active = (c: Contract) =>
-  ["HELD", "ACCEPTED", "AWAITING_EVIDENCE", "RECONCILING"].includes(c.status);
+  ["QUEUED", "HELD", "ACCEPTED", "AWAITING_EVIDENCE", "RECONCILING"].includes(c.status);
 const debit = (c: Candidate, person: string) =>
   Math.max(0, -(c.credits[person] || 0));
 function requestContracts(
@@ -204,6 +211,7 @@ export function partySeating(
   const adjacent = (a?: Resource, b?: Resource) =>
     !!a?.seatMap &&
     !!b?.seatMap &&
+    a.journey === b.journey && a.serviceHour === b.serviceHour &&
     a.seatMap.row === b.seatMap.row &&
     a.seatMap.block === b.seatMap.block &&
     Math.abs(a.seatMap.column - b.seatMap.column) === 1;
@@ -223,6 +231,7 @@ export function partySeating(
   const columns = maps.map((m) => m?.column ?? -999).sort((a, b) => a - b);
   const together =
     seats.every(Boolean) &&
+    seats.every(r => r?.journey === seats[0]?.journey && r?.serviceHour === seats[0]?.serviceHour) &&
     maps.every(
       (m) => m && m.row === maps[0]?.row && m.block === maps[0]?.block,
     ) &&
@@ -464,7 +473,7 @@ export function candidates(s: State): Candidate[] {
     };
     walk([start]);
   }
-  if (alloc(s, "D-meal")?.resource === "meal-d") {
+  if (s.operationalOffers?.some((o) => o.id === "meal-release") && alloc(s, "D-meal")?.resource === "meal-d") {
     const c = base(
       "meal-release",
       "Skip a meal before production is committed",
@@ -491,40 +500,6 @@ export function candidates(s: State): Candidate[] {
     });
     list.push(c);
   }
-  if (alloc(s, "A-handover")?.resource === "carry-a") {
-    const c = base(
-      "bag-handover",
-      "Check your cabin bag voluntarily",
-      "Help an airline-requested cabin loading adjustment. The reward follows physical baggage acceptance.",
-      "earn",
-      ["A"],
-      [change(s, "A-handover", "checked-a")],
-      { A: 100 },
-    );
-    Object.assign(c, {
-      dependencies: [
-        change(s, "A-flight-oct", alloc(s, "A-flight-oct").resource),
-        change(s, "A-seat-oct", alloc(s, "A-seat-oct").resource),
-      ],
-      issuance: 100,
-      budget: "baggage",
-      event: "handover-oct-original-A",
-      evidence: "baggage_handover",
-      value: 45,
-      cost: 15,
-      risk: 5,
-      experimental: true,
-      conditions: [
-        "Compliant 7 kg bag with simulated hold-capacity and weight checks",
-        "Reward follows physical acceptance and a baggage-tag receipt",
-      ],
-      prerequisites: [
-        "Replacement journey confirmed",
-        "No specific overhead space or arrival sequence is promised",
-      ],
-    });
-    list.push(c);
-  }
   return list;
 }
 function locks(c: Candidate) {
@@ -537,6 +512,25 @@ function locks(c: Candidate) {
 }
 function compatible(s: State, a: Candidate, b: Candidate) {
   return !candidatePlansConflict(s, a, b);
+}
+function manualBaggageState(state: State, person: string, candidate?: Candidate): State {
+  const s = structuredClone(state);
+  s.intents ||= {};
+  s.intents[person] ||= [];
+  const journeys = [...new Set((candidate ? candidate.changes : s.allocations.map((a) => ({key: a.key, from: a.resource})))
+    .filter((ch) => s.allocations.find((a) => a.key === ch.key)?.person === person)
+    .flatMap((ch) => {
+      const r = ch.from ? resource(s, ch.from) : undefined;
+      return r?.baggage?.role === "included" ? [r.journey] : [];
+    }))];
+  for (const journeyId of journeys) s.intents[person].push({
+    id: `review-baggage-return-${journeyId}`, purpose: "flexibility",
+    sourceText: "I will review this baggage allowance return before accepting it.",
+    scope: {kind: "journey", journeyId}, confirmed: true, questions: [], revision: 1,
+    rules: [{id: "review-baggage-return", evidence: "this baggage allowance return", when: [],
+      effect: {kind: "baggage_release", minRemainingPieces: 0}, strength: "flexible"}],
+  });
+  return s;
 }
 function manualConsentState(state: State, person: string): State {
   const s = structuredClone(state);
@@ -608,6 +602,8 @@ export function discoverOpportunities(
           resource(s, ch.to)?.kind === "seat",
       ),
   );
+  offers.push(...market(manualBaggageState(s, person)).filter((c) => c.baggageReturns?.some((r) =>
+    s.allocations.find((a) => a.key === r.donorKey)?.person === person)));
   const union = new Map(
     automatic.map(
       (c) =>
@@ -632,7 +628,7 @@ export function discoverOpportunities(
         blocked,
         fitsFlexibility: false,
         discoveryReason:
-          "A seat choice beyond your saved flexibility. Your saved settings stay unchanged.",
+          c.baggageReturns?.length ? "Review this baggage return for this journey." : "A seat choice beyond your saved flexibility. Your saved settings stay unchanged.",
       });
   }
   return [...union.values()].slice(0, 192);
@@ -696,6 +692,11 @@ function requestTermsCover(
   const covered = own.every((ch) => {
     if (!applies(ch)) return false;
     const kind = resource(s, (ch.to || ch.from)!)?.kind;
+    const quote = record.authorization?.quote;
+    // A published complete flight plan includes reviewed seats and unchanged entitlements.
+    if ((kind === "seat" || preservesFlightEntitlement(s, ch)) && quote?.version === 2 && quote.operationalPlan &&
+      quoteCoversCandidate(s, person, quote, c) &&
+      goals.some(rule => rule.effect.kind === "departure_window" && satisfied(rule))) return true;
     return goals.some(
       (rule) =>
         satisfied(rule) &&
@@ -710,7 +711,7 @@ function requestTermsCover(
   const baggageGoals = goals.filter((rule) => rule.effect.kind === "baggage");
   if (
     own.some(
-      (change) => change.to && resource(s, change.to)?.kind === "baggage",
+      (change) => change.to && resource(s, change.to)?.kind === "baggage" && !preservesFlightEntitlement(s, change),
     )
   ) {
     const authorizedPieces = Math.max(
@@ -727,7 +728,7 @@ function requestTermsCover(
           : undefined;
         return (
           total +
-          (assigned?.kind === "baggage" && assigned.journey === journey
+          (isExtraBaggage(assigned) && assigned?.journey === journey
             ? assigned.baggage?.pieces || 0
             : 0)
         );
@@ -834,11 +835,19 @@ export function contractConsentReadiness(
     highImpact,
     waitingForOthers,
     mode,
-    canAccept: !closed && !accepted && (!highImpact || !waitingForOthers),
+    // Each participant can approve reserved terms. Bookings move only after
+    // every participant approves, including when several departures change.
+    canAccept: !closed && !accepted,
   };
 }
 function bookingPlanErrors(s: State, c: Candidate): string[] {
   const errors: string[] = [];
+  for (const change of c.changes) {
+    const before = change.from ? resource(s, change.from) : undefined;
+    const after = change.to ? resource(s, change.to) : undefined;
+    if (after?.serviceOnly && after.id !== before?.id) errors.push("Choose a cabin upgrade through Travel extras.");
+    if (before?.kind === "seat" && after?.kind === "seat" && (before.cabin || "Economy") !== (after.cabin || "Economy")) errors.push("Seat exchanges must keep the booked cabin.");
+  }
   const affected = new Set<string>();
   for (const change of c.changes) {
     const allocation = alloc(s, change.key);
@@ -896,7 +905,10 @@ function bookingPlanErrors(s: State, c: Candidate): string[] {
         const item = id ? resource(s, id) : undefined;
         return item ? [item] : [];
       });
-    for (const seat of assigned.filter((item) => item.kind === "seat")) {
+    const changesDeparture = c.changes.some(change => alloc(s, change.key)?.person === person &&
+      change.from !== change.to && change.to && resource(s, change.to)?.kind === "flight");
+    for (const seat of assigned.filter((item) => item.kind === "seat" ||
+      (changesDeparture && ["meal", "baggage", "service"].includes(item.kind)))) {
       const flights = assigned.filter(
         (item) => item.kind === "flight" && item.journey === seat.journey,
       );
@@ -905,7 +917,9 @@ function bookingPlanErrors(s: State, c: Candidate): string[] {
         !flights.some((flight) => flight.serviceHour === seat.serviceHour)
       )
         errors.push(
-          "The complete arrangement must confirm seats on the replacement flight.",
+          seat.kind === "seat"
+            ? "The complete arrangement must confirm seats on the replacement flight."
+            : "The complete arrangement must transfer booked baggage, meals and services to the replacement flight.",
         );
     }
   }
@@ -926,6 +940,13 @@ function bookingPlanErrors(s: State, c: Candidate): string[] {
   return [...new Set(errors)];
 }
 export function validate(s: State, c: Candidate, except?: string): string[] {
+  if (c.serviceOrder) {
+    const errors = serviceErrors(s, c, except);
+    const person = c.serviceOrder.person;
+    if (s.wallets[person] - held(s, person, except) + (c.credits[person] || 0) < 0)
+      errors.push("You do not have enough available credits for this service.");
+    return errors;
+  }
   const source = s;
   const recordedContract =
     "contractId" in c
@@ -987,10 +1008,15 @@ export function validate(s: State, c: Candidate, except?: string): string[] {
       ),
     },
   };
-  if (c.manualPerson && c.participants.includes(c.manualPerson))
-    s = manualConsentState(s, c.manualPerson);
+  if (c.manualPerson && c.participants.includes(c.manualPerson)) {
+    const own = c.changes.filter((ch) => s.allocations.find((a) => a.key === ch.key)?.person === c.manualPerson);
+    if (own.some((ch) => ch.to && resource(s, ch.to)?.kind === "seat")) s = manualConsentState(s, c.manualPerson);
+    if (c.baggageReturns?.some((r) => own.some((ch) => ch.key === r.donorKey))) s = manualBaggageState(s, c.manualPerson, c);
+  }
   const errors: string[] = [
     ...bookingPlanErrors(s, c),
+    ...capacityPoolErrors(s, c, except),
+    ...baggageReturnErrors(s, c),
     ...(s.intents
       ? genericIntentErrors(
           s,
@@ -1005,6 +1031,14 @@ export function validate(s: State, c: Candidate, except?: string): string[] {
         )
       : []),
   ];
+  for (const change of c.changes) {
+    const before = change.from ? resource(s, change.from) : undefined;
+    const after = change.to ? resource(s, change.to) : undefined;
+    if (before?.kind === "meal" && change.to === null && c.evidence !== "catering_plan")
+      errors.push("A meal cancellation requires a confirmed catering-plan update.");
+    if (before?.product === "cabin-bag" && after?.product === "checked-bag" && c.evidence !== "baggage_handover")
+      errors.push("Cabin-bag check-in requires a baggage handover record.");
+  }
   if (c.manualPerson && !c.participants.includes(c.manualPerson))
     errors.push("The manual choice belongs to an offer participant");
   for (const ref of c.requestRefs || []) {
@@ -1335,7 +1369,7 @@ function originalContractAllocationView(state: State, contract: Contract): State
 function assertReservedArrangementsRemainValid(state: State, person: string) {
   const conflicts = state.contracts
     .filter(
-      (contract) => active(contract) && contract.participants.includes(person),
+      (contract) => active(contract) && contract.status !== "QUEUED" && contract.participants.includes(person),
     )
     .filter((contract) => {
       // Adapter progress changes the allocation version. Validate the promised
@@ -1395,18 +1429,34 @@ export function optimize(s: State, options: { nodeLimit?: number } = {}) {
     bundleAttempts: 0,
   };
   const all = raw.filter((candidate) => validate(s, candidate).length === 0);
+  const policy = createAllocationPolicy(s);
   const selection = solveCandidateSelection(s, all, {
     nodeLimit: options.nodeLimit ?? OPTIMIZER_NODE_LIMIT,
+    scoreCandidate: candidate => policy.evaluate(candidate).score,
     ...candidateSelectionFunding(s, all),
   });
   const fullyExplored = generation.complete && selection.complete;
+  const selectedIds = new Set(selection.selected);
+  const selectedPlans = all.filter(candidate => selectedIds.has(candidate.id));
+  const modern = policy.policyId !== "legacy_model_gain_v1";
+  const evaluated = selectedPlans.map(candidate => policy.evaluate(candidate));
   return {
     selected: selection.selected,
-    // Kept for existing clients. This coefficient is a model score, not welfare
-    // or a count of completed requests. The explicit policy fields remove ambiguity.
-    coveredParticipants: selection.objective[0],
+    // Older snapshots retain their historical aggregate. Modern markets report
+    // distinct participants separately from completed requests and preferences.
+    coveredParticipants: modern
+      ? new Set(selectedPlans.flatMap(candidate => candidate.participants)).size
+      : selection.objective[0],
     modelScore: selection.objective[0],
-    stressNetValue: selection.objective[1] / 100,
+    ...(modern ? {
+      completedRequests: new Set(evaluated.flatMap(result => result.fulfilledRequestIds)).size,
+      completedEffectiveRequests: new Set(evaluated.flatMap(result => result.fulfilledEffectiveRequestIds)).size,
+      improvedPreferenceOwners: new Set(evaluated.flatMap(result => result.improvedPreferenceOwners)).size,
+      improvedPreferenceGoals: new Set(evaluated.flatMap(result => result.improvedPreferenceGoals)).size,
+      lostPreferenceGoals: new Set(evaluated.flatMap(result => result.lostPreferenceGoals)).size,
+    } : {}),
+    stressNetValue: selection.objective[policy.stressNetIndex] / 100,
+    policyId: policy.policyId,
     candidateCount: selection.candidateCount,
     visited: selection.visited,
     status: fullyExplored
@@ -1419,7 +1469,7 @@ export function optimize(s: State, options: { nodeLimit?: number } = {}) {
       ? ("proven_within_generated_set" as const)
       : ("unproven" as const),
     objective: selection.objective,
-    objectiveNames: ["model_gain", "stress_net_minor_units", "negative_credit_issuance"],
+    objectiveNames: policy.objectiveNames,
     upperBound: selection.upperBound,
     firstUnresolvedTier: selection.firstUnresolvedTier,
     absoluteGapAtFirstUnresolvedTier: selection.absoluteGapAtFirstUnresolvedTier,
@@ -1429,11 +1479,15 @@ export function optimize(s: State, options: { nodeLimit?: number } = {}) {
   };
 }
 
-function audit(s: State, message: string) {
-  s.audit.push({ hour: s.hour, message });
+function audit(s: State, message: string, category: "operation" | "simulation" = "operation") {
+  s.audit.push({ hour: s.hour, message, category });
 }
 function expire(s: State) {
   for (const c of s.contracts) {
+    if (c.status === "QUEUED" && s.hour >= c.serviceOrder!.product.confirmBy) {
+      c.status = "EXPIRED";
+      c.log.push("The confirmation deadline passed. Reserved credits are available again.");
+    }
     const signedAuthorization =
       !!c.authorizations && c.accepted.length === c.participants.length;
     const requestExpired =
@@ -1452,7 +1506,7 @@ function expire(s: State) {
         "The offer expired. Credit and resource reservations were released.",
       );
     }
-    if (c.status === "AWAITING_EVIDENCE" && s.hour >= c.deadline) {
+    if (c.status === "AWAITING_EVIDENCE" && s.hour >= (c.serviceOrder?.product.confirmBy ?? c.deadline)) {
       c.status = "FAILED";
       c.log.push(
         "No delivery evidence arrived before the deadline. No resource changes or rewards. Reservations released.",
@@ -1521,6 +1575,7 @@ function apply(s: State, c: Contract, fault: string = "none") {
         "ADAPTER_CONFLICT",
         "Authoritative allocation conflicts with the contract. Manual intervention is required.",
       );
+      if (resource(s, (ch.from || ch.to)!)?.baggage?.role === "included") a.baggageRole = "included";
       a.resource = ch.to;
       a.version++;
     }
@@ -1583,7 +1638,7 @@ function deliverAuthorized(
   contract: Contract,
   fault?: Command["fault"],
 ) {
-  if (contract.status !== "ACCEPTED" || !contract.authorizations) return;
+  if (contract.status !== "ACCEPTED" || (!contract.authorizations && !contract.serviceOrder)) return;
   if (fault === "reject") {
     contract.status = "FAILED";
     contract.log.push(
@@ -1596,18 +1651,79 @@ function deliverAuthorized(
     );
   } else apply(s, contract, fault);
 }
+function dispatchServiceRequests(s: State, fault?: Command["fault"]) {
+  // Contracts retain insertion order across persistence, even when timestamps tie.
+  for (const contract of s.contracts) {
+    if (contract.status !== "QUEUED" || !contract.serviceOrder) continue;
+    const order = contract.serviceOrder;
+    const p = order.product;
+    if (s.hour < (p.confirmFrom ?? 0) || s.hour >= p.confirmBy ||
+        !s.serviceReleases?.some(r => r.journeyId === p.journeyId && r.kind === p.kind)) continue;
+    const alternatives = (s.serviceProducts || []).filter(x => x.kind === p.kind && x.journeyId === p.journeyId &&
+      x.deferred && (p.kind !== "upgrade" || resource(s, x.resourceId)?.cabin === resource(s, p.resourceId)?.cabin) && x.credits === (s.serviceProducts?.find(x => x.id === p.id)?.credits ?? p.credits));
+    for (const inventory of alternatives) {
+      // Accepted prices stay fixed. Inventory can be reassigned as the booking evolves.
+      const target = {...inventory, credits: Math.min(p.credits, effectiveServiceProduct(s, order.person, inventory).credits), bookBy: p.bookBy, confirmBy: p.confirmBy, terms: p.terms};
+      ensureServiceSlot(s, order.person, target);
+      const candidate = serviceCandidate(s, order.person, target, "allocated");
+      candidate.serviceOrder!.quotedAt = order.quotedAt;
+      if (validate(s, candidate, contract.contractId).length) continue;
+      Object.assign(contract, candidate);
+      contract.status = "ACCEPTED";
+      contract.log.push("Released airline inventory matched this request. Current booking and saved requirements verified.");
+      if (p.kind === "neighbour_free") {
+        contract.receipts.push(`service_delivery:${contract.contractId}:SIMULATED-DEPARTURE`);
+        contract.log.push("Departure inventory confirms that the adjacent seat will remain empty.");
+      }
+      if (fault === "reject") { contract.status = "FAILED"; contract.log.push("Airline rejected the update before any write. Credits released."); }
+      else apply(s, contract, fault);
+      break;
+    }
+    if (s.contracts.some(c => c.status === "RECONCILING")) break;
+  }
+}
 function fulfilAuthorizedInventory(s: State) {
-  // When every changed traveller has authorized the exact arrangement, no
-  // further personal approval is needed. Work remains explicitly bounded.
-  for (let i = 0; i < 8; i++) {
-    const candidate = candidates(s).find(
-      (candidate) =>
-        candidate.participants.every(
-          (person) => !!candidateRequestAuthorization(s, candidate, person),
-        ) && !validate(s, candidate).length,
-    );
-    if (!candidate) return;
-    deliverAuthorized(s, reserveCandidate(s, candidate));
+  const authorizationKey = (person: string, intentId: string, revision: number) =>
+    JSON.stringify([person, intentId, revision]);
+  const remaining = new Set(Object.entries(s.intents || {}).flatMap(([person, records]) =>
+    records.filter(record => record.authorization?.mode === "fixed_quote" &&
+      requestAuthorizationStatus(s, person, record).status === "active")
+      .map(record => authorizationKey(person, record.id, record.revision))));
+  // Every round reserves at least one previously unused exact request revision.
+  // The finite authorization set bounds draining without an arbitrary trade cap.
+  while (remaining.size && !s.contracts.some(contract => contract.status === "RECONCILING")) {
+    const eligible = candidates(s).flatMap(candidate => {
+      const authorizations = candidate.participants.map(person => {
+        const authorization = candidateRequestAuthorization(s, candidate, person);
+        return authorization && authorizationKey(person, authorization.intentId, authorization.revision);
+      });
+      return authorizations.length && authorizations.every((key): key is string => !!key && remaining.has(key)) &&
+        !validate(s, candidate).length ? [{candidate, authorizations}] : [];
+    });
+    if (!eligible.length) return;
+    const plans = eligible.map(entry => entry.candidate);
+    const policy = createAllocationPolicy(s);
+    const selection = solveCandidateSelection(s, plans, {
+      nodeLimit: OPTIMIZER_NODE_LIMIT,
+      scoreCandidate: candidate => policy.evaluate(candidate).score,
+      ...candidateSelectionFunding(s, plans),
+    });
+    if (!selection.selected.length) return;
+    const selected = selection.selected.map(id => eligible.find(entry => entry.candidate.id === id)!);
+    // Reserve the selected set against one snapshot before any booking changes.
+    // Each subsequent reservation sees the earlier holds, preserving funding
+    // and inventory even if adapter execution later requires reconciliation.
+    const contracts = selected.map(({candidate, authorizations}) => {
+      const errors = validate(s, candidate);
+      assert(!errors.length, "CLEARING_CONFLICT", errors.join(". "));
+      const contract = reserveCandidate(s, candidate);
+      for (const key of authorizations) remaining.delete(key);
+      return contract;
+    });
+    for (const contract of contracts) {
+      deliverAuthorized(s, contract);
+      if (contract.status === "RECONCILING") return;
+    }
   }
 }
 export function invariants(s: State) {
@@ -1635,6 +1751,11 @@ export function invariants(s: State) {
           r.capacity - r.protected,
       ),
       detail: "Allocations remain within capacity after protected inventory.",
+    },
+    {
+      name: "Shared airline capacity",
+      ok: (s.capacityPools || []).every((p) => (poolUsage(s).get(p.id) || 0) <= p.capacity - p.protected),
+      detail: "Extra products share the carrier-approved load pools. Returned ticket allowances create no physical capacity.",
     },
     {
       name: "Unique reward events",
@@ -1672,15 +1793,37 @@ export function invariants(s: State) {
     },
   ];
 }
+function canonicalCommandValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalCommandValue);
+  if (value && typeof value === "object")
+    return Object.fromEntries(Object.entries(value)
+      .filter(([, entry]) => entry !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, entry]) => [key, canonicalCommandValue(entry)]));
+  return value;
+}
+export function commandSignature(cmd: Partial<Command>): string {
+  return JSON.stringify(canonicalCommandValue({
+    ...cmd, expectedVersion: undefined, requestId: undefined,
+  }));
+}
+export function commandMatchesReceipt(cmd: Command, receipt: string): boolean {
+  try {
+    const recorded = JSON.parse(receipt) as Partial<Command>;
+    // Existing snapshots predate account-bound command receipts. The API
+    // checks legacy ownership before reaching this compatibility comparison.
+    return commandSignature(recorded) === commandSignature({
+      ...cmd, ...(recorded.actorId === undefined ? {actorId: undefined} : {}),
+    });
+  } catch {
+    return false;
+  }
+}
 export function transition(input: State, cmd: Command): State {
-  const signature = JSON.stringify({
-    ...cmd,
-    expectedVersion: undefined,
-    requestId: undefined,
-  });
+  const signature = commandSignature(cmd);
   if (input.requests[cmd.requestId]) {
     assert(
-      input.requests[cmd.requestId] === signature,
+      commandMatchesReceipt(cmd, input.requests[cmd.requestId]),
       "KEY_REUSED",
       "This idempotency key belongs to a different request",
     );
@@ -1691,9 +1834,39 @@ export function transition(input: State, cmd: Command): State {
     "VERSION_CONFLICT",
     "The workspace changed. Refresh and try again.",
   );
-  let s = structuredClone(input);
+  let s = upgradeResourceModel(structuredClone(input));
   expire(s);
-  if (cmd.action === "story_advance") {
+  if (cmd.action === "service_catalogue") {
+    installServiceCatalogue(s);
+    audit(s, "Travel extras catalogue and shared seat inventory enabled for this simulation.");
+  } else if (cmd.action === "service_purchase") {
+    const storedProduct = s.serviceProducts?.find(p => p.id === cmd.serviceProductId);
+    const product = storedProduct && cmd.person ? effectiveServiceProduct(s, cmd.person, storedProduct) : undefined;
+    assert(product && cmd.person, "NOT_FOUND", "This service is unavailable.");
+    assert(cmd.serviceQuoteKey === serviceQuoteKey(s, cmd.person, product), "QUOTE_CHANGED", "Your booking or this quote changed. Review the current service.");
+    ensureServiceSlot(s, cmd.person, product);
+    const candidate = serviceCandidate(s, cmd.person, product);
+    assert(!s.contracts.some(c => c.id === candidate.id && (active(c) || c.status === "SETTLED")), "ALREADY_BOOKED", "This service is already on your booking.");
+    const errors = validate(s, candidate);
+    assert(!errors.length, "SERVICE_UNAVAILABLE", errors.join(" "));
+    const contract = reserveCandidate(s, candidate);
+    contract.accepted = [cmd.person];
+    contract.status = product.deferred ? "QUEUED" : "ACCEPTED";
+    contract.expires = product.confirmBy;
+    contract.log = [product.deferred
+      ? "Request received at the fixed price. Credits held while waiting for airline inventory."
+      : "Traveller confirmed the fixed service price and delivery terms."];
+    if (product.kind === "meal_skip") contract.receipts.push(`catering_plan:${contract.contractId}:SIMULATED-AUTHORITY`);
+    deliverAuthorized(s, contract, cmd.fault);
+  } else if (cmd.action === "service_release") {
+    assert(cmd.journeyId && ["upgrade", "neighbour_free"].includes(cmd.serviceKind || ""), "INPUT", "Choose a flight and service.");
+    const products = s.serviceProducts?.filter(p => p.journeyId === cmd.journeyId && p.kind === cmd.serviceKind && p.deferred) || [];
+    assert(products.length && products.some(p => s.hour >= (p.confirmFrom ?? 0) && s.hour < p.confirmBy), "RELEASE_NOT_DUE", "This service is outside its airline confirmation window.");
+    s.serviceReleases ||= [];
+    if (!s.serviceReleases.some(r => r.journeyId === cmd.journeyId && r.kind === cmd.serviceKind))
+      s.serviceReleases.push({journeyId: cmd.journeyId, kind: cmd.serviceKind!, hour: s.hour});
+    audit(s, `Airline released ${cmd.serviceKind === "upgrade" ? "upgrade" : "adjacent-seat"} inventory for ${cmd.journeyId}.`);
+  } else if (cmd.action === "story_advance") {
     assert(
       s.scenarioId === "lin-family",
       "STORY",
@@ -1715,6 +1888,7 @@ export function transition(input: State, cmd: Command): State {
     audit(
       s,
       `Story ${storySteps[cursor].title}. ${storySteps[cursor].expectedOutcome}`,
+      "simulation",
     );
   } else if (cmd.action === "reset") {
     assert(
@@ -1724,7 +1898,9 @@ export function transition(input: State, cmd: Command): State {
       "UNFINISHED",
       "Resolve pending delivery or reconciliation before resetting the workspace",
     );
+    const hasServices = !!s.serviceProducts?.length;
     s = s.scenarioId === "lin-family" ? storyState() : initialState();
+    if (hasServices) installServiceCatalogue(s);
     audit(s, "The simulation workspace was reset.");
   } else if (cmd.action === "advance") {
     assert(
@@ -1739,7 +1915,7 @@ export function transition(input: State, cmd: Command): State {
     );
     s.hour = cmd.hour;
     expire(s);
-    audit(s, `Simulation time advanced to hour ${s.hour}.`);
+    audit(s, `Simulation time advanced to hour ${s.hour}.`, "simulation");
   } else if (cmd.action === "intent_save" || cmd.action === "intent_remove") {
     assert(
       cmd.person && s.people.some((p) => p.id === cmd.person),
@@ -1883,8 +2059,7 @@ export function transition(input: State, cmd: Command): State {
             (a.journeyId === journey ||
               s.resources.find((r) => r.id === a.resource)?.journey ===
                 journey) &&
-            (a.resourceKind === "baggage" ||
-              s.resources.find((r) => r.id === a.resource)?.kind === "baggage"),
+            isExtraBagSlot(s, a),
         );
         for (let i = slots.length; i < pieces; i++)
           s.allocations.push({
@@ -2008,7 +2183,7 @@ export function transition(input: State, cmd: Command): State {
     const a = s.allocations.find((a) => a.key === cmd.allocationKey);
     assert(a && a.resource && cmd.wishes, "INPUT", "Invalid seat preferences");
     assert(
-      !s.contracts.some((c) => active(c) && c.participants.includes(a.person)),
+      !s.contracts.some((c) => active(c) && c.status !== "QUEUED" && c.participants.includes(a.person)),
       "LOCKED",
       "This traveller has a reserved contract. Resolve it first.",
     );
@@ -2091,7 +2266,7 @@ export function transition(input: State, cmd: Command): State {
       "A physical seat must retain a capacity of one",
     );
     assert(
-      !s.contracts.some((c) => active(c) && locks(c).has(r.id)),
+      !s.contracts.some((c) => active(c) && c.status !== "QUEUED" && (locks(c).has(r.id) || c.serviceOrder?.product.physicalSeatId === r.id)),
       "LOCKED",
       "Resolve reservations affecting this resource before changing capacity",
     );
@@ -2104,6 +2279,8 @@ export function transition(input: State, cmd: Command): State {
     );
     r.capacity = cmd.capacity!;
     r.protected = cmd.protected!;
+    const physical = s.capacityPools?.find(pool => pool.id === `physical:${r.id}`);
+    if (physical) { physical.capacity = r.capacity; physical.protected = r.protected; }
     audit(s, `Operations updated capacity for ${r.label}.`);
   } else if (cmd.action === "quote") {
     if (cmd.manualPerson)
@@ -2145,19 +2322,15 @@ export function transition(input: State, cmd: Command): State {
       );
       const errors = validate(s, c, c.contractId);
       assert(!errors.length, "STALE", errors.join(". "));
-      const readiness = contractConsentReadiness(s, c, cmd.person);
-      assert(
-        !readiness.highImpact || !readiness.waitingForOthers,
-        "COORDINATION_REQUIRED",
-        "The other travellers must confirm before you can commit to a departure change. Your current booking is protected.",
-      );
       if (!c.accepted.includes(cmd.person)) c.accepted.push(cmd.person);
       if (c.accepted.length === c.participants.length) c.status = "ACCEPTED";
-      c.log.push(`${name(s, cmd.person)} accepted the complete arrangement.`);
+      c.log.push(c.status === "ACCEPTED"
+        ? `${name(s, cmd.person)} approved the terms. Every participant has now agreed.`
+        : `${name(s, cmd.person)} approved the reserved terms. Booking changes await the remaining approvals.`);
       deliverAuthorized(s, c, cmd.fault);
     } else if (cmd.action === "cancel") {
       assert(
-        ["HELD", "ACCEPTED", "AWAITING_EVIDENCE"].includes(c.status),
+        ["QUEUED", "HELD", "ACCEPTED", "AWAITING_EVIDENCE"].includes(c.status),
         "WRONG_STATE",
         "Reconcile the executing contract before releasing reservations",
       );
@@ -2195,11 +2368,12 @@ export function transition(input: State, cmd: Command): State {
         "WRONG_STATE",
         "This contract is not awaiting delivery evidence",
       );
+      assert(!c.serviceOrder || s.hour >= (c.serviceOrder.product.confirmFrom ?? 0), "DELIVERY_NOT_DUE", "Confirm this service at departure, when the empty seat is delivered.");
       const errors = validate(s, c, c.contractId);
       assert(!errors.length, "DELIVERY_INVALID", errors.join(". "));
       c.receipts.push(`${c.evidence}:${c.contractId}:SIMULATED-AUTHORITY`);
       c.log.push(
-        c.evidence === "catering_plan"
+        c.serviceOrder ? "The simulated departure authority confirmed the adjacent seat stayed empty." : c.evidence === "catering_plan"
           ? "The simulated catering authority confirmed one fewer meal in the production plan."
           : "The simulated baggage authority accepted a 7 kg bag and issued a tag.",
       );
@@ -2222,8 +2396,10 @@ export function transition(input: State, cmd: Command): State {
       apply(s, c);
     }
   }
+  if (!s.contracts.some(c => c.status === "RECONCILING")) dispatchServiceRequests(s, cmd.action === "service_release" ? cmd.fault : undefined);
   if (
-    ["intent_save", "accept", "advance", "evidence", "reconcile"].includes(
+    ["service_release", "service_purchase", "service_catalogue", "intent_save", "intent_remove", "accept", "advance", "evidence", "reconcile",
+      "inventory", "budget", "policy", "cancel", "execute", "preferences", "seat_preferences", "travel_need"].includes(
       cmd.action,
     ) &&
     !s.contracts.some((contract) => contract.status === "RECONCILING")

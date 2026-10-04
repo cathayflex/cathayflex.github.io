@@ -17,11 +17,11 @@ export const journey = {
   changesClose: '2026-10-07T08:00:00+08:00',
   seat: { id: '22C', type: 'aisle' },
 };
+export const reward = 400;
 export const otherTravellers = [{
   journeyId: journey.id, seat: { id: '22A', type: 'window' },
-  authorization: { position: 'aisle', quotedCredits: 0, validUntil: journey.changesClose },
+  authorization: { position: 'aisle', quotedCredits: reward, validUntil: journey.changesClose },
 }];
-export const reward = 400;
 export const accountTravellerId = 'traveller-you';
 // A synthetic account booking resolves the authored request to a specific
 // flight and its booked companions. These are not live flight records.
@@ -87,10 +87,10 @@ export function findSeatOffer(profile = preferences, flight = journey, people = 
   const match = people.find(person => person.journeyId === flight.id
     && person.seat.id !== flight.seat.id
     && person.authorization?.position === flight.seat.type
-    && Number.isInteger(person.authorization.quotedCredits) && person.authorization.quotedCredits >= 0
+    && Number.isSafeInteger(person.authorization.quotedCredits) && person.authorization.quotedCredits >= 0
     && time(now) < time(person.authorization.validUntil)
     && seatAllowed(profile, flight.durationMinutes, person.seat.type));
-  return match ? { id: 'taipei-seat-change', before: {...flight.seat}, after: {...match.seat}, reward } : null;
+  return match ? { id: 'taipei-seat-change', before: {...flight.seat}, after: {...match.seat}, reward: match.authorization.quotedCredits } : null;
 }
 function sameMembers(actual, expected) {
   return Array.isArray(actual) && actual.length === expected.length

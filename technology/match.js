@@ -1,4 +1,4 @@
-import { prepareExample, commitExample, reconcileExample, walletSummary } from './lab.mjs?v=aa3b57dabe77';
+import { prepareExample, commitExample, reconcileExample, walletSummary } from './lab.mjs?v=2f66724e6270';
 
 const root = document.getElementById('matching-visual');
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
@@ -25,6 +25,12 @@ if (root) {
   const session = () => {
     if (!sessions.has(scenario)) sessions.set(scenario, {example: prepareExample(scenario), execution: null});
     return sessions.get(scenario);
+  };
+  const reportError = message => {
+    element('state').textContent = message;
+    element('announcement').textContent = message;
+    element('confirm').disabled = true;
+    element('confirm').hidden = true;
   };
   const stateOf = current => current.execution?.state ?? current.example.state;
   const resource = (state, id) => state.resources.find(entry => entry.id === id);
@@ -81,6 +87,7 @@ if (root) {
       <div class="match-benefit ${!example.chosen ? 'match-benefit-muted' : ''}">${bagIcon}<div><strong>${bagLine.quantity} extra checked bag</strong><small>${settled ? 'Confirmed' : scenario === 'expired' ? 'Request closed' : scenario === 'bag-full' ? 'Currently unavailable' : 'Available'} · ${bag.baggage.maxKg} kg</small></div></div>`;
     element('wallet').innerHTML = settled ? `<span>Remaining balance</span><strong>${wallet.balance}<small> credits</small></strong>` : `<span>${scenario === 'expired' ? 'Available balance' : 'Approved total'}</span><strong>${scenario === 'expired' ? wallet.available : quote.debit}<small> credits</small></strong>`;
     element('confirm').hidden = !example.chosen;
+    element('confirm').disabled = false;
     element('confirm').classList.toggle('match-action-reset', settled);
     element('confirm').innerHTML = settled ? 'Replay <span aria-hidden="true">↻</span>' : showingResult ? 'Daniel accepts <span aria-hidden="true">→</span>' : 'See the arrangement <span aria-hidden="true">→</span>';
     element('state').textContent = !example.chosen && scenario !== 'expired' ? 'Request open' : '';
@@ -119,7 +126,7 @@ if (root) {
     scenario = event.target.value;
     view = 'current';
     try { render(true, pointerControl === event.target); }
-    catch (error) { element('announcement').textContent = `The example could not complete. ${error.message}`; }
+    catch { reportError('Unable to load this arrangement. Try another availability option.'); }
     pointerControl = null;
   });
   for (const button of root.querySelectorAll('[data-view]')) button.addEventListener('click', event => {
@@ -134,10 +141,10 @@ if (root) {
       else if (view === 'current') view = 'proposed';
       else current.execution = commitExample(current.example);
       render(true, Boolean(event.detail));
-    } catch (error) { element('announcement').textContent = `The arrangement could not complete. ${error.message}`; }
+    } catch { reportError('Unable to complete this arrangement. Reload to try again.'); }
   });
   try { render(); }
-  catch (error) { element('announcement').textContent = `The example could not load. ${error.message}`; }
+  catch { reportError('Unable to load the example. Please reload.'); }
 }
 
 const recoveryRoot = document.getElementById('confirmation-recovery');

@@ -2,16 +2,12 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const interpretations = {
   request: {
     words:'“For <em>Tokyo</em>, can the <em>three of us sit together</em>? We also need <em>one extra checked bag</em>.”',
-    context:'Your booking · CX 520 · Lin, Mia and Jamie',
     rules:[['Flight','CX 520 · Tokyo',''],['Seats','3 adjacent seats','Same row and seat block'],['Baggage','1 extra checked bag','Up to 23 kg']],
-    caption:'Review the requirements, accept the quote, publish the request.',
     announcement:'Travel request. The Tokyo booking, three adjacent seats and one extra bag become matching requirements.',
   },
   flexibility: {
     words:'“When I travel <em>alone</em>, any seat is fine on flights <em>up to six hours</em>. On longer flights, I need an <em>aisle</em>. With my family, I’d like us to <em>sit together</em>.”',
-    context:'Saved preferences · Applied to the relevant journeys',
     rules:[['Acceptable','Any seat','Solo · Flight ≤ 6 hours'],['Required','Aisle seat','Solo · Flight > 6 hours'],['Preferred','Seats together','Family journey']],
-    caption:'Saved flexibility guides which changes Flex offers you.',
     announcement:'Saved flexibility. Solo short flights allow any seat. Solo long flights require an aisle. Family journeys prefer seats together.',
   },
 };

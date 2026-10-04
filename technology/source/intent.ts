@@ -1,3 +1,5 @@
+import { baggageRequirementSatisfied } from "./baggage-plans.ts";
+import { isExtraBaggage } from "./baggage.ts";
 import { z } from "zod";
 import { requestQuoteSchema } from "./request-quote-schema.ts";
 import {
@@ -148,7 +150,7 @@ export function journeyFacts(s: State, person: string, journeyId: string) {
     journeyId,
     origin: journey?.origin,
     destination: journey?.destination,
-    cabin: journey?.cabin,
+    cabin: s.resources.find(r => r.kind === "seat" && r.journey === journeyId && s.allocations.some(a => a.person === person && a.resource === r.id))?.cabin || journey?.cabin,
     durationMinutes: journey?.durationMinutes,
     partyId: party?.id ?? (soloKnown ? null : undefined),
     partySize: party?.memberIds.length ?? (soloKnown ? 1 : undefined),
@@ -260,6 +262,7 @@ export function requestGoalSatisfied(
   person: string,
   journeyId: string,
   rule: IntentRule,
+  baseline?: State,
 ): boolean {
   const own = s.allocations.filter(
     (a) =>
@@ -279,16 +282,9 @@ export function requestGoalSatisfied(
         effect.positions.includes(r.seatPosition),
     );
   if (effect.kind === "baggage")
-    return (
-      resources
-        .filter(
-          (r) =>
-            r.kind === "baggage" &&
-            (!effect.maxKgPerPiece ||
-              (r.baggage?.maxKg || 0) >= effect.maxKgPerPiece),
-        )
-        .reduce((n, r) => n + (r.baggage?.pieces || 0), 0) >= effect.extraPieces
-    );
+    return baggageRequirementSatisfied(resources, effect);
+  if (effect.kind === "baggage_release")
+    return resources.filter((r) => r.baggage?.role === "included").reduce((n, r) => n + r.baggage!.pieces, 0) >= effect.minRemainingPieces;
   if (effect.kind === "seating_together") {
     const party = s.parties?.find(
       (p) =>
@@ -304,6 +300,7 @@ export function requestGoalSatisfied(
         .find((r) => r?.kind === "seat"),
     );
     if (seats.some((r) => !r?.seatMap)) return false;
+    if (seats.some(r => r!.serviceHour !== seats[0]!.serviceHour)) return false;
     const maps = seats
       .map((r) => r!.seatMap!)
       .sort((a, b) => a.column - b.column);
@@ -319,16 +316,13 @@ export function requestGoalSatisfied(
   if (effect.kind === "gate_check")
     return resources.some((r) => r.kind === "handover") === effect.allowed;
   if (effect.kind === "departure_window") {
-    const current = resources.find((r) => r.kind === "flight");
-    const departure = current
-      ? simulationEpoch(s) + current.serviceHour * 3600000
-      : undefined;
-    if (departure === undefined || (!effect.earliest && !effect.latest))
-      return false;
-    return (
-      (!effect.earliest || departure >= Date.parse(effect.earliest)) &&
-      (!effect.latest || departure <= Date.parse(effect.latest))
-    );
+    if (!effect.earliest && !effect.latest && effect.maxDelayMinutes === undefined) return false;
+    // Relative limits refer to this traveller's source flight. Journey metadata
+    // and the outcome snapshot cannot establish that source after a change.
+    if (effect.maxDelayMinutes !== undefined && !baseline) return false;
+    return evaluateOutcomePredicate(baseline || s, s, person, journeyId, {
+      kind: "atom", condition: effect,
+    }) === true;
   }
   return true;
 }
@@ -370,7 +364,7 @@ export function requestAuthorizationDeadline(
             ? "flight"
             : rule.effect.kind === "gate_check"
               ? "handover"
-              : rule.effect.kind;
+              : rule.effect.kind === "baggage_release" ? "baggage" : rule.effect.kind;
       const services = journeyResources.filter(
         (resource) => resource.kind === kind,
       );
@@ -413,14 +407,20 @@ export function requestProgress(
       rule.effect.kind !== "credit_budget" &&
       ruleConditionMatches(facts, rule) === true,
   );
-  const fulfilledRules = goals.filter((rule) =>
-    requestGoalSatisfied(s, person, journeyId, rule),
-  ).length;
+  const fulfilledContract = s.contracts.find(contract => contract.status === "SETTLED" &&
+    contract.authorizations?.[person]?.intentId === record.id &&
+    contract.authorizations[person].revision === record.revision);
+  const baseline = fulfilledContract ? { ...s, allocations: s.allocations.map(allocation => {
+    const change = fulfilledContract.changes.find(entry => entry.key === allocation.key);
+    return change ? { ...allocation, resource: change.from } : allocation;
+  }) } : undefined;
+  const satisfied = (rule: IntentRule) => requestGoalSatisfied(s, person, journeyId, rule, baseline);
+  const fulfilledRules = goals.filter(satisfied).length;
   const expired =
     (record.authorization !== undefined &&
       record.authorization.validUntil <= s.hour) ||
     goals.some((rule) => {
-      if (requestGoalSatisfied(s, person, journeyId, rule)) return false;
+      if (satisfied(rule)) return false;
       const kind =
         rule.effect.kind === "seating_together" ||
         rule.effect.kind === "seat_position"
@@ -429,7 +429,7 @@ export function requestProgress(
             ? "flight"
             : rule.effect.kind === "gate_check"
               ? "handover"
-              : rule.effect.kind;
+              : rule.effect.kind === "baggage_release" ? "baggage" : rule.effect.kind;
       const resources = s.resources.filter(
         (resource) => resource.journey === journeyId && resource.kind === kind,
       );
@@ -516,6 +516,8 @@ export function ruleDescription(rule: IntentRule): string {
     result = `${prefix} seats together with the booking party`;
   if (effect.kind === "departure_window")
     result = `${prefix} a departure${effect.earliest ? ` from ${effect.earliest}` : ""}${effect.latest ? ` by ${effect.latest}` : ""}${effect.maxDelayMinutes !== undefined ? ` no more than ${effect.maxDelayMinutes} minutes later` : ""}`;
+  if (effect.kind === "baggage_release")
+    result = `Open to returning an unused included bag allowance while keeping at least ${effect.minRemainingPieces} included checked bags`;
   if (effect.kind === "baggage")
     result = `${prefix} ${effect.extraPieces} extra checked ${effect.extraPieces === 1 ? "bag" : "bags"}${effect.maxKgPerPiece ? ` up to ${effect.maxKgPerPiece} kg each` : ""}`;
   if (effect.kind === "gate_check")
@@ -731,6 +733,8 @@ export function validateIntent(
       if (atom.kind === "departure_window") validateDepartureWindow(atom);
     }
     const effect = rule.effect;
+    if (effect.kind === "baggage_release" && (isRequest || rule.strength !== "flexible"))
+      throw new Error("An allowance return is a flexibility permission. Review each airline offer before accepting.");
     if (
       isRequest &&
       parsed.scope.kind === "journey" &&
@@ -744,7 +748,7 @@ export function validateIntent(
             ? "flight"
             : effect.kind === "gate_check"
               ? "handover"
-              : effect.kind;
+              : effect.kind === "baggage_release" ? "baggage" : effect.kind;
       // A missing inventory category means no known offer, not an elapsed deadline.
       const journeyId = parsed.scope.journeyId;
       const knownService = s.resources.some(
@@ -803,7 +807,7 @@ function effectResourceKind(effect: OutcomeCondition): Resource["kind"] {
   if (effect.kind === "departure_window" || effect.kind === "flight_unchanged")
     return "flight";
   if (effect.kind === "gate_check") return "handover";
-  return effect.kind;
+  return effect.kind === "baggage_release" ? "baggage" : effect.kind;
 }
 function outcomeAllocations(
   s: State,
@@ -855,6 +859,7 @@ function outcomeConditionMatches(
       return resourceOn(after, allocations[0].resource, journeyId);
     });
     if (seats.some((seat) => !seat?.seatMap)) return undefined;
+    if (seats.some(seat => seat!.serviceHour !== seats[0]!.serviceHour)) return false;
     const maps = seats
       .map((seat) => seat!.seatMap!)
       .sort((a, b) => a.column - b.column);
@@ -887,14 +892,16 @@ function outcomeConditionMatches(
       condition.positions.includes(resource.seatPosition!),
     );
   }
+  if (condition.kind === "baggage_release")
+    return resources.filter((r) => r.baggage?.role === "included").reduce((n, r) => n + (r.baggage?.pieces || 0), 0) >= condition.minRemainingPieces;
   if (condition.kind === "baggage") {
     if (resources.some((resource) => !resource.baggage)) return undefined;
     return (
       resources
         .filter(
           (resource) =>
-            condition.maxKgPerPiece === undefined ||
-            resource.baggage!.maxKg >= condition.maxKgPerPiece,
+            isExtraBaggage(resource) && (condition.maxKgPerPiece === undefined ||
+            resource.baggage!.maxKg >= condition.maxKgPerPiece),
         )
         .reduce((pieces, resource) => pieces + resource.baggage!.pieces, 0) >=
       condition.extraPieces
@@ -952,12 +959,13 @@ export function conditionalOutcomeIssues(
         false,
   );
   const errors: string[] = [];
+  const permissionFamily = (effect: OutcomeCondition) => effect.kind === "baggage_release" ? "baggage_release" : effectResourceKind(effect);
   const kinds = new Set(
-    guarded.map((rule) => effectResourceKind(rule.effect as OutcomeCondition)),
+    guarded.map((rule) => permissionFamily(rule.effect as OutcomeCondition)),
   );
   for (const kind of kinds) {
-    const old = outcomeAllocations(before, person, journeyId, kind);
-    const next = outcomeAllocations(after, person, journeyId, kind);
+    const old = outcomeAllocations(before, person, journeyId, kind === "baggage_release" ? "baggage" : kind);
+    const next = outcomeAllocations(after, person, journeyId, kind === "baggage_release" ? "baggage" : kind);
     if (
       old.length === next.length &&
       old.every((allocation) =>
@@ -973,7 +981,7 @@ export function conditionalOutcomeIssues(
       (rule) =>
         rule.strength === "flexible" &&
         rule.effect.kind !== "credit_budget" &&
-        effectResourceKind(rule.effect) === kind,
+        permissionFamily(rule.effect) === kind,
     );
     const permissions = alternatives.map((rule) =>
       andTruth([
@@ -1000,7 +1008,7 @@ export function conditionalOutcomeIssues(
         `The complete arrangement does not establish an only-if condition in “${guarded
           .filter(
             (rule) =>
-              effectResourceKind(rule.effect as OutcomeCondition) === kind,
+              permissionFamily(rule.effect as OutcomeCondition) === kind,
           )
           .map((rule) => rule.evidence)
           .join(" and ")}”`,

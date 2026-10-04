@@ -1,43 +1,75 @@
 {
-  "generatedAt": "2026-10-03T18:30:04.409Z",
-  "platformBaseCommit": "3c792c47304ef6a3717ecd4e6c2735207e0363d2",
-  "sourceTreeDigest": "72ea6cfcbcc259e78479b856e4081df4781ce928e10d12762b66954580bb9148",
+  "generatedAt": "2026-10-04T13:01:38.928Z",
+  "platformBaseCommit": "981bfa6319743b7c9f27640e9381a8ce33036e1c",
+  "sourceTreeDigest": "8c59f8328f594c8d5f379993d5fad50d9188cde310398e93feedca920f615481",
   "files": [
     {
+      "file": "allocation-policy.ts",
+      "sha256": "1caa1f8ac94ed9a716c16d21c5e9b742ee8a07cd02e09792b246e15fd80db978"
+    },
+    {
+      "file": "baggage-plans.ts",
+      "sha256": "675b8c94e6e2a70d6644c13bde7c935a55341e0cdbec4cb2431a3e7eb4bc932e"
+    },
+    {
+      "file": "baggage.ts",
+      "sha256": "7e51499932e499265fe5d9a9808d1aebc6837a0fac22c7b24f8bebb21c4d457c"
+    },
+    {
+      "file": "booking-view.ts",
+      "sha256": "e7240b4c53988b23a52d4d885f347a1c2e1e924a6528034dd5fa35eb62c5885a"
+    },
+    {
+      "file": "capacity.ts",
+      "sha256": "02aaf84bac7a6a99292877aaeef6a739092a1bdf2c2054593eac187bd3e253db"
+    },
+    {
       "file": "engine.ts",
-      "sha256": "451e25f5df475d5356f7d28000fbe428a0c5428be9156aa8754123002b440c82"
+      "sha256": "3a72d6b5b48b22a681b5650bc8fc6823785dd4de2a8c52a1d570bd1e77bc1582"
     },
     {
       "file": "generic-market.ts",
-      "sha256": "1b04061338779338ab7ceb157d783a31e5834d849f45d8bc0ab5d57aa9562717"
+      "sha256": "732202dd1c8e913e1fdd3ffe31b2efbc0f802cd3dd79663fd748c75824b6f46f"
     },
     {
       "file": "intent.ts",
-      "sha256": "7c116b263e61823281dcb6c791c24d44d95000116b4ffd0ebd418065a06b92bd"
+      "sha256": "b235d620f016f4b28474d5d8a397c7036ac07739160c7e30fbedb689bef0c3f8"
     },
     {
       "file": "order-book.ts",
-      "sha256": "8ac17a46a3dd743ca2a5953ead1e406de4a86ccce6b750f19b89a57bb071e839"
+      "sha256": "45890df08c8dc9a3b032bcc36d05eda0143f2d74ad565ff99e33ce6d5eca4873"
     },
     {
       "file": "predicates.ts",
-      "sha256": "c90754957a0d2fda90ca10558996988cea0d1f9a346b0458c0ad22d03a553e57"
+      "sha256": "54b1fa55bb30da1417b97b6cc9f8ae66a9fbba00d3ba26e18106a6def29240e5"
     },
     {
       "file": "request-quote-schema.ts",
-      "sha256": "daf626cb7b95aadd1290daad9b39ec1ffc9054a19a7e4200f6cc5a4359af9b3a"
+      "sha256": "4beb72b00ed5f7b39a60621a4940865c6b3437c9e5d42ae84d2803c5c8a39529"
     },
     {
       "file": "request-quote.ts",
-      "sha256": "9929a267ea45f812484d06f79fbcb0ddd4f2892b6dcce6b95414610488099a90"
+      "sha256": "462dd98f062d40da7c3583711c22f9a37c9523a35fd31f516444ada2263d40b6"
+    },
+    {
+      "file": "resource-model.ts",
+      "sha256": "8627e92476749e1400ad1354df9039909ab84fd8ead770b3f8c0237e40467139"
     },
     {
       "file": "seed.ts",
-      "sha256": "e65ed94c0f7661d32b02ccb5b519d84a40f1c4a829b3d3d1ee9e2446d21e7f79"
+      "sha256": "3b523c30db985d1fcf1ececdfab500306dc9ca274192bdfd9ed6a80a8d3b0ca1"
     },
     {
       "file": "selection.ts",
-      "sha256": "4f922b081628304179834984fe88859a020bea5abc99930f8f6bc7d3ae6fbefe"
+      "sha256": "f180e5e1b7d5a6bb83e76cb1a174bdf27cec24c76a0a07387ce799ce1a6193ff"
+    },
+    {
+      "file": "service-catalogue.ts",
+      "sha256": "863054466531df66ec620c9ffe767b6dc4c83744e284496da2a3896cc958d0f1"
+    },
+    {
+      "file": "services.ts",
+      "sha256": "0f6e76784551a33749752903d180b4aa62ff52219ab1d64cf68c9b4847a054a1"
     },
     {
       "file": "story.ts",
@@ -49,10 +81,10 @@
     },
     {
       "file": "types.ts",
-      "sha256": "b678ded4f0e23270a42a969a67fdbbbed83d198d1335722348b5714e0af20692"
+      "sha256": "1db3022cffa997aa633fd7b94eb50ee78a7591fa0163996f04ea0977c822752d"
     }
   ],
-  "engineBytes": 187880,
-  "engineSha256": "ae302d3de40722243de2b82a85c96de342fef8d652b0e138dd084b63064e5f42",
+  "engineBytes": 236479,
+  "engineSha256": "475ca456be354d64e61a1d9b4d5efa610a3849006423539df559df48b507456e",
   "runtime": "Browser JavaScript. Same pure domain functions as the platform. Synthetic bookings. No live AI or airline connection."
 }

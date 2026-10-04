@@ -1,4 +1,5 @@
 import type { Candidate, State } from "./types.ts";
+import { availablePools, poolDemand, capacityPoolErrors } from "./capacity.ts";
 
 export type Objective = readonly number[];
 export type SelectionOptions = {
@@ -10,7 +11,7 @@ export type SelectionOptions = {
   scoreCandidate?: (candidate: Candidate) => Objective;
 };
 const active = (status: string) =>
-  ["HELD", "ACCEPTED", "AWAITING_EVIDENCE", "RECONCILING"].includes(status);
+  ["QUEUED", "HELD", "ACCEPTED", "AWAITING_EVIDENCE", "RECONCILING"].includes(status);
 const order = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 export function compareObjectives(a: Objective, b: Objective): number {
   for (let i = 0; i < a.length; i++) {
@@ -39,6 +40,7 @@ const indexState = (s: State): StateIndex => ({
 });
 function scopes(index: StateIndex, c: Candidate): Set<string> {
   const result = new Set<string>();
+  if (c.serviceOrder) return result;
   for (const change of c.changes) {
     const allocation = index.allocations.get(change.key);
     if (!allocation) continue;
@@ -105,6 +107,57 @@ function snapshotErrors(s: State, c: Candidate): string[] {
 }
 type Entry = { candidate: Candidate; score: number[]; demand: Map<string, number>; footprint: Footprint };
 type Node = { remaining: number[]; chosen: number[]; score: number[]; used: Map<string, number>; upper: number[] };
+type PoolRelaxation = { key: string; capacity: number; demand: number[]; ranked: number[][]; totalDemand: number };
+
+function capacityRelaxations(entries: Entry[], capacity: Map<string, number>, dimensions: number): PoolRelaxation[] {
+  // Small pools are cheap to enumerate. Reserve the extra bound work for broad
+  // competition, where a capacity bottleneck can leave many compatible subsets.
+  if (entries.length < 16) return [];
+  const demands = new Map<string, {indices: number[]; amounts: number[]; total: number; integral: boolean}>();
+  for (let i = 0; i < entries.length; i++) for (const [key, amount] of entries[i].demand) {
+    if (!amount) continue;
+    const pool = demands.get(key) || {indices: [], amounts: [], total: 0, integral: true};
+    pool.indices.push(i);
+    pool.amounts.push(amount);
+    pool.total += amount;
+    pool.integral &&= Number.isSafeInteger(amount);
+    demands.set(key, pool);
+  }
+  const distinct = new Set<string>();
+  const pools: PoolRelaxation[] = [];
+  for (const [key, sparse] of demands) {
+    if (sparse.indices.length < 8) continue;
+    const available = capacity.get(key) ?? 0;
+    // Fractional balances keep the original clique bound. The tighter relaxation
+    // uses exact integer ratios and rounds its one fractional item upward. Apply
+    // it to strongly oversubscribed pools, where it repays its per-node cost.
+    if (!Number.isSafeInteger(available) || !sparse.integral || sparse.total <= available * 3) continue;
+    const demand = Array<number>(entries.length).fill(0);
+    sparse.indices.forEach((index, i) => { demand[index] = sparse.amounts[i]; });
+    const signature = `${available}|${demand.join(",")}`;
+    if (distinct.has(signature)) continue;
+    distinct.add(signature);
+    pools.push({key, capacity: available, demand, ranked: [], totalDemand: sparse.total});
+  }
+  // A few binding pools give useful bounds without rescanning every wallet and
+  // inventory row at each search node. Equivalent wallet pools are shared.
+  pools.sort((a, b) => a.capacity / a.totalDemand - b.capacity / b.totalDemand || order(a.key, b.key));
+  return pools.slice(0, 4).map((pool) => ({...pool, ranked: Array.from({length: dimensions}, (_, dimension) =>
+    entries.flatMap((entry, i) => pool.demand[i] > 0 && entry.score[dimension] > 0 ? [i] : []).sort((a, b) => {
+      const left = entries[a].score[dimension] * pool.demand[b];
+      const right = entries[b].score[dimension] * pool.demand[a];
+      if (Number.isSafeInteger(left) && Number.isSafeInteger(right)) return right - left || a - b;
+      const exactLeft = BigInt(entries[a].score[dimension]) * BigInt(pool.demand[b]);
+      const exactRight = BigInt(entries[b].score[dimension]) * BigInt(pool.demand[a]);
+      return exactLeft === exactRight ? a - b : exactLeft > exactRight ? -1 : 1;
+    }))}));
+}
+
+function fractionalRewardCeiling(reward: number, capacity: number, demand: number): number {
+  const numerator = BigInt(reward) * BigInt(capacity);
+  const denominator = BigInt(demand);
+  return Number((numerator + denominator - BigInt(1)) / denominator);
+}
 
 /**
  * Select independently reservable, individually validated complete arrangements.
@@ -117,6 +170,7 @@ export function solveCandidateSelection(s: State, candidates: Candidate[], optio
   const nodeLimit = Number.isFinite(requestedLimit)
     ? Math.max(1, Math.min(1000000, Math.floor(requestedLimit))) : 20000;
   const capacity = new Map<string, number>();
+  for (const [id, units] of availablePools(s)) capacity.set(`pool:${id}`, units);
   const heldContracts = s.contracts.filter((contract) => active(contract.status));
   for (const resource of s.resources) {
     const occupied = s.allocations.filter((a) => a.resource === resource.id).length + resource.background;
@@ -144,7 +198,7 @@ export function solveCandidateSelection(s: State, candidates: Candidate[], optio
   const ids = new Set<string>();
   const entries: Entry[] = [];
   for (const candidate of [...candidates].sort((a, b) => order(a.id, b.id))) {
-    const reasons = snapshotErrors(s, candidate);
+    const reasons = [...snapshotErrors(s, candidate), ...capacityPoolErrors(s, candidate)];
     const objective = [...score(candidate)];
     if (!dimensions) dimensions = objective.length;
     if (!objective.length || objective.length !== dimensions || !objective.every(Number.isSafeInteger)) reasons.push("invalid_objective");
@@ -152,6 +206,7 @@ export function solveCandidateSelection(s: State, candidates: Candidate[], optio
     ids.add(candidate.id);
     if (heldContracts.some((contract) => candidatePlansConflict(s, candidate, contract))) reasons.push("active_contract_conflict");
     const demand = new Map([...candidateCapacityDemand(candidate)].map(([id, amount]) => [`resource:${id}`, amount]));
+    for (const [id, units] of poolDemand(s, candidate)) demand.set(`pool:${id}`, units);
     for (const [person, credits] of Object.entries(candidate.credits)) {
       if (credits >= 0) continue;
       const debit = -credits;
@@ -177,6 +232,7 @@ export function solveCandidateSelection(s: State, candidates: Candidate[], optio
   const zero = () => Array<number>(dimensions).fill(0);
   entries.sort((a, b) => compareObjectives(b.score, a.score) || order(a.candidate.id, b.candidate.id));
   const conflict = entries.map((a, i) => entries.map((b, j) => i === j || footprintsConflict(a.footprint, b.footprint)));
+  let poolRelaxations: PoolRelaxation[] | undefined = entries.length < 16 ? [] : undefined;
   const fits = (i: number, used: Map<string, number>) => [...entries[i].demand]
     .every(([key, amount]) => (used.get(key) || 0) + amount <= (capacity.get(key) ?? 0));
   const consume = (i: number, used: Map<string, number>) => {
@@ -187,14 +243,46 @@ export function solveCandidateSelection(s: State, candidates: Candidate[], optio
   const plus = (a: number[], b: number[]) => a.map((value, index) => value + b[index]);
   // Partition into conflict cliques. At most one candidate per clique can be
   // selected. Componentwise maxima remain an admissible lexicographic bound.
-  const upperBound = (remaining: number[], current: number[]) => {
+  const upperBound = (remaining: number[], current: number[], used: Map<string, number>) => {
     const cliques: number[][] = [];
     for (const i of remaining) {
       const clique = cliques.find((members) => members.every((j) => conflict[i][j]));
       if (clique) clique.push(i); else cliques.push([i]);
     }
-    return current.map((value, dimension) => value + cliques.reduce((sum, clique) =>
+    const upper = current.map((value, dimension) => value + cliques.reduce((sum, clique) =>
       sum + Math.max(0, ...clique.map((i) => entries[i].score[dimension])), 0));
+    if (poolRelaxations?.length === 0 || compareObjectives(upper, objective) <= 0) return upper;
+    poolRelaxations ||= capacityRelaxations(entries, capacity, dimensions);
+    if (!poolRelaxations.length) return upper;
+    const present = new Uint8Array(entries.length);
+    for (const i of remaining) present[i] = 1;
+    for (let dimension = 0; dimension < dimensions; dimension++) {
+      if (upper[dimension] === objective[dimension]) continue;
+      if (upper[dimension] <= current[dimension]) break;
+      for (const pool of poolRelaxations) {
+        let value = current[dimension], residual = pool.capacity - (used.get(pool.key) || 0);
+        for (const i of remaining) if (!pool.demand[i]) value += Math.max(0, entries[i].score[dimension]);
+        // Drop other pools and conflicts, and permit fractional selection. This
+        // maximizes each coordinate independently, so intersecting these bounds
+        // with the clique bounds preserves the lexicographic upper guarantee.
+        for (const i of pool.ranked[dimension]) {
+          if (!present[i]) continue;
+          if (residual >= pool.demand[i]) {
+            value += entries[i].score[dimension];
+            residual -= pool.demand[i];
+          } else {
+            if (residual > 0) value += fractionalRewardCeiling(entries[i].score[dimension], residual, pool.demand[i]);
+            break;
+          }
+        }
+        upper[dimension] = Math.min(upper[dimension], value);
+        if (upper[dimension] <= objective[dimension]) break;
+      }
+      // A later tier can affect pruning only after every earlier tier ties the
+      // incumbent. The untouched clique coordinates remain valid bounds.
+      if (upper[dimension] !== objective[dimension]) break;
+    }
+    return upper;
   };
   let chosen: number[] = [], objective = zero(), greedyUsed = new Map<string, number>();
   for (let i = 0; i < entries.length; i++) {
@@ -204,7 +292,7 @@ export function solveCandidateSelection(s: State, candidates: Candidate[], optio
     greedyUsed = consume(i, greedyUsed);
   }
   const all = entries.map((_, index) => index);
-  const stack: Node[] = [{remaining: all, chosen: [], score: zero(), used: new Map(), upper: upperBound(all, zero())}];
+  const stack: Node[] = [{remaining: all, chosen: [], score: zero(), used: new Map(), upper: upperBound(all, zero(), new Map())}];
   let visited = 0;
   while (stack.length && visited < nodeLimit) {
     const node = stack.pop()!;
@@ -213,14 +301,17 @@ export function solveCandidateSelection(s: State, candidates: Candidate[], optio
     if (compareObjectives(node.score, objective) > 0) { objective = node.score; chosen = node.chosen; }
     if (!node.remaining.length) continue;
     const [first, ...rest] = node.remaining;
-    const excludedUpper = upperBound(rest, node.score);
+    const excludedUpper = upperBound(rest, node.score, node.used);
     if (compareObjectives(excludedUpper, objective) > 0) stack.push({...node, remaining: rest, upper: excludedUpper});
     if (fits(first, node.used)) {
       const includedScore = plus(node.score, entries[first].score);
       if (compareObjectives(includedScore, objective) > 0) { objective = includedScore; chosen = [...node.chosen, first]; }
       const remaining = rest.filter((i) => !conflict[first][i]);
-      const upper = upperBound(remaining, includedScore);
-      if (compareObjectives(upper, objective) > 0) stack.push({remaining, chosen: [...node.chosen, first], score: includedScore, used: consume(first, node.used), upper});
+      // The root fixes which bounds apply before branching. Defer copying the
+      // capacity map when the clique bound alone can discard this child.
+      const used = poolRelaxations?.length ? consume(first, node.used) : undefined;
+      const upper = upperBound(remaining, includedScore, used || node.used);
+      if (compareObjectives(upper, objective) > 0) stack.push({remaining, chosen: [...node.chosen, first], score: includedScore, used: used || consume(first, node.used), upper});
     }
   }
   // A frontier node remains a valid upper bound even if its incumbent improved.

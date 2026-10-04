@@ -59,7 +59,7 @@ export const intentEffectSchema = z.discriminatedUnion("kind", [
       maxKgPerPiece: z.number().finite().positive().max(100).optional(),
     })
     .strict(),
-  z.object({ kind: z.literal("gate_check"), allowed: z.boolean() }).strict(),
+  z.object({ kind: z.literal("baggage_release"), minRemainingPieces: z.number().int().min(0).max(100) }).strict(),
   z.object({ kind: z.literal("meal"), receive: z.boolean() }).strict(),
   z
     .object({

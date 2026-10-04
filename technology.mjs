@@ -2,7 +2,7 @@ import {
   preferenceWords, needWords, preferences, journey, otherTravellers,
   request, requestTerms, requestQuote, tokyoFlight, bookedParty, services, reward, timeline,
   findSeatOffer, findRequestArrangement,
-} from './offers.mjs?v=20261004-fixed2';
+} from './offers.mjs?v=20261004-quote3';
 
 // The phrase links and structured extracts are authored illustrations. This
 // module does not parse text or call a model. Both results use the shared matcher.

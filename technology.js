@@ -1,4 +1,4 @@
-import { technologyExamples, capitalize, durationLabel } from './technology.mjs?v=20261004-fixed2';
+import { technologyExamples, capitalize, durationLabel } from './technology.mjs?v=20261004-quote3';
 
 const mount = document.getElementById('technology-visual');
 const arrow = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6"/></svg>';

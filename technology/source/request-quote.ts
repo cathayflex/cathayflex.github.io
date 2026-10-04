@@ -1,12 +1,17 @@
+import { baggagePlans } from "./baggage-plans.ts";
+import { preservesFlightEntitlement } from "./booking-view.ts";
+import { isExtraBaggage, isExtraBagSlot } from "./baggage.ts";
 import {
   bookedJourneys,
   intentPurpose,
   journeyFacts,
   requestAuthorizationDeadline,
   requestGoalSatisfied,
+  requestRulesFor,
   ruleConditionMatches,
   rulesFor,
   validateIntent,
+  conditionalOutcomeIssues,
 } from "./intent.ts";
 import type {
   Candidate,
@@ -14,6 +19,7 @@ import type {
   IntentRule,
   Resource,
   State,
+  OperationalOffer,
 } from "./types.ts";
 
 import {
@@ -60,6 +66,82 @@ const eligible = (entry: Resource, person: string) =>
   !entry.eligible.length || entry.eligible.includes(person);
 const seatCost = (from: Resource, to: Resource) =>
   Math.max(0, to.source === "airline_inventory" ? to.q : to.q - from.q);
+const seatSettlement = (from: Resource, to: Resource) =>
+  to.source === "airline_inventory" ? to.q : to.q - from.q;
+
+function seatReleaseRequestedBy(
+  s: State,
+  person: string,
+  booked: Resource,
+  released: Resource,
+) {
+  return (
+    booked.kind === "seat" &&
+    booked.journey === released.journey &&
+    eligible(released, person) &&
+    requestRulesFor(s, person, released.journey).some(
+      (rule) =>
+        rule.strength !== "flexible" &&
+        rule.effect.kind === "seat_position" &&
+        !!released.seatPosition &&
+        rule.effect.positions.includes(released.seatPosition) &&
+        !!booked.seatPosition &&
+        !rule.effect.positions.includes(booked.seatPosition),
+    )
+  );
+}
+
+function seatQuoteTerms(
+  s: State,
+  key: string,
+  from: Resource,
+  to: Resource,
+  version: 1 | 2,
+  fixedCampaign?: string | null,
+) {
+  if (version === 1)
+    return { charge: seatCost(from, to), reward: 0, campaign: undefined };
+  const amount = seatSettlement(from, to);
+  const owner = s.allocations.find(
+    (allocation) => allocation.key === key,
+  )?.person;
+  const requestedRelease = s.allocations.some((allocation) => {
+    const booked = resource(s, allocation.resource);
+    return (
+      allocation.person !== owner &&
+      !!booked &&
+      seatReleaseRequestedBy(s, allocation.person, booked, from)
+    );
+  });
+  const campaign =
+    to.source === "airline_inventory" ||
+    fixedCampaign === null ||
+    (fixedCampaign === undefined && !requestedRelease)
+      ? undefined
+      : s.campaigns?.find(
+          (entry) =>
+            (fixedCampaign === undefined || entry.id === fixedCampaign) &&
+            entry.journeyId === from.journey &&
+            !!from.seatPosition &&
+            !!to.seatPosition &&
+            entry.releasePositions.includes(from.seatPosition) &&
+            entry.receivePositions.includes(to.seatPosition),
+        );
+  const reward =
+    campaign && !s.usedEvents.includes(`${campaign.id}:${key}:${from.id}`)
+      ? {
+          id: campaign.id,
+          event: `${campaign.id}:${key}:${from.id}`,
+          credits: campaign.reward,
+          termsKey: canonical(campaign),
+        }
+      : undefined;
+  return {
+    charge: Math.max(0, amount),
+    reward: Math.max(0, -amount) + (reward?.credits || 0),
+    campaign: reward,
+  };
+}
 
 function catalogKey(s: State, resourceIds: string[]) {
   return canonical(
@@ -69,14 +151,19 @@ function catalogKey(s: State, resourceIds: string[]) {
       .map((id) => {
         const entry = resource(s, id);
         if (!entry) return null;
-        const { kind, product, source, q, seatPosition, seatMap, baggage } =
+        const { kind, product, source, q, seatPosition, seatMap, baggage, flightNumber } =
           entry;
-        return { id, kind, product, source, q, seatPosition, seatMap, baggage };
+        return { id, kind, product, source, q, seatPosition, seatMap, baggage, flightNumber };
       }),
   );
 }
 
-function bookingKey(s: State, person: string, journeyId: string) {
+function bookingKey(
+  s: State,
+  person: string,
+  journeyId: string,
+  version: 1 | 2,
+) {
   const parties = (s.parties || []).filter(
     (party) =>
       party.journeyId === journeyId && party.memberIds.includes(person),
@@ -93,7 +180,14 @@ function bookingKey(s: State, person: string, journeyId: string) {
     allocations: s.allocations
       .filter(
         (allocation) =>
-          members.has(allocation.person) && onJourney(s, allocation, journeyId),
+          (allocation.resourceKind || resource(s, allocation.resource)?.kind) !== "service" &&
+          !s.serviceProducts?.some(p => p.mealAllocationKey === allocation.key) &&
+          members.has(allocation.person) &&
+          onJourney(s, allocation, journeyId) &&
+          (version === 1 ||
+            allocation.person === person ||
+            (allocation.resourceKind ||
+              resource(s, allocation.resource)?.kind) === "seat"),
       )
       .map(({ key, person: owner, resource: assigned, version }) => ({
         key,
@@ -127,9 +221,11 @@ function seatDestinations(
   );
   const choices = s.resources.filter(
     (entry) =>
-      entry.kind === "seat" &&
+      entry.kind === "seat" && !entry.serviceOnly &&
       entry.journey === journeyId &&
       entry.id !== from.id &&
+      (entry.cabin || "Economy") === (from.cabin || "Economy") &&
+      entry.serviceHour === from.serviceHour &&
       resourcePrice(entry) &&
       eligible(entry, person) &&
       positions.every(
@@ -168,7 +264,7 @@ function seatDestinations(
   if (current.some((id) => !id)) return null;
   const maps = s.resources.filter(
     (entry) =>
-      entry.kind === "seat" && entry.journey === journeyId && entry.seatMap,
+      entry.kind === "seat" && !entry.serviceOnly && entry.journey === journeyId && entry.seatMap,
   );
   const blocks = new Map<string, Resource[]>();
   for (const entry of maps) {
@@ -219,12 +315,133 @@ function seatDestinations(
 }
 
 /** Quote a reviewed draft before publication. Its revision is the existing revision. */
+function operationalTerms(s: State, candidate: Pick<Candidate, "id" | "changes" | "credits" | "issuance" | "redemption" | "budget" | "evidence" | "requiredEvents">) {
+  return canonical({
+    id: candidate.id,
+    changes: [...candidate.changes].sort((a, b) => a.key.localeCompare(b.key)),
+    credits: candidate.credits,
+    issuance: candidate.issuance,
+    redemption: candidate.redemption,
+    budget: candidate.budget,
+    evidence: candidate.evidence,
+    requiredEvents: candidate.requiredEvents,
+    resources: [...new Set(candidate.changes.flatMap(change => [change.from, change.to].filter((id): id is string => !!id)))].sort().map(id => {
+      const entry = resource(s, id);
+      return entry && {id, kind: entry.kind, journey: entry.journey, serviceHour: entry.serviceHour, flightNumber: entry.flightNumber,
+        deadline: entry.deadline, product: entry.product, cabin: entry.cabin, q: entry.q,
+        eligible: [...entry.eligible].sort(), seatPosition: entry.seatPosition, seatMap: entry.seatMap,
+        baggage: entry.baggage, mealName: entry.mealName};
+    }),
+  });
+}
+
+function operationalChanges(s: State, offer: OperationalOffer) {
+  return offer.changes.flatMap((change) => {
+    const allocation = s.allocations.find((entry) => entry.key === change.allocationKey);
+    return allocation ? [{ key: allocation.key, from: allocation.resource, to: change.to, version: allocation.version }] : [];
+  });
+}
+
+/** Departure requests quote a complete airline plan, including replacement seats.
+ * Inventory and approval are checked by the transaction engine at reservation.
+ * The plan's published price does not vary with current demand or the wallet.
+ */
+function quoteDeparturePlan(
+  s: State,
+  person: string,
+  record: IntentRecord,
+  goals: IntentRule[],
+  options: { validUntil?: number; fixedPlanId?: string },
+): RequestQuoteResult {
+  if (record.scope.kind !== "journey") return unavailable("Choose a journey on your booking.");
+  const journeyId = record.scope.journeyId;
+  const plans = (s.operationalOffers || []).flatMap((offer) => {
+    if (options.fixedPlanId && offer.id !== options.fixedPlanId) return [];
+    const changes = operationalChanges(s, offer);
+    if (changes.length !== offer.changes.length || new Set(changes.map(change => change.key)).size !== changes.length) return [];
+    const own = changes.filter(change => s.allocations.find(entry => entry.key === change.key)?.person === person);
+    if (!own.some(change => change.from !== change.to && resource(s, change.to)?.kind === "flight")) return [];
+    if (own.some(change => {
+      const from = resource(s, change.from), to = resource(s, change.to);
+      return change.from === change.to || !to || !["flight", "seat", "baggage", "meal", "service"].includes(to.kind)
+        || to.journey !== journeyId || !eligible(to, person)
+        || (to.kind === "baggage" && !goals.some(rule => rule.effect.kind === "baggage") && !preservesFlightEntitlement(s, change))
+        || (["meal", "service"].includes(to.kind) && !preservesFlightEntitlement(s, change))
+        || (from && (from.kind !== to.kind || from.journey !== to.journey))
+        || (from?.kind === "flight" && from.product !== to.product)
+        || (from?.kind === "seat" && (from.cabin || "Economy") !== (to.cabin || "Economy"));
+    })) return [];
+    const projected: State = { ...s, allocations: s.allocations.map(allocation => {
+      const change = changes.find(entry => entry.key === allocation.key);
+      return change ? { ...allocation, resource: change.to } : allocation;
+    }) };
+    const owned = projected.allocations.filter(allocation => allocation.person === person)
+      .flatMap(allocation => { const entry = resource(s, allocation.resource); return entry?.journey === journeyId ? [entry] : []; });
+    const flights = owned.filter(entry => entry.kind === "flight");
+    if (owned.some(entry => ["seat", "meal", "baggage", "service"].includes(entry.kind) &&
+      !flights.some(flight => flight.serviceHour === entry.serviceHour))) return [];
+    const hardRules = rulesFor(s, person, journeyId).filter(rule => rule.recordId !== record.id && rule.strength === "must");
+    if (![...goals, ...hardRules].every(rule => requestGoalSatisfied(projected, person, journeyId, rule, s))
+      || conditionalOutcomeIssues(s, projected, person, journeyId).length) return [];
+    const net = offer.credits[person] || 0;
+    if (!Number.isSafeInteger(net) || Math.abs(net) > 1000000) return [];
+    const deadline = Math.min(requestAuthorizationDeadline(s, person, record), ...changes.flatMap(change =>
+      [change.from, change.to].flatMap(id => { const entry = resource(s, id); return entry ? [entry.deadline] : []; })));
+    if (deadline <= s.hour) return [];
+    return [{ offer, changes, own, net, deadline }];
+  }).sort((a, b) => b.net - a.net || a.offer.id.localeCompare(b.offer.id));
+  const plan = plans[0];
+  if (!plan) return unavailable("No complete flight arrangement currently matches this request.");
+  const validUntil = options.validUntil ?? plan.deadline;
+  if (!Number.isFinite(validUntil) || validUntil <= s.hour || validUntil > plan.deadline)
+    return unavailable("The quote must expire before the requested services close.");
+  const chargeCredits = Math.max(0, -plan.net), rewardCredits = Math.max(0, plan.net);
+  const pricedFlight = plan.own.find(change => resource(s, change.to)?.kind === "flight")!.key;
+  const lineItems = plan.own.map(change => {
+    const target = resource(s, change.to)!;
+    const priced = change.key === pricedFlight;
+    return {
+      kind: target.kind as "flight" | "seat" | "baggage" | "meal" | "service",
+      label: target.label,
+      ruleIds: goals.map(rule => rule.id).sort(),
+      resourceIds: [target.id],
+      catalogKey: catalogKey(s, [target.id]),
+      allocationKeys: [change.key],
+      quantity: 1,
+      unitCredits: priced ? chargeCredits : 0,
+      credits: priced ? chargeCredits : 0,
+      unitRewardCredits: priced ? rewardCredits : 0,
+      rewardCredits: priced ? rewardCredits : 0,
+    };
+  });
+  const quote: RequestQuote = {
+    version: 2,
+    id: `request-quote:${person}:${record.id}:${record.revision + 1}:${s.hour}`,
+    person, journeyId, intentId: record.id, targetRevision: record.revision + 1,
+    pricingVersion: REQUEST_PRICING_VERSION, issuedAt: s.hour, validUntil,
+    outcomeKey: canonical({ sourceText: record.sourceText, scope: record.scope, rules: record.rules }),
+    bookingKey: bookingKey(s, person, journeyId, 2),
+    debit: chargeCredits, allowPartial: false, lineItems,
+    operationalPlan: { id: plan.offer.id, termsKey: operationalTerms(s, { ...plan.offer, changes: plan.changes }) },
+    settlement: { chargeCredits, rewardCredits, netCredits: plan.net },
+  };
+  const parsed = requestQuoteSchema.safeParse(quote);
+  return parsed.success ? { status: "quoted", quote: parsed.data }
+    : unavailable("This arrangement exceeds the supported fixed quote limits.");
+}
+
 export function quoteRequest(
   s: State,
   person: string,
   record: IntentRecord,
-  options: { validUntil?: number } = {},
+  options: {
+    validUntil?: number;
+    version?: 1 | 2;
+    fixedCampaigns?: Record<string, string | null>;
+    fixedPlanId?: string;
+  } = {},
 ): RequestQuoteResult {
+  const version = options.version ?? 2;
   try {
     validateIntent(s, person, record);
   } catch (error) {
@@ -266,6 +483,9 @@ export function quoteRequest(
   );
   if (!unmet.length)
     return unavailable("Your booking already meets this request.");
+  if (unmet.some(rule => rule.effect.kind === "departure_window"))
+    return version === 2 ? quoteDeparturePlan(s, person, record, goals, options)
+      : unavailable("Review a current fixed quote for this flight arrangement.");
   if (
     unmet.some(
       (rule) =>
@@ -277,7 +497,7 @@ export function quoteRequest(
     return unavailable(
       "A fixed catalog price is not available for every part of this request. Review an exact offer before accepting these changes.",
     );
-  const lineItems: RequestQuote["lineItems"] = [];
+  const lineItems: Extract<RequestQuote, { version: 2 }>["lineItems"] = [];
   const seatGoals = goals.filter((rule) =>
     ["seat_position", "seating_together"].includes(rule.effect.kind),
   );
@@ -296,12 +516,26 @@ export function quoteRequest(
       return unavailable(
         "A fixed seating price is not available for this arrangement yet.",
       );
-    const price = Math.min(
-      ...destinations.choices.map((seat) => seatCost(destinations.from, seat)),
+    const priced = destinations.choices.map((seat) => ({
+      seat,
+      terms: seatQuoteTerms(
+        s,
+        destinations.own.key,
+        destinations.from,
+        seat,
+        version,
+        options.fixedCampaigns?.[destinations.own.key],
+      ),
+    }));
+    priced.sort(
+      (a, b) =>
+        a.terms.charge - a.terms.reward - (b.terms.charge - b.terms.reward) ||
+        a.seat.id.localeCompare(b.seat.id),
     );
-    const tier = destinations.choices.filter(
-      (seat) => seatCost(destinations.from, seat) === price,
-    );
+    const terms = priced[0].terms;
+    const tier = priced
+      .filter((entry) => canonical(entry.terms) === canonical(terms))
+      .map((entry) => entry.seat);
     lineItems.push({
       kind: "seat",
       label: seatGoals.some((rule) => rule.effect.kind === "seating_together")
@@ -315,98 +549,53 @@ export function quoteRequest(
       ),
       allocationKeys: [destinations.own.key],
       quantity: 1,
-      unitCredits: price,
-      credits: price,
+      unitCredits: terms.charge,
+      credits: terms.charge,
+      unitRewardCredits: terms.reward,
+      rewardCredits: terms.reward,
+      ...(terms.campaign ? { campaign: terms.campaign } : {}),
     });
   }
   const bagGoals = goals.filter((rule) => rule.effect.kind === "baggage");
   if (unmet.some((rule) => bagGoals.includes(rule))) {
-    const pieces = Math.max(
-      ...bagGoals.map((rule) =>
-        rule.effect.kind === "baggage" ? rule.effect.extraPieces : 0,
-      ),
-    );
-    const minimumKg = Math.max(
-      0,
-      ...bagGoals.map((rule) =>
-        rule.effect.kind === "baggage" ? rule.effect.maxKgPerPiece || 0 : 0,
-      ),
-    );
-    const own = s.allocations.filter(
-      (allocation) =>
-        allocation.person === person &&
-        onJourney(s, allocation, journeyId) &&
-        (allocation.resourceKind === "baggage" ||
-          resource(s, allocation.resource)?.kind === "baggage"),
-    );
-    const supplied = own.reduce((sum, allocation) => {
-      const entry = resource(s, allocation.resource);
-      return (
-        sum +
-        ((entry?.baggage?.maxKg || 0) >= minimumKg
-          ? entry?.baggage?.pieces || 0
-          : 0)
-      );
-    }, 0);
-    const needed = pieces - supplied;
-    const products = s.resources.filter(
-      (entry) =>
-        entry.kind === "baggage" &&
-        entry.journey === journeyId &&
-        entry.source === "airline_inventory" &&
-        eligible(entry, person) &&
-        resourcePrice(entry) &&
-        entry.baggage?.passenger === person &&
-        entry.baggage.pieces > 0 &&
-        entry.baggage.maxKg >= minimumKg &&
-        needed > 0 &&
-        needed % entry.baggage.pieces === 0,
-    );
-    if (!products.length)
-      return unavailable(
-        "An exact baggage product with a fixed catalog price is not available for this request.",
-      );
-    products.sort(
-      (a, b) =>
-        (a.q * needed) / a.baggage!.pieces -
-          (b.q * needed) / b.baggage!.pieces ||
-        a.baggage!.maxKg - b.baggage!.maxKg ||
-        a.id.localeCompare(b.id),
-    );
-    const product = products[0],
-      quantity = needed / product.baggage!.pieces;
-    const slots = own
-      .filter((allocation) => allocation.resource === null)
-      .map((allocation) => allocation.key)
-      .sort();
-    // Publishing creates these empty entitlement slots deterministically.
-    for (let index = own.length; index < pieces; index++)
-      slots.push(`extra-baggage:${person}:${journeyId}:${index}`);
-    if (slots.length < quantity)
-      return unavailable(
-        "This baggage quantity cannot be represented by the booking.",
-      );
-    const tier = products.filter(
-      (entry) =>
-        entry.q === product.q &&
-        entry.product === product.product &&
-        canonical(entry.baggage) === canonical(product.baggage),
-    );
-    lineItems.push({
-      kind: "baggage",
-      label: `${needed} extra checked ${needed === 1 ? "bag" : "bags"} · Up to ${product.baggage!.maxKg} kg each`,
-      ruleIds: bagGoals.map((rule) => rule.id).sort(),
-      resourceIds: tier.map((entry) => entry.id).sort(),
-      catalogKey: catalogKey(
-        s,
-        tier.map((entry) => entry.id),
-      ),
-      allocationKeys: slots,
-      quantity,
-      unitCredits: product.q,
-      credits: product.q * quantity,
-    });
+    const result = baggagePlans(s, person, journeyId, bagGoals, {createSlots: true, maxPlans: 1});
+    const plan = result.plans[0];
+    if (!plan) return unavailable(result.limited === "work_limit"
+      ? "This baggage request needs a more specific selection. Review the baggage quantities and weights."
+      : "An exact baggage product with a fixed catalog price is not available for this request.");
+    const own = s.allocations.filter(allocation => allocation.person === person &&
+      onJourney(s, allocation, journeyId) && isExtraBagSlot(s, allocation));
+    const slots = [...new Set([...own.filter(allocation => allocation.resource === null).map(allocation => allocation.key),
+      ...plan.changes.map(change => change.key)])].sort();
+    const requested = Math.max(...bagGoals.map(rule => rule.effect.kind === "baggage" ? rule.effect.extraPieces : 0));
+    for (let index = own.length; index < requested; index++) {
+      const key = `extra-baggage:${person}:${journeyId}:${index}`;
+      if (!slots.includes(key)) slots.push(key);
+    }
+    const groups = new Map<string, {product: Resource; quantity: number}>();
+    const productTerms = (entry: Resource) => canonical({product: entry.product, q: entry.q, baggage: entry.baggage});
+    for (const change of plan.changes) {
+      const product = resource(s, change.to)!, key = productTerms(product), prior = groups.get(key);
+      if (prior) prior.quantity++;
+      else groups.set(key, {product, quantity: 1});
+    }
+    for (const {product, quantity} of groups.values()) {
+      const tier = s.resources.filter(entry => isExtraBaggage(entry) && entry.journey === journeyId &&
+        entry.source === "airline_inventory" && eligible(entry, person) && productTerms(entry) === productTerms(product));
+      const pieces = product.baggage!.pieces * quantity;
+      lineItems.push({
+        kind: "baggage",
+        label: `${pieces} extra checked ${pieces === 1 ? "bag" : "bags"} · Up to ${product.baggage!.maxKg} kg each`,
+        ruleIds: bagGoals.map(rule => rule.id).sort(),
+        resourceIds: tier.map(entry => entry.id).sort(),
+        catalogKey: catalogKey(s, tier.map(entry => entry.id)),
+        allocationKeys: slots,
+        quantity, unitCredits: product.q, credits: product.q * quantity,
+        unitRewardCredits: 0, rewardCredits: 0,
+      });
+    }
   }
+
   const deadline = Math.min(
     requestAuthorizationDeadline(s, person, record),
     ...lineItems.flatMap((item) =>
@@ -422,14 +611,18 @@ export function quoteRequest(
     return unavailable(
       "The quote must expire before the requested services close.",
     );
-  const quote: RequestQuote = {
-    version: 1,
+  const chargeCredits = lineItems.reduce((sum, item) => sum + item.credits, 0);
+  const rewardCredits = lineItems.reduce(
+    (sum, item) => sum + item.rewardCredits,
+    0,
+  );
+  const common = {
     id: `request-quote:${person}:${record.id}:${record.revision + 1}:${s.hour}`,
     person,
     journeyId,
     intentId: record.id,
     targetRevision: record.revision + 1,
-    pricingVersion: REQUEST_PRICING_VERSION,
+    pricingVersion: REQUEST_PRICING_VERSION as typeof REQUEST_PRICING_VERSION,
     issuedAt: s.hour,
     validUntil,
     outcomeKey: canonical({
@@ -438,11 +631,34 @@ export function quoteRequest(
       rules: record.rules,
       standingHardSeats,
     }),
-    bookingKey: bookingKey(s, person, journeyId),
-    debit: lineItems.reduce((sum, item) => sum + item.credits, 0),
-    lineItems,
-    allowPartial: false,
+    bookingKey: bookingKey(s, person, journeyId, version),
+    debit: Math.max(0, chargeCredits - rewardCredits),
+    allowPartial: false as const,
   };
+  const quote: RequestQuote =
+    version === 1
+      ? {
+          ...common,
+          version: 1,
+          lineItems: lineItems.map(
+            ({ unitRewardCredits, rewardCredits, campaign, ...item }) => {
+              void unitRewardCredits;
+              void rewardCredits;
+              void campaign;
+              return item;
+            },
+          ),
+        }
+      : {
+          ...common,
+          version: 2,
+          lineItems,
+          settlement: {
+            chargeCredits,
+            rewardCredits,
+            netCredits: rewardCredits - chargeCredits,
+          },
+        };
   const parsed = requestQuoteSchema.safeParse(quote);
   return parsed.success
     ? { status: "quoted", quote: parsed.data }
@@ -457,8 +673,7 @@ export function validateRequestQuote(
   input: RequestQuote,
 ): string[] {
   const parsed = requestQuoteSchema.safeParse(input);
-  if (!parsed.success)
-    return ["Review a valid platform quote before publishing."];
+  if (!parsed.success) return ["Review a new fixed quote before publishing."];
   const quote = parsed.data;
   if (quote.issuedAt > s.hour || quote.validUntil <= s.hour)
     return ["This quote has expired. Review a new quote."];
@@ -466,6 +681,23 @@ export function validateRequestQuote(
   // of authority. Altering a client debit or binding cannot grant consent.
   const result = quoteRequest({ ...s, hour: quote.issuedAt }, person, record, {
     validUntil: quote.validUntil,
+    version: quote.version,
+    fixedPlanId: quote.version === 2 ? quote.operationalPlan?.id : undefined,
+    // Demand can affect which campaign is available for a new quote. Accepted
+    // commercial terms remain fixed when unrelated requests arrive or leave.
+    fixedCampaigns:
+      quote.version === 2
+        ? Object.fromEntries(
+            quote.lineItems
+              .filter((item) => item.kind === "seat")
+              .flatMap((item) =>
+                item.allocationKeys.map((key) => [
+                  key,
+                  item.campaign?.id ?? null,
+                ]),
+              ),
+          )
+        : undefined,
   });
   return result.status === "quoted" &&
     canonical(result.quote) === canonical(quote)
@@ -534,9 +766,18 @@ export function quoteCoversCandidate(
   if (
     quote.person !== person ||
     quote.pricingVersion !== candidate.pricingVersion ||
-    Math.max(0, -(candidate.credits[person] || 0)) !== quote.debit
+    (quote.version === 2
+      ? (candidate.credits[person] || 0) !== quote.settlement.netCredits
+      : Math.max(0, -(candidate.credits[person] || 0)) !== quote.debit)
   )
     return false;
+  if (quote.version === 2 && quote.operationalPlan) {
+    if (candidate.id !== quote.operationalPlan.id || operationalTerms(s, candidate) !== quote.operationalPlan.termsKey) return false;
+    const ownChanges = candidate.changes.filter(change => s.allocations.find(allocation => allocation.key === change.key)?.person === person);
+    return ownChanges.length === quote.lineItems.length && quote.lineItems.every(item =>
+      catalogKey(s, item.resourceIds) === item.catalogKey && ownChanges.some(change =>
+        item.allocationKeys.includes(change.key) && !!change.to && item.resourceIds.includes(change.to)));
+  }
   const ownChanges = candidate.changes.filter(
     (change) =>
       s.allocations.find((allocation) => allocation.key === change.key)
@@ -560,8 +801,54 @@ export function quoteCoversCandidate(
       const to = resource(s, change.to),
         from = resource(s, change.from);
       if (!to || to.kind !== item.kind) return false;
-      const cost = item.kind === "seat" && from ? seatCost(from, to) : to.q;
-      return cost === item.unitCredits;
+      const quotedCampaign =
+        "campaign" in item
+          ? (item.campaign as Extract<
+              RequestQuote,
+              { version: 2 }
+            >["lineItems"][number]["campaign"])
+          : undefined;
+      const terms =
+        item.kind === "seat" && from
+          ? seatQuoteTerms(
+              s,
+              change.key,
+              from,
+              to,
+              quote.version,
+              quote.version === 2 ? (quotedCampaign?.id ?? null) : undefined,
+            )
+          : { charge: to.q, reward: 0, campaign: undefined };
+      if (terms.charge !== item.unitCredits) return false;
+      if (quote.version === 1) return true;
+      if (
+        !("unitRewardCredits" in item) ||
+        terms.reward !== item.unitRewardCredits ||
+        canonical(terms.campaign) !== canonical(quotedCampaign)
+      )
+        return false;
+      if (!terms.campaign) return true;
+      const receiver = candidate.changes.find(
+        (entry) => entry.to === change.from && entry.key !== change.key,
+      );
+      const recipient =
+        receiver && s.allocations.find((entry) => entry.key === receiver.key);
+      const recipientBefore = receiver && resource(s, receiver.from);
+      const campaign = s.campaigns?.find(
+        (entry) => entry.id === terms.campaign!.id,
+      );
+      return (
+        !!from &&
+        !!recipient &&
+        recipient.person !== person &&
+        !!recipientBefore &&
+        seatReleaseRequestedBy(s, recipient.person, recipientBefore, from) &&
+        [candidate.event, ...(candidate.requiredEvents || [])].includes(
+          terms.campaign.event,
+        ) &&
+        candidate.budget === campaign?.budget &&
+        candidate.issuance >= terms.campaign.credits
+      );
     });
   });
 }

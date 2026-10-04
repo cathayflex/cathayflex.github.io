@@ -6,7 +6,7 @@ The public product website for Team Globe’s Cathay Hackathon 2026 project, pub
 
 The page introduces the product through traveller experience, the technology behind a match and the value of portable credits. It develops three connected ideas. Different passenger priorities make useful voluntary changes possible. Flex credits carry their value across flights, seats, travel services and journeys. Travellers control the offers they accept and the terms of requests they publish.
 
-The idea presents six illustrated moments with a compact, persistent credit balance. Standing preferences lead to an offer, an accepted seat change earns 400 credits, and a later request shows a fixed 360-credit quote for adjacent seats and an extra bag. Confirmation leaves 40 credits. Each moment has one main action. Back revisits immutable snapshots and replay starts a fresh illustration. Brief seat and balance movements connect actions with outcomes. Keyboard input and reduced-motion preferences skip the animation.
+The idea presents six illustrated moments with a compact, persistent credit balance. Standing preferences lead to an offer, an accepted seat change earns 400 credits, and a later request shows a fixed 360-credit quote for adjacent seats and an extra bag. Publishing that request authorises its terms and holds the quoted credits. Confirmation leaves 40 credits. Each moment has one main action. Back revisits immutable snapshots and replay starts a fresh illustration. Brief seat and balance movements connect actions with outcomes. Keyboard input and reduced-motion preferences skip the animation.
 
 Behind Flex pairs natural language with structured conditions and a computed match. A single link opens the technical page. Flex Credits explains how a contribution through one resource can fund a different resource or a later journey, accompanied by the four resource groups and their eight services. Your Choices presents offer terms, request deadlines and booking updates. The page closes with “Let your flexibility take you further.”
 
@@ -14,7 +14,7 @@ Behind Flex pairs natural language with structured conditions and a computed mat
 
 The site uses plain HTML, CSS and JavaScript. `index.html` contains the narrative. `style.css` provides base styles and branding, `story.css` defines the editorial layout, and `exchange.css` styles the illustration. `exchange.js` presents the interaction, `experience.mjs` defines its six immutable snapshots, and `offers.mjs` models local quoting, publication, holds and settlement. `technology.js` and `technology.css` present AI interpretation and constraint matching separately. `app.js` handles navigation and reveal motion.
 
-Preview with Python’s HTTP server. Run `npm test` for illustration transitions and matching safeguards. The main branch is the GitHub Pages source. No CNAME is used. The previous personal-site introduction redirects here. SlidePoise publishing does not update this repository.
+Preview with Python’s HTTP server. Run `npm test` for illustration transitions and matching safeguards. The accepting traveller’s reward matches the requesting traveller’s authorised fixed quote. The main branch is the GitHub Pages source. No CNAME is used. The previous personal-site introduction redirects here. SlidePoise publishing does not update this repository.
 
 ## Scope
 

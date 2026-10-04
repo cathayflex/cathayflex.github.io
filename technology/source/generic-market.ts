@@ -1,3 +1,5 @@
+import { baggagePlans, baggageRequirementSatisfied } from "./baggage-plans.ts";
+import { isExtraBaggage, isExtraBagSlot } from "./baggage.ts";
 import type {
   Allocation,
   Candidate,
@@ -20,6 +22,16 @@ type Seating = (
   partyId: string,
   changes?: Change[],
 ) => { together: boolean; guardiansProtected: boolean; seats: Resource[] };
+type SeatFacts = {
+  from: Resource;
+  rules: ReturnType<typeof rulesFor>;
+  demand: ReturnType<typeof requestRulesFor>;
+  contextKnown: boolean;
+  hasParty: boolean;
+  age: number;
+  canMove: boolean;
+  hasSeatRequest: boolean;
+};
 const current = (s: State, id: string | null) =>
   s.resources.find((r) => r.id === id);
 const change = (a: Allocation, to: string | null): Change => ({
@@ -74,11 +86,14 @@ function acceptableSeat(
   a: Allocation,
   to: Resource,
   pricedInventory = false,
+  facts?: SeatFacts,
 ): boolean {
-  const from = current(s, a.resource);
+  const from = facts?.from ?? current(s, a.resource);
   if (
     !from ||
     to.kind !== "seat" ||
+    (to.serviceOnly && to.product !== from.product) ||
+    (to.cabin || "Economy") !== (from.cabin || "Economy") ||
     to.journey !== from.journey ||
     (!pricedInventory && to.product !== from.product) ||
     to.serviceHour !== from.serviceHour ||
@@ -86,9 +101,9 @@ function acceptableSeat(
   )
     return false;
   if (to.eligible.length && !to.eligible.includes(a.person)) return false;
-  if (to.seatMap?.exitRow && (s.people.find((person) => person.id === a.person)?.age ?? 18) < 15) return false;
-  if (intentContextIssues(s, a.person, from.journey).length) return false;
-  const rules = rulesFor(s, a.person, from.journey);
+  if (to.seatMap?.exitRow && (facts?.age ?? s.people.find((person) => person.id === a.person)?.age ?? 18) < 15) return false;
+  if (facts ? !facts.contextKnown : intentContextIssues(s, a.person, from.journey).length > 0) return false;
+  const rules = facts?.rules ?? rulesFor(s, a.person, from.journey);
   const hard = rules.filter(
     (r) => r.strength === "must" && r.effect.kind === "seat_position",
   );
@@ -100,13 +115,13 @@ function acceptableSeat(
     )
   )
     return false;
-  const demand = requestRulesFor(s, a.person, from.journey);
+  const demand = facts?.demand ?? requestRulesFor(s, a.person, from.journey);
   const together = rules.filter((r) => r.effect.kind === "seating_together");
   if (together.length) {
-    const party = s.parties?.find(
+    const hasParty = facts?.hasParty ?? !!s.parties?.find(
       (p) => p.journeyId === from.journey && p.memberIds.includes(a.person),
     );
-    if (!party) return false;
+    if (!hasParty) return false;
     // Togetherness is a final-allocation predicate. An isolated move can fail
     // even when the full family permutation succeeds, so it cannot prune an edge.
     if (demand.some((r) => r.effect.kind === "seating_together")) return true;
@@ -181,10 +196,11 @@ function seatImprovement(
   to: Resource,
   seating: Seating,
   changes: Change[],
+  facts?: SeatFacts,
 ): boolean {
-  const from = current(s, a.resource);
+  const from = facts?.from ?? current(s, a.resource);
   if (!from) return false;
-  const rules = requestRulesFor(s, a.person, from.journey);
+  const rules = facts?.demand ?? requestRulesFor(s, a.person, from.journey);
   const requiredGain = rules.some(
     (r) =>
       r.strength === "must" &&
@@ -333,6 +349,7 @@ export function composeCandidateBundle(
     deadline: Math.min(...parts.map((part) => part.deadline)),
     availableFrom: Math.max(...parts.map((part) => part.availableFrom || 0)),
     requiredEvents,
+    baggageReturns: parts.flatMap((part) => part.baggageReturns || []),
     prerequisites: [...new Set(parts.flatMap((part) => part.prerequisites))],
     conditions: [...new Set(parts.flatMap((part) => part.conditions))],
   };
@@ -376,11 +393,65 @@ export function generateGenericMarket(
     diagnostics.complete = false;
     diagnostics.reason ??= reason;
   };
-  const list: Candidate[] = [], seatFragments: Candidate[] = [],
-    seats = s.allocations
-      .filter((a) => current(s, a.resource)?.kind === "seat")
-      .sort((a, b) => a.key.localeCompare(b.key)),
-    found = new Set<string>();
+  // These indexes belong to this immutable generation snapshot. Context and
+  // applicable rules are compiled once, before exploring alternative moves.
+  const resources = new Map(s.resources.map((resource) => [resource.id, resource]));
+  const allocations = new Map(s.allocations.map((allocation) => [allocation.key, allocation]));
+  const people = new Map(s.people.map((person) => [person.id, person]));
+  const occupied = new Map<string, number>();
+  for (const allocation of s.allocations) if (allocation.resource) {
+    occupied.set(allocation.resource, (occupied.get(allocation.resource) || 0) + 1);
+  }
+  const getResource = (id: string | null) => id ? resources.get(id) : undefined;
+  const requestCache = new Map<string, ReturnType<typeof requestRulesFor>>();
+  const requestRules = (person: string, journey: string) => {
+    const key = JSON.stringify([person, journey]);
+    let rules = requestCache.get(key);
+    if (!rules) {
+      rules = requestRulesFor(s, person, journey);
+      requestCache.set(key, rules);
+    }
+    return rules;
+  };
+  const contextCache = new Map<string, Omit<SeatFacts, "from">>();
+  const seatFacts = new Map<string, SeatFacts>();
+  for (const allocation of s.allocations) {
+    const from = getResource(allocation.resource);
+    if (from?.kind !== "seat") continue;
+    const key = JSON.stringify([allocation.person, from.journey]);
+    let context = contextCache.get(key);
+    if (!context) {
+      const rules = rulesFor(s, allocation.person, from.journey);
+      const demand = requestRules(allocation.person, from.journey);
+      const hasSeatRequest = demand.some((rule) =>
+        rule.effect.kind === "seat_position" || rule.effect.kind === "seating_together");
+      const hasParty = !!s.parties?.some((party) =>
+        party.journeyId === from.journey && party.memberIds.includes(allocation.person));
+      const contextKnown = intentContextIssues(s, allocation.person, from.journey).length === 0;
+      const permitted = rules.some((rule) => rule.purpose === "flexibility"
+        && rule.strength === "flexible" && rule.effect.kind === "seat_position");
+      context = {rules, demand, contextKnown, hasParty, hasSeatRequest,
+        age: people.get(allocation.person)?.age ?? 18,
+        canMove: contextKnown && (permitted || hasSeatRequest)
+          && (!rules.some((rule) => rule.effect.kind === "seating_together") || hasParty)};
+      contextCache.set(key, context);
+    }
+    seatFacts.set(allocation.key, {...context, from});
+  }
+  const seatGroup = (resource: Resource) =>
+    JSON.stringify([resource.journey, resource.product, resource.serviceHour]);
+  const activeGroups = new Set([...seatFacts.values()]
+    .filter((facts) => facts.canMove && facts.hasSeatRequest).map((facts) => seatGroup(facts.from)));
+  const seats = s.allocations.filter((allocation) => {
+    const facts = seatFacts.get(allocation.key);
+    return facts?.canMove && activeGroups.has(seatGroup(facts.from));
+  }).sort((a, b) => {
+    const left = seatFacts.get(a.key)!, right = seatFacts.get(b.key)!;
+    return Number(right.hasSeatRequest) - Number(left.hasSeatRequest)
+      || left.from.deadline - right.from.deadline || a.key.localeCompare(b.key);
+  });
+  const requestSeats = seats.filter((allocation) => seatFacts.get(allocation.key)!.hasSeatRequest);
+  const list: Candidate[] = [], seatFragments: Candidate[] = [], found = new Set<string>();
   const completeRequests = Object.entries(s.intents || {}).flatMap(
     ([person, records]) =>
       records
@@ -411,30 +482,54 @@ export function generateGenericMarket(
     catalogueVisits = 0,
     seatCount = 0,
     seatStopped = false;
-  const edgeCache = new Map<string, Allocation[]>();
-  const seatIndex = new Map(seats.map((a, i) => [a.key, i]));
+  const edgeCache = new Map<string, Map<number, Allocation | null>>();
   const groups = new Map<string, Allocation[]>();
   for (const seat of seats) {
-    const r = current(s, seat.resource)!;
-    const key = `${r.journey}|${r.product}|${r.serviceHour}`;
-    groups.set(key, [...(groups.get(key) || []), seat]);
+    const key = seatGroup(seatFacts.get(seat.key)!.from);
+    const members = groups.get(key);
+    if (members) members.push(seat); else groups.set(key, [seat]);
   }
-  graph: for (const group of groups.values())
-    for (const from of group) {
-      const edges: Allocation[] = [];
+  const outgoing = function* (from: Allocation): Generator<Allocation | null> {
+    let edges = edgeCache.get(from.key);
+    if (!edges) {
+      edges = new Map();
       edgeCache.set(from.key, edges);
-      for (const to of group) {
-        if (from.key === to.key) continue;
-        if (graphVisits >= graphBudget) {
-          limited("work_limit");
-          break graph;
-        }
-        graphVisits++;
-        diagnostics.visited++;
-        if (acceptableSeat(s, from, current(s, to.resource)!))
-          edges.push(to);
-      }
     }
+    const facts = seatFacts.get(from.key)!;
+    const group = groups.get(seatGroup(facts.from)) || [];
+    for (let position = 0; position < group.length; position++) {
+      const to = group[position];
+      if (from.key === to.key) continue;
+      if (edges.has(position)) {
+        yield edges.get(position)!;
+        continue;
+      }
+      if (graphVisits >= graphBudget || diagnostics.visited >= workLimit) {
+        limited("work_limit");
+        return;
+      }
+      graphVisits++;
+      diagnostics.visited++;
+      const destination = acceptableSeat(s, from, seatFacts.get(to.key)!.from, false, facts) ? to : null;
+      edges.set(position, destination);
+      // Rejected edges yield as well, so one large flight cannot spend the
+      // graph budget before another request frontier receives a turn.
+      yield destination;
+    }
+  };
+  // One traversal step per frontier gives every active request an opportunity
+  // before a dense component spends the remaining cycle-search budget.
+  const runFrontiers = (frontiers: Generator<void>[]) => {
+    let pending = frontiers;
+    while (pending.length && !seatStopped) {
+      const next: Generator<void>[] = [];
+      for (const frontier of pending) {
+        if (seatStopped) return;
+        if (!frontier.next().done) next.push(frontier);
+      }
+      pending = next;
+    }
+  };
   const add = (c: Candidate, isSeat = false, isBundle = false) => {
     if (
       list.length >= (isBundle ? candidateLimit : ordinaryLimit) ||
@@ -449,11 +544,11 @@ export function generateGenericMarket(
           c.changes
             .filter(
               (ch) =>
-                s.allocations.find((a) => a.key === ch.key)?.person === person,
+                allocations.get(ch.key)?.person === person,
             )
             .flatMap((ch) => [
-              current(s, ch.to)?.journey,
-              current(s, ch.from)?.journey,
+              getResource(ch.to)?.journey,
+              getResource(ch.from)?.journey,
             ])
             .filter((j): j is string => !!j),
         ),
@@ -462,15 +557,15 @@ export function generateGenericMarket(
         c.changes
           .filter(
             (ch) =>
-              s.allocations.find((a) => a.key === ch.key)?.person === person,
+              allocations.get(ch.key)?.person === person,
           )
           .flatMap((ch) => [
-            current(s, ch.from)?.kind,
-            current(s, ch.to)?.kind,
+            getResource(ch.from)?.kind,
+            getResource(ch.to)?.kind,
           ]),
       );
       return journeys.flatMap((journey) =>
-        requestRulesFor(s, person, journey)
+        requestRules(person, journey)
           .filter((rule) => {
             const kind =
               rule.effect.kind === "seat_position" ||
@@ -511,20 +606,25 @@ export function generateGenericMarket(
     diagnostics.visited++;
     return true;
   };
-  seatSearch: for (let cycleLength = 2; cycleLength <= 4; cycleLength++)
-    for (const start of seats) {
-      const walk = (path: Allocation[]) => {
+  const traversalWork = () => {
+    if (walkVisits >= walkBudget || diagnostics.visited >= workLimit) {
+      limited("work_limit");
+      seatStopped = true;
+      return false;
+    }
+    walkVisits++;
+    diagnostics.visited++;
+    return true;
+  };
+  for (let cycleLength = 2; cycleLength <= 4; cycleLength++) {
+    const frontiers = requestSeats.map((start) => {
+      const walk = function* (path: Allocation[]): Generator<void> {
         const last = path[path.length - 1];
-        for (const owner of edgeCache.get(last.key) || []) {
+        for (const owner of outgoing(last)) {
           if (seatStopped) return;
-          if (walkVisits >= walkBudget) {
-            limited("work_limit");
-            seatStopped = true;
-            return;
-          }
-          walkVisits++;
-          diagnostics.visited++;
-          if (seatIndex.get(owner.key)! < seatIndex.get(start.key)!) continue;
+          if (!traversalWork()) return;
+          yield;
+          if (!owner) continue;
           if (owner.key === start.key && path.length === cycleLength) {
             const canonical = path
               .map((a, i) => `${a.key}>${path[(i + 1) % path.length].resource}`)
@@ -543,18 +643,19 @@ export function generateGenericMarket(
                 seatImprovement(
                   s,
                   a,
-                  current(s, path[(i + 1) % path.length].resource)!,
+                  getResource(path[(i + 1) % path.length].resource)!,
                   seating,
                   changes,
+                  seatFacts.get(a.key),
                 ));
-            const jointGoal = path.some((a) => requestRulesFor(s, a.person, current(s, a.resource)!.journey)
+            const jointGoal = path.some((a) => requestRules(a.person, getResource(a.resource)!.journey)
               .some((rule) => rule.effect.kind === "seating_together"));
             if (!improves && !jointGoal) continue;
             const credits = Object.fromEntries(
               path.map((a, i) => [
                 a.person,
-                current(s, a.resource)!.q -
-                  current(s, path[(i + 1) % path.length].resource)!.q,
+                getResource(a.resource)!.q -
+                  getResource(path[(i + 1) % path.length].resource)!.q,
               ]),
             );
             const c = base(
@@ -575,7 +676,7 @@ export function generateGenericMarket(
                 path.some(
                   (a) =>
                     party.memberIds.includes(a.person) &&
-                    current(s, a.resource)?.journey === party.journeyId,
+                    getResource(a.resource)?.journey === party.journeyId,
                 ) &&
                 seating(s, party.id, changes).together
               ) {
@@ -585,18 +686,14 @@ export function generateGenericMarket(
             }
             for (const campaign of s.campaigns || []) {
               const released = path.find((a, i) => {
-                const from = current(s, a.resource)!,
-                  to = current(s, path[(i + 1) % path.length].resource)!;
+                const from = getResource(a.resource)!,
+                  to = getResource(path[(i + 1) % path.length].resource)!;
                 const recipient = path.find(
                   (_, j) => changes[j].to === from.id,
                 );
                 if (!recipient || recipient.person === a.person) return false;
-                const recipientBefore = current(s, recipient.resource)!;
-                const demand = requestRulesFor(
-                  s,
-                  recipient.person,
-                  from.journey,
-                ).some(
+                const recipientBefore = getResource(recipient.resource)!;
+                const demand = requestRules(recipient.person, from.journey).some(
                   (r) =>
                     r.strength !== "flexible" &&
                     r.effect.kind === "seat_position" &&
@@ -611,6 +708,16 @@ export function generateGenericMarket(
                 );
               });
               if (released) {
+                // A published fixed quote can require catalog settlement without
+                // a campaign. Later demand must not silently change that price.
+                const fixedQuotes = (s.intents?.[released.person] || []).filter((record) =>
+                  record.confirmed && !record.cancelled && !record.questions.length &&
+                  record.authorization?.mode === "fixed_quote" && record.authorization.validUntil > s.hour,
+                ).flatMap((record) => {
+                  const quote = record.authorization?.quote;
+                  return quote?.version === 2 ? quote.lineItems.filter((item) => item.kind === "seat" && item.allocationKeys.includes(released.key)) : [];
+                });
+                if (fixedQuotes.some((item) => item.campaign?.id !== campaign.id)) continue;
                 const event = `${campaign.id}:${released.key}:${released.resource}`;
                 Object.assign(c, {
                   category: "earn",
@@ -634,9 +741,10 @@ export function generateGenericMarket(
                 seatImprovement(
                   s,
                   a,
-                  current(s, path[(i + 1) % path.length].resource)!,
+                  getResource(path[(i + 1) % path.length].resource)!,
                   seating,
                   changes,
+                  seatFacts.get(a.key),
                 ) || (c.credits[a.person] || 0) > 0,
             ).length;
             seatFragments.push(c);
@@ -649,86 +757,96 @@ export function generateGenericMarket(
             path.length < cycleLength &&
             !path.some((a) => a.key === owner.key || a.person === owner.person)
           )
-            walk([...path, owner]);
+            yield* walk([...path, owner]);
         }
       };
-      walk([start]);
-      if (seatStopped) break seatSearch;
-    }
+      return walk([start]);
+    });
+    runFrontiers(frontiers);
+    if (seatStopped) break;
+  }
   // A path can end at a genuinely empty airline seat instead of closing a cycle.
   // The initiating passenger buys their new seat. Intermediate movers settle
   // fixed reference-value differences, with the net debit funding that inventory.
-  const emptySeats = s.resources.filter((resource) => resource.kind === "seat"
-    && resource.source === "airline_inventory"
-    && resource.capacity - resource.protected - resource.background
-      - s.allocations.filter((a) => a.resource === resource.id).length > 0);
-  chains: for (let length = 1; length <= 4 && !seatStopped; length++) for (const start of seats) {
-    const walk = (path: Allocation[]) => {
-      const last = path[path.length - 1];
-      if (path.length === length) {
-        for (const destination of emptySeats) {
-          if (walkVisits >= walkBudget) { limited("work_limit"); seatStopped = true; return; }
-          walkVisits++; diagnostics.visited++;
-          if (!acceptableSeat(s, last, destination, true)) continue;
-          const changes = path.map((a, i) => change(a, path[i + 1]?.resource || destination.id));
-          const improves = path.some((a, i) => seatImprovement(s, a,
-            current(s, changes[i].to)!, seating, changes));
-          const jointGoal = path.some((a) => requestRulesFor(s, a.person, current(s, a.resource)!.journey)
-            .some((rule) => rule.effect.kind === "seating_together"));
-          if (!improves && !jointGoal) continue;
-          const credits = Object.fromEntries(path.map((a, i) => [a.person,
-            current(s, a.resource)!.q - current(s, changes[i].to)!.q
-              - (i === 0 ? current(s, start.resource)!.q : 0)]));
-          const id = path.length === 1 ? `redeem-${start.person}-${destination.id}`
-            : `chain-${changes.map((ch) => `${ch.key}>${ch.to}`).sort().join("|")}`;
-          const candidate = {...base(s, id, path.map((a) => a.person), changes, credits),
-            category: "redeem" as const, redemption: destination.q,
-            cost: destination.serviceCost + destination.opportunityCost,
-            gain: path.filter((a, i) => seatImprovement(s, a, current(s, changes[i].to)!, seating, changes)
-              || credits[a.person] > 0).length,
-            title: "A complete seat arrangement with airline inventory"};
-          seatFragments.push(candidate);
-          if (!improves || !completeSeatOutcomeValid(s, changes, seating)) continue;
-          if (!add(candidate, true)) { seatStopped = true; return; }
+  const emptySeatGroups = new Map<string, Resource[]>();
+  const inventoryGroup = (resource: Resource) => JSON.stringify([resource.journey, resource.serviceHour]);
+  for (const resource of s.resources) {
+    if (resource.kind !== "seat" || resource.source !== "airline_inventory"
+      || resource.capacity - resource.protected - resource.background - (occupied.get(resource.id) || 0) <= 0) continue;
+    const key = inventoryGroup(resource), group = emptySeatGroups.get(key);
+    if (group) group.push(resource); else emptySeatGroups.set(key, [resource]);
+  }
+  for (let length = 1; length <= 4 && !seatStopped; length++) {
+    const frontiers = seats.map((start) => {
+      const walk = function* (path: Allocation[]): Generator<void> {
+        const last = path[path.length - 1];
+        if (path.length === length) {
+          for (const destination of emptySeatGroups.get(inventoryGroup(seatFacts.get(last.key)!.from)) || []) {
+            if (!traversalWork()) return;
+            yield;
+            if (!acceptableSeat(s, last, destination, true, seatFacts.get(last.key))) continue;
+            const changes = path.map((a, i) => change(a, path[i + 1]?.resource || destination.id));
+            const improves = path.some((a, i) => seatImprovement(s, a,
+              getResource(changes[i].to)!, seating, changes, seatFacts.get(a.key)));
+            const jointGoal = path.some((a) => requestRules(a.person, getResource(a.resource)!.journey)
+              .some((rule) => rule.effect.kind === "seating_together"));
+            if (!improves && !jointGoal) continue;
+            const credits = Object.fromEntries(path.map((a, i) => [a.person,
+              getResource(a.resource)!.q - getResource(changes[i].to)!.q
+                - (i === 0 ? getResource(start.resource)!.q : 0)]));
+            const id = path.length === 1 ? `redeem-${start.person}-${destination.id}`
+              : `chain-${changes.map((ch) => `${ch.key}>${ch.to}`).sort().join("|")}`;
+            const candidate = {...base(s, id, path.map((a) => a.person), changes, credits),
+              category: "redeem" as const, redemption: destination.q,
+              cost: destination.serviceCost + destination.opportunityCost,
+              gain: path.filter((a, i) => seatImprovement(s, a, getResource(changes[i].to)!, seating, changes, seatFacts.get(a.key))
+                || credits[a.person] > 0).length,
+              title: "A complete seat arrangement with airline inventory"};
+            seatFragments.push(candidate);
+            if (!improves || !completeSeatOutcomeValid(s, changes, seating)) continue;
+            if (!add(candidate, true)) { seatStopped = true; return; }
+          }
+          return;
         }
-        return;
-      }
-      for (const owner of edgeCache.get(last.key) || []) {
-        if (walkVisits >= walkBudget) { limited("work_limit"); seatStopped = true; return; }
-        walkVisits++; diagnostics.visited++;
-        if (!path.some((a) => a.key === owner.key || a.person === owner.person)) walk([...path, owner]);
-        if (seatStopped) return;
-      }
-    };
-    walk([start]);
-    if (seatStopped) break chains;
+        for (const owner of outgoing(last)) {
+          if (!traversalWork()) return;
+          yield;
+          if (!owner) continue;
+          if (!path.some((a) => a.key === owner.key || a.person === owner.person)) yield* walk([...path, owner]);
+          if (seatStopped) return;
+        }
+      };
+      return walk([start]);
+    });
+    runFrontiers(frontiers);
   }
   // Disconnected swaps or empty-seat paths can form one jointly feasible family
   // move. Keep infeasible components private until their complete union is valid.
   const jointIds = new Set<string>();
   joint: for (const party of s.parties || []) {
     const relevant = seatFragments.filter((candidate) => candidate.changes.some((update) => {
-      const allocation = s.allocations.find((a) => a.key === update.key);
+      const allocation = allocations.get(update.key);
       return allocation && party.memberIds.includes(allocation.person)
-        && current(s, update.from)?.journey === party.journeyId;
+        && getResource(update.from)?.journey === party.journeyId;
     }));
-    if (!party.memberIds.some((person) => requestRulesFor(s, person, party.journeyId)
+    if (!party.memberIds.some((person) => requestRules(person, party.journeyId)
       .some((rule) => rule.effect.kind === "seating_together"))) continue;
+    const fragmentKeys = relevant.map((candidate) => new Set(candidate.changes.map((update) => update.key)));
     const attempt = (parts: Candidate[]) => {
-      const keys = parts.flatMap((part) => part.changes.map((change) => change.key));
-      if (new Set(keys).size !== keys.length) return true;
       if ((diagnostics.jointAttempts || 0) >= Math.max(192, candidateLimit * 4) || diagnostics.visited >= workLimit) {
         limited("work_limit"); return false;
       }
       diagnostics.jointAttempts = (diagnostics.jointAttempts || 0) + 1; diagnostics.visited++;
+      const keys = parts.flatMap((part) => part.changes.map((change) => change.key));
+      if (new Set(keys).size !== keys.length) return true;
       const candidate = composeCandidateBundle(s, parts);
       if (!candidate || jointIds.has(candidate.id) || !completeSeatOutcomeValid(s, candidate.changes, seating)
         || !seating(s, party.id, candidate.changes).together) return true;
       candidate.partyId = party.id;
       candidate.title = "Your complete booking party, seated together";
       candidate.gain = candidate.changes.filter((update) => {
-        const allocation = s.allocations.find((a) => a.key === update.key)!;
-        return seatImprovement(s, allocation, current(s, update.to)!, seating, candidate.changes)
+        const allocation = allocations.get(update.key)!;
+        return seatImprovement(s, allocation, getResource(update.to)!, seating, candidate.changes, seatFacts.get(allocation.key))
           || candidate.credits[allocation.person] > 0;
       }).length;
       jointIds.add(candidate.id);
@@ -736,62 +854,46 @@ export function generateGenericMarket(
     };
     for (let i = 0; i < relevant.length; i++) for (let j = i + 1; j < relevant.length; j++) {
       if (!attempt([relevant[i], relevant[j]])) break joint;
+      // A third fragment cannot repair duplicate writes in the first pair.
+      if ([...fragmentKeys[i]].some((key) => fragmentKeys[j].has(key))) continue;
       for (let k = j + 1; k < relevant.length; k++) if (!attempt([relevant[i], relevant[j], relevant[k]])) break joint;
     }
   }
+  const searchedBaggage = new Set<string>();
   inventory: for (const r of s.resources.filter(
     (r) => r.source === "airline_inventory",
   )) {
     for (const p of s.people) {
       if (!catalogueWork()) break inventory;
       if (r.eligible.length && !r.eligible.includes(p.id)) continue;
-      const rules = requestRulesFor(s, p.id, r.journey);
+      const rules = requestRules(p.id, r.journey);
       if (r.kind === "baggage") {
-        const wants = rules.filter(
-          (rule) =>
-            rule.effect.kind === "baggage" && rule.strength !== "flexible",
-        );
-        const requested = Math.max(
-          0,
-          ...wants.map((rule) =>
-            rule.effect.kind === "baggage" ? rule.effect.extraPieces : 0,
-          ),
-        );
-        if (!requested) continue;
-        const own = s.allocations.filter(
-          (a) =>
-            a.person === p.id &&
-            (a.journeyId === r.journey ||
-              current(s, a.resource)?.journey === r.journey) &&
-            (a.resourceKind === "baggage" ||
-              current(s, a.resource)?.kind === "baggage"),
-        );
-        const supplied = own.reduce(
-          (n, a) => n + (current(s, a.resource)?.baggage?.pieces || 0),
-          0,
-        );
-        const count = Math.ceil(
-          Math.max(0, requested - supplied) / (r.baggage?.pieces || 1),
-        );
-        if (!count) continue;
-        const slots = own.filter((a) => a.resource === null).slice(0, count);
-        if (slots.length < count) continue;
-        const c = base(
-          s,
-          `redeem-${p.id}-${r.id}`,
-          [p.id],
-          slots.map((a) => change(a, r.id)),
-          { [p.id]: -r.q * count },
-        );
-        Object.assign(c, {
-          category: "redeem",
-          redemption: r.q * count,
-          cost: (r.serviceCost + r.opportunityCost) * count,
-          title: `${count} extra checked ${count === 1 ? "bag" : "bags"} for your journey`,
-          description:
-            "A personal baggage entitlement supplied by airline inventory.",
+        const key = JSON.stringify([p.id, r.journey]);
+        if (searchedBaggage.has(key)) continue;
+        searchedBaggage.add(key);
+        const result = baggagePlans(s, p.id, r.journey, rules, {
+          workLimit: Math.max(1, Math.min(20000, workLimit - diagnostics.visited)),
+          maxPlans: Math.max(1, Math.min(64, ordinaryLimit - list.length)),
         });
-        if (!add(c)) break inventory;
+        diagnostics.visited += result.work;
+        if (result.limited) limited(result.limited);
+        for (const plan of result.plans) {
+          const ids = [...new Set(plan.changes.map(change => change.to))];
+          const id = ids.length === 1 ? `redeem-${p.id}-${ids[0]}`
+            : `redeem-baggage-${p.id}-${plan.changes.map(change => `${change.key}>${change.to}`).join("|")}`;
+          const c = base(s, id, [p.id], plan.changes, {[p.id]: -plan.credits});
+          const pieces = plan.changes.reduce((total, change) => total + getResource(change.to)!.baggage!.pieces, 0);
+          Object.assign(c, {
+            category: "redeem", redemption: plan.credits,
+            cost: plan.changes.reduce((total, change) => {
+              const product = getResource(change.to)!;
+              return total + product.serviceCost + product.opportunityCost;
+            }, 0),
+            title: `${pieces} extra checked ${pieces === 1 ? "bag" : "bags"} for your journey`,
+            description: "Personal baggage entitlements supplied by airline inventory.",
+          });
+          if (!add(c)) break inventory;
+        }
       }
       if (r.kind === "seat") {
         // Empty-seat moves, including paths and joint family assignments, were
@@ -800,7 +902,7 @@ export function generateGenericMarket(
         const a = seats.find(
           (a) =>
             a.person === p.id &&
-            current(s, a.resource)?.journey === r.journey &&
+            getResource(a.resource)?.journey === r.journey &&
             a.resource !== r.id,
         );
         if (
@@ -811,7 +913,7 @@ export function generateGenericMarket(
               rule.effect.kind === "seat_position" &&
               rule.effect.positions.includes(r.seatPosition!) &&
               !rule.effect.positions.includes(
-                current(s, a.resource)!.seatPosition!,
+                getResource(a.resource)!.seatPosition!,
               ),
           )
         )
@@ -838,7 +940,7 @@ export function generateGenericMarket(
     );
     if (
       allocations.some((a) => !a) ||
-      offer.changes.some((ch) => ch.to && !current(s, ch.to))
+      offer.changes.some((ch) => ch.to && !getResource(ch.to))
     )
       continue;
     if (offer.changes.every((ch, i) => allocations[i]!.resource === ch.to))
@@ -882,7 +984,7 @@ export function generateGenericMarket(
   bundles: for (const { person, record } of completeRequests) {
     if (record.scope.kind !== "journey") continue;
     const journeyId = record.scope.journeyId;
-    const goals = requestRulesFor(s, person, journeyId).filter(
+    const goals = requestRules(person, journeyId).filter(
       (rule) =>
         rule.recordId === record.id &&
         rule.strength !== "flexible" &&
@@ -1004,6 +1106,15 @@ export function genericIntentErrors(
           !rules.some((r) => r.effect.kind === "meal" && !r.effect.receive)
         )
           errors.push("The traveller has not offered to decline the meal");
+        if (from?.baggage?.role === "included" && ch.to === null) {
+          const remaining = s.allocations.filter((a) => a.person === person).reduce((total, a) => {
+            const update = c.changes.find((ch) => ch.key === a.key);
+            const r = current(s, update ? update.to : a.resource);
+            return total + (r?.journey === journey && r.baggage?.role === "included" ? r.baggage.pieces : 0);
+          }, 0);
+          if (!rules.some((r) => r.effect.kind === "baggage_release" && r.strength === "flexible" && remaining >= r.effect.minRemainingPieces))
+            errors.push("Review the included baggage allowance you would give up.");
+        }
         if (to?.kind === "seat") {
           const party = s.parties?.find(
             (p) => p.journeyId === journey && p.memberIds.includes(person),
@@ -1012,7 +1123,13 @@ export function genericIntentErrors(
             party &&
             rules.some((r) => r.effect.kind === "seating_together") &&
             seating(s, party.id, c.changes).together;
-          const seatAllowed = rules.some(
+          const replacementSeat = rules.some(rule => rule.purpose === "request" &&
+            rule.effect.kind === "departure_window" && rule.strength !== "flexible") &&
+            own.some(change => {
+              const flight = current(s, change.to);
+              return flight?.kind === "flight" && flight.journey === to.journey && flight.serviceHour === to.serviceHour;
+            });
+          const seatAllowed = replacementSeat || rules.some(
             (r) =>
               r.effect.kind === "seat_position" &&
               r.effect.positions.includes(to.seatPosition!),
@@ -1088,28 +1205,15 @@ export function genericIntentErrors(
             .map((a) =>
               current(
                 s,
-                c.changes.find((ch) => ch.key === a.key)?.to ?? a.resource,
+                (c.changes.find((ch) => ch.key === a.key) || {to: a.resource}).to,
               ),
             )
             .filter(
               (r): r is Resource =>
-                !!r && r.kind === "baggage" && r.journey === journey,
+                !!r && isExtraBaggage(r) && r.journey === journey,
             );
-          if (
-            rule.strength === "must" &&
-            bags.reduce((n, r) => n + (r.baggage?.pieces || 0), 0) <
-              e.extraPieces
-          )
-            errors.push(
-              "The offer does not supply the requested baggage quantity",
-            );
-          if (
-            e.maxKgPerPiece &&
-            bags.some((r) => (r.baggage?.maxKg || 0) < e.maxKgPerPiece!)
-          )
-            errors.push(
-              "The offered baggage product does not meet the requested weight limit",
-            );
+          if (!baggageRequirementSatisfied(bags, e))
+            errors.push("The offer does not supply the requested baggage quantity and weight allowances");
         }
         if (
           e.kind === "gate_check" &&

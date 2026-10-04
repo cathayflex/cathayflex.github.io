@@ -34,6 +34,7 @@ export type IntentEffect =
       maxDelayMinutes?: number;
     }
   | { kind: "baggage"; extraPieces: number; maxKgPerPiece?: number }
+  | { kind: "baggage_release"; minRemainingPieces: number }
   | { kind: "gate_check"; allowed: boolean }
   | { kind: "meal"; receive: boolean }
   | { kind: "credit_budget"; maxCredits: number };
@@ -65,7 +66,9 @@ export type FixedRequestAuthorizationTerms = {
 };
 // Legacy terms remain readable for persisted workspaces. New publications must
 // carry a validated fixed quote and cannot inherit a legacy spending authority.
-export type RequestAuthorizationTerms = FixedRequestAuthorizationTerms | LegacyRequestAuthorizationTerms;
+export type RequestAuthorizationTerms =
+  | FixedRequestAuthorizationTerms
+  | LegacyRequestAuthorizationTerms;
 export type RequestAuthorization = LegacyRequestAuthorizationTerms & {
   mode?: "fixed_quote";
   quote?: RequestQuote;
@@ -110,9 +113,15 @@ export type TravelNeed = {
 export type Resource = {
   id: string;
   label: string;
-  kind: "flight" | "seat" | "baggage" | "meal" | "handover";
+  kind: "flight" | "seat" | "baggage" | "meal" | "handover" | "service";
+  cabin?: string;
+  includedServices?: ("wifi" | "lounge")[];
+  serviceOnly?: boolean;
+  mealName?: string;
   journey: string;
   serviceHour: number;
+  /** Operating flight identity, independent of the logical journey. */
+  flightNumber?: string;
   deadline: number;
   capacity: number;
   background: number;
@@ -125,7 +134,17 @@ export type Resource = {
   opportunityCost: number;
   seatMap?: { row: number; column: number; block: string; exitRow: boolean };
   source?: "airline_inventory" | "allocated_seat";
-  baggage?: { pieces: number; maxKg: number; maxCm: number; passenger: string };
+  capacityUses?: { poolId: string; units: number }[];
+  baggage?: {
+    pieces: number;
+    maxKg: number;
+    maxCm: number;
+    passenger: string;
+    role?: "included" | "extra";
+    entitlementId?: string;
+    checkedThroughKey?: string;
+    checkedIn?: boolean;
+  };
 };
 export type Allocation = {
   key: string;
@@ -134,6 +153,7 @@ export type Allocation = {
   version: number;
   journeyId?: string;
   resourceKind?: Resource["kind"];
+  baggageRole?: "included" | "extra";
   partyId?: string | null;
 };
 export type Change = {
@@ -154,7 +174,48 @@ export type Preference = {
     familyTogether: boolean;
   };
 };
+export type TravelServiceKind = "upgrade" | "neighbour_free" | "lounge" | "wifi" | "meal_skip" | "baggage_release";
+export type ServiceProduct = {
+  id: string;
+  revision: number;
+  kind: TravelServiceKind;
+  journeyId: string;
+  title: string;
+  description: string;
+  credits: number;
+  bookBy: number;
+  confirmBy: number;
+  confirmFrom?: number;
+  deferred?: boolean;
+  delivery: "immediate" | "departure";
+  resourceId: string;
+  physicalSeatId?: string;
+  mealAllocationKey?: string;
+  baggageAllocationKey?: string;
+  entitlementId?: string;
+  programmeId?: string;
+  person?: string;
+  budget?: string;
+  terms: string[];
+};
+export type ServiceOrder = {
+  product: ServiceProduct;
+  person: string;
+  quotedAt: number;
+  phase?: "queue" | "allocated";
+};
+export type ServiceOffer = {
+  product: ServiceProduct;
+  quoteKey: string;
+  available: boolean;
+  included?: boolean;
+  reason?: string;
+  contractId?: string;
+  status?: Status;
+};
 export type Candidate = {
+  serviceOrder?: ServiceOrder;
+  baggageReturns?: BaggageReturn[];
   manualPerson?: string;
   requestRefs?: { person: string; intentId: string; revision: number }[];
   id: string;
@@ -170,7 +231,7 @@ export type Candidate = {
   redemption: number;
   budget?: string;
   event?: string;
-  evidence?: "baggage_handover" | "catering_plan";
+  evidence?: "baggage_handover" | "catering_plan" | "service_delivery";
   gain: number;
   value: number;
   cost: number;
@@ -184,6 +245,7 @@ export type Candidate = {
   requiredEvents?: string[];
 };
 export type Status =
+  | "QUEUED"
   | "HELD"
   | "ACCEPTED"
   | "AWAITING_EVIDENCE"
@@ -274,6 +336,35 @@ export type OperationalOffer = {
   cost: number;
   risk: number;
 };
+export type CapacityPool = {
+  id: string;
+  label: string;
+  capacity: number;
+  background: number;
+  protected: number;
+};
+export type BaggageReturnProgramme = {
+  id: string;
+  revision: number;
+  journeyId: string;
+  checkedThroughKey: string;
+  deadline: number;
+  reward: number;
+  eligibleEntitlementIds: string[];
+  /** Carrier-assessed incremental benefit and delivery costs, in valuation units. */
+  value: number;
+  cost: number;
+  risk: number;
+};
+export type BaggageReturn = {
+  programmeId: string;
+  programmeTerms: string;
+  entitlementId: string;
+  donorKey: string;
+  recipientKey: string;
+  recipientProduct: string;
+  reward: number;
+};
 export type SaveAvailability =
   | { allowed: true }
   | {
@@ -295,6 +386,9 @@ export type AgentResult = {
   trace: { step: string; detail: string }[];
 };
 export type State = {
+  resourceModelVersion?: number;
+  serviceReleases?: { journeyId: string; kind: "upgrade" | "neighbour_free"; hour: number }[];
+  serviceProducts?: ServiceProduct[];
   schema: 3;
   version: number;
   hour: number;
@@ -314,7 +408,7 @@ export type State = {
   contracts: Contract[];
   ledger: LedgerEntry[];
   usedEvents: string[];
-  audit: { hour: number; message: string }[];
+  audit: { hour: number; message: string; category?: "operation" | "simulation" }[];
   requests: Record<string, string>;
   agent?: AgentResult;
   scenarioId?: "network" | "lin-family";
@@ -325,9 +419,16 @@ export type State = {
   intents?: Record<string, IntentRecord[]>;
   campaigns?: AirlineCampaign[];
   operationalOffers?: OperationalOffer[];
+  capacityPools?: CapacityPool[];
+  baggageReturnProgrammes?: BaggageReturnProgramme[];
 };
 export type Command = {
+  /** Set by the authenticated API boundary, never by a client payload. */
+  actorId?: string;
   action:
+    | "service_purchase"
+    | "service_catalogue"
+    | "service_release"
     | "quote"
     | "accept"
     | "execute"
@@ -345,6 +446,10 @@ export type Command = {
     | "intent_save"
     | "intent_remove"
     | "story_advance";
+  serviceProductId?: string;
+  serviceKind?: "upgrade" | "neighbour_free";
+  journeyId?: string;
+  serviceQuoteKey?: string;
   candidateId?: string;
   manualPerson?: string;
   contractId?: string;

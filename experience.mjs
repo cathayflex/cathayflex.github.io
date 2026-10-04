@@ -1,4 +1,4 @@
-import { initialState, accept, openRequest, publishRequest, settlePublishedRequest } from './offers.mjs?v=20261004-fixed2';
+import { initialState, accept, openRequest, publishRequest, settlePublishedRequest } from './offers.mjs?v=20261004-quote3';
 
 export const stages = Object.freeze(['flexibility', 'offer', 'earned', 'need', 'review', 'complete']);
 
