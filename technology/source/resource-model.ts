@@ -3,7 +3,7 @@ import type { State } from "./types.ts";
 
 export const resourceGroups = [
   { id: "travel", title: "Travel changes", description: "Request a change, or earn credits by accepting one.", resources: ["seat", "flight"] },
-  { id: "release", title: "Baggage and meals", description: "Return baggage allowance or skip a meal to earn credits. Use credits for extra baggage.", resources: ["baggage_release", "meal_skip"] },
+  { id: "release", title: "Booking options", description: "Return baggage allowance or skip a meal to earn credits. Use credits for extra baggage.", resources: ["baggage_release", "meal_skip"] },
   { id: "later", title: "Later confirmation", description: "Request now. Pay when availability is confirmed.", resources: ["upgrade", "neighbour_free"] },
   { id: "access", title: "Service access", description: "Use credits for services on this journey.", resources: ["lounge", "wifi"] },
 ] as const;
