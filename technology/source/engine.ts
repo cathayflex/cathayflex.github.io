@@ -379,7 +379,7 @@ export function candidates(s: State): Candidate[] {
       const c = base(
         id,
         title,
-        "Use verified rewards for a concrete seat entitlement on a later journey. Prices are synthetic pilot assumptions.",
+        "Use Flex credits for a preferred seat on this journey.",
         "redeem",
         [p],
         [change(s, key, to)],
@@ -391,7 +391,6 @@ export function candidates(s: State): Candidate[] {
         experimental: true,
         conditions: [
           `Confirm ${r.label} before redeeming ${r.q} Flex`,
-          "This pilot price is synthetic. Availability and eligibility are rechecked.",
         ],
         prerequisites: [`At least ${r.q} Flex available`],
       });
@@ -462,9 +461,8 @@ export function candidates(s: State): Candidate[] {
             credits,
           );
           c.conditions = [
-            "Same journey and seat product. Protected eligibility stays intact.",
-            "Every traveller receives a seat they explicitly marked acceptable",
-            "Fixed reference-value differences settle with zero net issuance",
+            "Same journey and seat product",
+            "Seats meet each traveller’s saved preferences",
           ];
           list.push(c);
         } else if (path.length < 4 && !path.some((a) => a.key === owner.key))
@@ -477,7 +475,7 @@ export function candidates(s: State): Candidate[] {
     const c = base(
       "meal-release",
       "Skip a meal before production is committed",
-      "Opt out of a standard meal. Earn a reward only after catering confirms one fewer meal in the production plan.",
+      "Decline the main meal before the catering deadline and earn 30 credits.",
       "earn",
       ["D"],
       [change(s, "D-meal", null)],

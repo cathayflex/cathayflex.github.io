@@ -1,4 +1,4 @@
-import { prepareExample, commitExample, reconcileExample, walletSummary } from './lab.mjs?v=2f66724e6270';
+import { prepareExample, commitExample, reconcileExample, walletSummary } from './lab.mjs?v=5d0d8be85732';
 
 const root = document.getElementById('matching-visual');
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));

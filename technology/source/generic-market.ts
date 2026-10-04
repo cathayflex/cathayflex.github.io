@@ -78,7 +78,7 @@ function base(
     prerequisites: [
       "Every changing traveller has a valid request authorization or accepts the complete arrangement",
     ],
-    conditions: ["The platform verifies all assignments before settlement."],
+    conditions: [],
   };
 }
 function acceptableSeat(

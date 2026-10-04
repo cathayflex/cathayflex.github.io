@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-04T13:01:38.928Z",
-  "platformBaseCommit": "981bfa6319743b7c9f27640e9381a8ce33036e1c",
-  "sourceTreeDigest": "8c59f8328f594c8d5f379993d5fad50d9188cde310398e93feedca920f615481",
+  "generatedAt": "2026-10-04T13:16:31.847Z",
+  "platformBaseCommit": "7943bb9cec55263e844aaebc6f93c64fa6556024",
+  "sourceTreeDigest": "06d862292bbab5550fa52be140399b29f7114d15548d11c706f3a6adb42b938d",
   "files": [
     {
       "file": "allocation-policy.ts",
@@ -25,11 +25,11 @@
     },
     {
       "file": "engine.ts",
-      "sha256": "3a72d6b5b48b22a681b5650bc8fc6823785dd4de2a8c52a1d570bd1e77bc1582"
+      "sha256": "ba9b822e4be9d3f4ce0c39e7264dd56007667fede7b29b9f5e3e7c5dc24f1fd6"
     },
     {
       "file": "generic-market.ts",
-      "sha256": "732202dd1c8e913e1fdd3ffe31b2efbc0f802cd3dd79663fd748c75824b6f46f"
+      "sha256": "f6bfa4d52f39a52f21622142b1daf545e8ce4df74816cae896fb521e13142736"
     },
     {
       "file": "intent.ts",
@@ -84,7 +84,7 @@
       "sha256": "1db3022cffa997aa633fd7b94eb50ee78a7591fa0163996f04ea0977c822752d"
     }
   ],
-  "engineBytes": 236479,
-  "engineSha256": "475ca456be354d64e61a1d9b4d5efa610a3849006423539df559df48b507456e",
+  "engineBytes": 236130,
+  "engineSha256": "6743582eea268fa6d6e265fb5fb07a3d3f7e1e4afb84bbcc078b8db70708dc41",
   "runtime": "Browser JavaScript. Same pure domain functions as the platform. Synthetic bookings. No live AI or airline connection."
 }
