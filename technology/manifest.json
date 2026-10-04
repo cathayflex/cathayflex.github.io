@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-04T13:37:14.868Z",
+  "generatedAt": "2026-10-04T21:08:12.292Z",
   "platformBaseCommit": "f92a37408bba5fdf6b4a20dfa28f7cb77545e632",
-  "sourceTreeDigest": "908b567649ddbe8b7deb6402d34af9792575f79218e724df7214d8f330ec81da",
+  "sourceTreeDigest": "ff454f8d6cbaa0c602f87f664e7b7ddeb8bbff482d99cb223061e00e1b676a5c",
   "files": [
     {
       "file": "allocation-policy.ts",
@@ -57,7 +57,7 @@
     },
     {
       "file": "resource-model.ts",
-      "sha256": "8627e92476749e1400ad1354df9039909ab84fd8ead770b3f8c0237e40467139"
+      "sha256": "abd3c1c80b59684f173f592f71376ac1a4daca9e103e9b97eb47199d887669ca"
     },
     {
       "file": "seed.ts",
