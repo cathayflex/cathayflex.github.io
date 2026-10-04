@@ -5,12 +5,12 @@ const root = document.getElementById('flex-journey');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const $ = id => document.getElementById(id);
 const descriptions = {
-  flexibility: {status: 'YOUR FLEXIBILITY', title: 'Set your travel preferences.', action: 'Save flexibility', progress: 'Save your flexibility', bottom: 'You choose which offers to accept.'},
-  offer: {status: 'AN OFFER FOR YOUR JOURNEY', title: 'A seat change offer for you.', action: 'Accept seat change', progress: 'Review your offer', explanation: 'On your Taipei flight, another traveller needs your aisle seat. This window seat fits your saved preferences.', bottom: 'Same flight. Same cabin. You decide.'},
-  earned: {status: 'SEAT CHANGE CONFIRMED', title: 'Your flexibility earned 400 credits.', action: 'Use credits', progress: 'Credits added to your balance', explanation: 'Your window seat is confirmed. Your credits are ready whenever you need them.', bottom: '22A · Window seat confirmed'},
-  need: {status: 'YOUR NEXT JOURNEY', title: 'What would make this trip better?', action: 'Review request', progress: 'Request what you need', bottom: 'Use your balance for the changes that matter to you.'},
-  review: {status: 'REVIEW YOUR REQUEST', title: 'Two changes for 360 credits.', action: 'Publish request', progress: 'Approve your request', explanation: 'Flex found your Tokyo booking. Confirm the price and we’ll look for both changes together.', bottom: 'Complete both by 1 Nov, 9 am HKT.', amount: 'Fixed price · 360 credits'},
-  complete: {status: 'REQUEST FULFILLED', title: 'Your family trip, confirmed.', action: 'Start again', progress: '400 earned · 360 used · 40 remaining', explanation: 'Your family is seated together, with room for the extra bag.', bottom: 'Both changes confirmed within your approved terms.', amount: '360 credits used'},
+  flexibility: {title: 'Your travel preferences.', action: 'Save preferences'},
+  offer: {title: 'Earn 400 credits for a seat change.', action: 'Accept change', explanation: 'Another traveller needs an aisle. The window seat fits your preferences.'},
+  earned: {title: '400 credits earned.', action: 'Use credits', explanation: 'Your window seat is confirmed.'},
+  need: {title: 'Your next journey.', action: 'Review request'},
+  review: {title: 'Review your request.', action: 'Confirm request', amount: '360 credits', expiry: 'Request valid until 1 Nov, 9 am HKT'},
+  complete: {title: 'Your family trip, confirmed.', action: 'Experience again', amount: '360 credits used'},
 };
 let index = 0, current = snapshotAt(0), animations = [], epoch = 0, pendingMatch = null;
 const text = (id, value) => { $(id).textContent = value; };
@@ -37,40 +37,35 @@ function render() {
   const future = index >= 3, earned = index >= 2, completed = index === 5;
   root.dataset.stage = screen;
   text('experience-counter', `0${index + 1} / 06`);
-  text('app-context', configuring ? 'Your profile' : future ? 'Hong Kong to Tokyo' : 'Hong Kong to Taipei');
-  $('journey-date').hidden = configuring;
-  $('flexibility-note').hidden = !configuring;
-  text('journey-date', future ? 'CX520 · 2 Nov' : '7 Oct · 1 h 45 min');
-  text('scene-status', copy.status);
+  $('experience-counter').setAttribute('aria-label', `Step ${index + 1} of 6`);
+  $('journey-context').hidden = configuring;
+  text('app-context', future ? 'Hong Kong to Tokyo' : 'Hong Kong to Taipei');
+  text('journey-date', future ? '2 Nov' : '7 Oct · 1 h 45 min');
   text('card-title', copy.title);
-  text('experience-progress', copy.progress);
-  text('scene-bottom-copy', copy.bottom);
+  $('scene-terms').hidden = !copy.amount;
   text('scene-amount', copy.amount || '');
-  $('scene-amount').hidden = !copy.amount;
-  const naturalLanguage = screen === 'flexibility' || screen === 'need';
+  text('scene-expiry', copy.expiry || '');
+  const naturalLanguage = configuring || screen === 'need';
   $('journey-words').hidden = !naturalLanguage;
   text('journey-words', `“${future ? needWords : preferenceWords}”`);
-  $('scene-explanation').hidden = naturalLanguage;
+  $('scene-explanation').hidden = !copy.explanation;
   text('scene-explanation', copy.explanation || '');
   $('taipei-booking').hidden = configuring || future;
-  $('tokyo-booking').hidden = !future;
+  $('tokyo-booking').hidden = !['review', 'complete'].includes(screen);
   const seatMap = root.querySelector('.seat-map');
   seatMap.classList.toggle('seat-moved', earned);
   seatMap.setAttribute('aria-label', `Your seat is ${earned ? '22A, by the window' : '22C, on the aisle'}`);
-  text('seat-change-label', screen === 'offer' ? 'Your offered change' : earned ? 'Your confirmed seat' : 'Your current seat');
-  text('seat-change-value', screen === 'offer' ? '22C → 22A' : earned ? '22A · Window' : '22C · Aisle');
-  $('credit-award').hidden = index === 0;
-  text('credit-award', earned ? '+400 earned' : '+400 credits');
-  text('seat-change-note', screen === 'offer' ? 'Aisle to window' : earned ? 'Your flight and cabin stay the same.' : 'Your booking stays unchanged until you accept.');
-  root.querySelectorAll('.service-state').forEach(node => { node.textContent = completed ? 'Confirmed' : index === 4 ? 'Included' : 'Requested'; });
+  text('seat-change-label', earned ? 'Confirmed seat' : 'Proposed change');
+  text('seat-change-value', earned ? '22A · Window' : '22C → 22A');
+  text('seat-change-note', earned ? '' : 'Aisle to window');
+  $('credit-award').hidden = true;
+  root.querySelectorAll('.service-state').forEach(node => { node.hidden = !completed; node.textContent = 'Confirmed'; });
   root.querySelectorAll('.assigned-seat').forEach(node => { node.hidden = !completed; });
   root.querySelectorAll('.seat-person').forEach(node => { node.hidden = completed; });
   $('tokyo-booking').classList.toggle('is-confirmed', completed);
   $('journey-wallet').setAttribute('aria-label', `${state.balance} Flex credits available`);
   text('wallet-number', state.balance);
-  $('wallet-earned').hidden = !earned;
-  $('wallet-spent').hidden = !completed;
-  text('wallet-note', completed ? '40 credits stay in your balance.' : earned ? 'Earned on one journey. Ready for another.' : 'The credits you earn stay with you.');
+  $('wallet-held').hidden = true;
   const back = root.querySelector('[data-action="back"]');
   back.disabled = index === 0;
   const forward = root.querySelector('[data-action="forward"]');
@@ -122,13 +117,10 @@ function showMatch(keyboard) {
   if (published.stage !== 'published') return;
   current = {screen: current.screen, state: published};
   root.setAttribute('aria-busy', 'true');
-  text('scene-status', 'REQUEST PUBLISHED');
-  text('card-title', 'Finding your changes.');
-  text('scene-explanation', 'Your request is active. Flex checks seats, baggage and each traveller’s agreement.');
-  text('experience-progress', 'Looking for both changes together');
-  text('wallet-note', `${published.creditHold} credits reserved for this request.`);
+    text('card-title', 'Finding your changes.');
+  $('wallet-held').hidden = false;
+  text('wallet-held', `${published.creditHold} held`);
   $('journey-wallet').setAttribute('aria-label', `${published.balance} Flex credits, including ${published.creditHold} reserved for this request`);
-  text('scene-bottom-copy', 'Your booking stays unchanged until both changes are confirmed.');
   const forward = root.querySelector('[data-action="forward"]');
   forward.disabled = true;
   forward.querySelector('span').textContent = 'Matching';
@@ -157,9 +149,9 @@ function go(next, keyboard) {
   if (!quiet) {
     animate(root.querySelector('.scene-copy'),[{opacity:.35,transform:`translateY(${backward?-4:6}px)`},{opacity:1,transform:'translateY(0)'}]);
     if (index === 1) animate($('taipei-booking'),[{opacity:0,transform:'translateX(18px) scale(.98)'},{opacity:1,transform:'translateX(0) scale(1)'}],{duration:280});
-    if (index === 3) animate($('tokyo-booking'),[{opacity:0,transform:'translateX(18px)'},{opacity:1,transform:'translateX(0)'}],{duration:280});
+    if (index === 4) animate($('tokyo-booking'),[{opacity:0,transform:'translateX(18px)'},{opacity:1,transform:'translateX(0)'}],{duration:280});
     if (index === 5) root.querySelectorAll('.service-visual').forEach((node,i)=>animate(node,[{opacity:.5,transform:'translateY(5px)'},{opacity:1,transform:'translateY(0)'}],{delay:i*60}));
-    animateBalance(previous.state.balance,current.state.balance,index>=3?$('scene-amount'):$('credit-award'),backward);
+    animateBalance(previous.state.balance,current.state.balance,index>=3?$('scene-amount'):$('seat-change-value'),backward);
   }
   if (keyboard) $('card-title').focus({preventScroll:true});
   keepInView(keyboard);

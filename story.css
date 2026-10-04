@@ -45,3 +45,13 @@
 .product-choices h2, .closing h2 { letter-spacing: normal; font-weight: 400; }
 .journey-editorial h2, .airline-copy h2, .product-choices h2 { line-height: 1.16; }
 .closing h2 { line-height: 1.18; }
+
+.resource-directory{display:grid;align-self:stretch;align-content:center;gap:0}
+.resource-row{padding:23px 0;border-bottom:1px solid #d1dcd3}
+.resource-row:first-child{border-top:1px solid #d1dcd3}
+.resource-row h3{font-size:22px;line-height:1.25;color:var(--jade)}
+.resource-row p{font-size:15px;line-height:1.5;color:var(--muted);margin-top:9px;max-width:420px}
+.product-credits .airline-copy{grid-column:1;grid-row:1}
+.resource-directory{grid-column:2;grid-row:1}
+@media(max-width:800px){.product-credits .airline-copy,.resource-directory{grid-column:auto;grid-row:auto}.product-credits .airline-copy{order:-1}.resource-directory{width:100%}.resource-row h3{font-size:22px}.resource-row p{max-width:540px}}
+@media(max-width:440px){.resource-row{padding-block:21px}.resource-row h3{font-size:21px}.resource-row p{font-size:15px}}

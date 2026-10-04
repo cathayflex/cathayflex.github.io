@@ -3,7 +3,7 @@ const interpretations = {
   request: {
     words:'“For <em>Tokyo</em>, can the <em>three of us sit together</em>? We also need <em>one extra checked bag</em>.”',
     context:'Your booking · CX 520 · Lin, Mia and Jamie',
-    rules:[['Journey','CX 520 · Hong Kong to Tokyo',''],['Seating','3 adjacent seats','Same row and seat block · Lin, Mia, Jamie'],['Baggage','1 extra checked bag','Catalog product · up to 23 kg']],
+    rules:[['Flight','CX 520 · Tokyo',''],['Seats','3 adjacent seats','Same row and seat block'],['Baggage','1 extra checked bag','Up to 23 kg']],
     caption:'Review the requirements, accept the quote, publish the request.',
     announcement:'Travel request. The Tokyo booking, three adjacent seats and one extra bag become matching requirements.',
   },
@@ -22,9 +22,7 @@ for(const button of document.querySelectorAll('[data-interpret]')) button.addEve
   const value=interpretations[button.dataset.interpret];
   document.querySelectorAll('[data-interpret]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));
   document.getElementById('spoken-words').innerHTML=value.words;
-  document.getElementById('spoken-context').textContent=value.context;
   document.getElementById('interpreted-rules').innerHTML=value.rules.map(([name,rule,scope])=>`<div><dt>${name}</dt><dd>${rule}${scope?`<small>${scope}</small>`:''}</dd></div>`).join('');
-  document.getElementById('interpretation-caption').textContent=value.caption;
   document.getElementById('interpretation-status').textContent=value.announcement;
   interpretationAnimation?.cancel();
   if(event.detail&&!reduced.matches) interpretationAnimation=interpretationContent.animate([{opacity:.4,transform:'translateY(3px)'},{opacity:1,transform:'translateY(0)'}],{duration:200,easing:'cubic-bezier(.23,1,.32,1)'});
@@ -43,5 +41,5 @@ fetch('manifest.json').then(r=>{if(!r.ok)throw new Error();return r.json();}).th
 }).catch(()=>{document.getElementById('build-evidence').textContent='Source hashes and export details are included in the repository manifest.';});
 fetch('benchmark.json').then(r=>{if(!r.ok)throw new Error();return r.json();}).then(report=>{
   const rows=report.rows.filter(row=>row.nodeLimit===20000);
-  document.getElementById('benchmark-results').innerHTML=`<p class="benchmark-context">Recorded selection runs · 20,000-node budget · ${report.platform} ${report.arch}</p><div class="benchmark-scroll" tabindex="0" aria-label="Measured search results"><table><thead><tr><th>Candidates</th><th>Nodes visited</th><th>Result</th><th>Time</th></tr></thead><tbody>${rows.map(row=>`<tr><td>${row.suppliedCandidates}</td><td>${row.visited.toLocaleString('en')}</td><td>${row.complete?'Best within supplied set':'Feasible at search limit'}</td><td>${row.elapsedMs.toFixed(1)} ms</td></tr>`).join('')}</tbody></table></div>`;
+  document.getElementById('benchmark-results').innerHTML=`<p class="benchmark-context">Recorded selection runs · 20,000-node search budget</p><div class="benchmark-scroll" tabindex="0" aria-label="Measured search results"><table><thead><tr><th>Candidates</th><th>Nodes visited</th><th>Result</th><th>Time</th></tr></thead><tbody>${rows.map(row=>`<tr><td>${row.suppliedCandidates}</td><td>${row.visited.toLocaleString('en')}</td><td>${row.complete?'Search complete':'Feasible at limit'}</td><td>${row.elapsedMs.toFixed(1)} ms</td></tr>`).join('')}</tbody></table></div>`;
 }).catch(()=>{document.getElementById('benchmark-results').innerHTML='<p>The recorded search results are available in the repository’s benchmark data.</p>';});
