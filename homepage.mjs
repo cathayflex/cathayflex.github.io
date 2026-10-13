@@ -1,5 +1,5 @@
 import {resources} from './homepage-model.mjs';
-import {renderInterface} from './interface-preview.mjs';
+import {renderInterface} from './interface-preview.mjs?v=20261014b';
 const $=id=>document.getElementById(id);
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
 const mobile=matchMedia('(max-width: 800px)');
