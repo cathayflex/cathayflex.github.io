@@ -1,45 +1,43 @@
 # Cathay Flex website
 
-The public project website for Team Globe’s Cathay Hackathon 2026 entry lives at https://cathayflex.github.io/.
+The public website for Team Globe’s Cathay Hackathon 2026 project lives at https://cathayflex.github.io/.
 
-The current page follows the accepted project deck. It explains passenger flexibility, the marketplace, passenger experience, eight travel resources, differentiation, service design, commercial value, sustainability and Day Two. Technology is part of the same page. The previous `/technology/` address redirects to its section.
+The page introduces passenger flexibility, explains how passengers and Cathay participate in an exchange, presents the passenger interface and travel benefits, and explains the resulting value. The project deck supplies the underlying information. The website selects the detail useful to a public visitor.
 
 ## Development
 
-The site uses plain HTML, CSS and JavaScript without a build step.
-
-- `index.html` contains the narrative and semantic page structure.
-- `homepage.css` contains the responsive layout, typography and interaction styles.
-- `homepage.mjs` handles navigation, the illustrated exchange, resource and technology tabs, authentic interface screenshots and the inline matching example.
-- `homepage-model.mjs` defines the resource participation rules and immutable journey snapshots.
-- `assets/deck` contains selected illustrations and interface screenshots from the accepted deck. Asset origins are recorded in `provenance.json`.
-- `assets/flex-credits.svg` is the shared Flex Credit mark.
-
-Preview and check the website locally.
+The site uses HTML, CSS and JavaScript without a build step. Run these commands from the project root.
 
 ```sh
 python3 -m http.server 8781 --bind 127.0.0.1 --directory website
 npm test --prefix website
 ```
 
-Run these commands from the project root. The public GitHub Pages deployment uses the root of `cathayflex/cathayflex.github.io` on `main`. This project's `website` directory is the maintained source. Updating the project repository alone does not publish the public site.
+- `index.html` contains the page narrative and semantic structure.
+- `homepage.css` contains the responsive page layout.
+- `homepage.mjs` handles navigation, the passenger-flow steps, resource selectors and video playback.
+- `homepage-model.mjs` holds the eight resource participation rules and the earlier illustrated-journey fixtures.
+- `interface-preview.mjs` and `interface-preview.css` construct the four frozen interface views with native text, shapes and the platform’s original photos.
+- `assets/interface` contains the Paris and lounge photographs copied from the platform.
+- `assets/video/cathay-flex.mp4` is the latest supplied film, copied from `video/Cathay_Flex_Pitch (new video).mp4`.
+- `assets/deck` contains accepted project illustrations. Their origins are recorded in `provenance.json`.
 
-## Interactive examples
+## Interaction design
 
-The illustrated passenger story starts with 600 credits, earns 160 for a completed seat change, then spends 360 on family seating and an extra bag. Its final balance is 400. Back and replay revisit immutable states, so neither action duplicates a reward or a payment. Seat numbers, passenger icons and names occupy separate rows.
+Each section handles one communication task and fits the available screen height at ordinary laptop and phone sizes. Narrow screens use selectors for parallel research and sustainability details. Shorter phones omit repeated introductory copy while preserving the main explanation, evidence and resource participation rules. Content stays in normal page flow without scroll locking or mandatory scroll snapping.
 
-The resource explorer preserves the different participation rules. Seat changes, flight changes and baggage allowance can earn and use credits. Meal choice earns credits. Upgrades, neighbour-free seats, lounge access and Wi-Fi use credits.
+The passenger-flow diagram follows the deck’s stakeholder model. Its five selectable stages explain the requesting passenger, the helping passenger, Cathay’s booking updates and credit settlement. It does not execute a booking or change a balance.
 
-The four interface views use authentic screenshots from the current deck. They are views of the project interface, not live account sessions.
+The four interface previews reproduce the content and visual structure of the approved platform screenshots. Text and interface shapes are native browser elements. The app contents are frozen, with no internal scrolling or account actions. The surrounding tabs switch between Journey, Request changes, Earn credits and View balance.
 
-The technology section presents AI interpretation, exchange optimisation and transaction coordination. Its optional matching example loads `technology/lab.mjs`, which executes the exported platform engine with fixed example data. Changing baggage availability changes the computed result. No live airline booking is changed. The AI explanation is authored copy, not a live language-model call.
+The opening video button loads the latest film in a native video dialog. Closing it pauses playback and returns focus to the opening button. The film’s music attribution appears below the player.
 
-The existing pure engine, manifest, fixtures and earlier model tests remain for maintenance and regression checks. The earlier standalone page styles and interaction scripts are no longer loaded by the homepage. `technology/manifest.json` records the exported source hashes. Regenerate the export deliberately when platform domain logic changes.
+The earlier matching lab, technical precedents, Day Two and commercial accounting explanation are absent from the public page. The `/technology/` address redirects to the inline matching explanation. Earlier pure engine modules and tests remain in the repository for maintenance and provenance, and the homepage does not load them.
 
-## Content and assets
+The closing contains the Cathay Flex logo and the approved closing line. Additional buttons, benefits and supporting paragraphs do not belong in that section.
 
-Research attribution sits beside the relevant evidence. The site preserves the survey population and trial context. Sustainability copy distinguishes reduced preparation and weight from emissions allocated per passenger.
+## Publishing
 
-The Cathay wordmarks, resource SVGs and first-party hosted fonts are shared with the rest of the project. Selected illustrations come from the accepted Cathay Flex deck. Private PwC reference material is not part of this site. The final section retains the user-approved closing line.
+The maintained source is this `website` directory. GitHub Pages publishes the root of `cathayflex/cathayflex.github.io` on `main`. Updating the project repository alone does not publish the public site.
 
-All interactive controls support keyboard input. Motion respects reduced-motion preferences. Mobile navigation closes on Escape, outside interaction and link activation. The page remains readable across narrow and wide screens without nested scrolling containers.
+Private PwC reference material is excluded. Research links accompany the relevant evidence. Keep resource earning rules, exact logos and source attribution intact when revising the public copy.

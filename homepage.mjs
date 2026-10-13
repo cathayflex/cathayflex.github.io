@@ -1,4 +1,5 @@
-import {resources,journeyAt,nextJourney,previousJourney} from './homepage-model.mjs';
+import {resources} from './homepage-model.mjs';
+import {renderInterface} from './interface-preview.mjs';
 const $=id=>document.getElementById(id);
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
 const mobile=matchMedia('(max-width: 800px)');
@@ -14,43 +15,13 @@ document.addEventListener('pointerdown',e=>{if(mobile.matches&&!e.target.closest
 const links=[...nav.querySelectorAll('a')];
 const sections=links.map(a=>document.querySelector(a.hash));
 let scrollQueued=false;
-function activeNav(){scrollQueued=false;let selected=-1;sections.forEach((s,i)=>{if(s.getBoundingClientRect().top<170)selected=i});links.forEach((link,i)=>{if(i===selected)link.setAttribute('aria-current','location');else link.removeAttribute('aria-current')})}
+function activeNav(){scrollQueued=false;let selected=-1;sections.forEach((s,i)=>{if(s.getBoundingClientRect().top<180)selected=i});links.forEach((link,i)=>{if(i===selected)link.setAttribute('aria-current','location');else link.removeAttribute('aria-current')})}
 addEventListener('scroll',()=>{if(!scrollQueued){scrollQueued=true;requestAnimationFrame(activeNav)}},{passive:true});activeNav();
-
 function transitionContent(el,keyboard){
   if(reduced.matches||keyboard)return;
   el.getAnimations().forEach(a=>a.cancel());
-  el.animate([{opacity:.35,transform:'translateY(5px)'},{opacity:1,transform:'translateY(0)'}],{duration:240,easing:'cubic-bezier(.23,1,.32,1)'});
+  el.animate([{opacity:.5,transform:'translateY(4px)'},{opacity:1,transform:'translateY(0)'}],{duration:200,easing:'cubic-bezier(.23,1,.32,1)'});
 }
-const person=`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6" r="3.4"/><path d="M5 22v-4.5a7 7 0 0 1 14 0V22"/></svg>`;
-const credit=`<img src="assets/flex-credits.svg" width="28" height="28" alt="Flex Credits">`;
-const scenes=[
-()=>`<p class="micro">Hong Kong to Paris / A change you can accept</p><h3>Your seat can help a family sit together.</h3><p>Another passenger will pay 160 credits if you move to a different aisle seat in the same cabin.</p><div class="seat-change"><div class="seat-option"><span>Your current seat</span><strong>22C</strong><p>Economy aisle</p><img src="assets/resources/seat-changes.svg" alt=""></div><span class="transfer-arrow" aria-label="changes to">→</span><div class="seat-option new"><span>Your new seat</span><strong>24C</strong><p>Economy aisle</p><img src="assets/resources/seat-changes.svg" alt=""></div></div><div class="reward-line"><span>You earn when the change is completed</span><strong>+160 ${credit}</strong></div>`,
-()=>`<p class="micro">Hong Kong to Paris / Seat change completed</p><h3>You helped another traveller.</h3><p>Your booking now shows seat 24C, and the other passenger’s family can sit together.</p><div class="earned-receipt">${credit}<div><strong>160 credits earned</strong><p>Your balance has increased from 600 to 760.</p></div></div><p class="receipt-note">The credits remain available for the next travel benefit you need.</p>`,
-()=>`<p class="micro">A later journey / Hong Kong to Tokyo</p><h3>This time, your family needs a change.</h3><p>You want three adjacent seats and an extra checked bag. Flex combines the seating request with Cathay’s baggage availability.</p><div class="request-quote"><span>Three seats together</span><strong>160 credits</strong><span>One extra checked bag</span><strong>200 credits</strong><div class="quote-total"><span>Total for your request</span><span><strong>360</strong>${credit}</span></div></div>`,
-()=>`<p class="micro">Hong Kong to Tokyo / Changes confirmed</p><h3>Your family’s arrangements are in place.</h3><p>A fellow passenger accepted the seat change, and Cathay confirmed the extra baggage.</p><div class="confirmed-services"><div class="family-confirmed"><div class="confirmed-label"><span>Seats together</span><span aria-label="Confirmed">✓</span></div><div class="family-seats">${[['32A','Mia'],['32B','Jamie'],['32C','You']].map(([seat,name])=>`<div class="family-seat"><strong>${seat}</strong>${person}<span>${name}</span></div>`).join('')}</div></div><div class="bag-confirmed"><div class="confirmed-label"><span>Extra baggage</span><span aria-label="Confirmed">✓</span></div><img src="assets/resources/checked-baggage.svg" alt=""><strong>1 checked bag</strong><p>Up to 23 kg</p></div></div><div class="reward-line"><span>160 to the helping passenger, 200 for baggage</span><strong>−360 ${credit}</strong></div>`
-];
-let state=journeyAt(0);
-const labels=['Accept this seat change','See a later journey','Find the complete arrangement','Replay the exchange'];
-function renderJourney(keyboard=false,initial=false){
-  $('demo-screen').innerHTML=scenes[state.step]();
-  $('demo-balance').textContent=state.balance;
-  $('demo-count').textContent=`${state.step+1} of 4`;
-  $('demo-back').disabled=state.step===0;
-  $('demo-next').innerHTML=`${labels[state.step]} <span aria-hidden="true">${state.step===3?'↺':'→'}</span>`;
-  document.querySelectorAll('[data-story]').forEach((el,i)=>{if(i===state.step)el.setAttribute('aria-current','step');else el.removeAttribute('aria-current')});
-  $('demo-announcement').textContent=`${$('demo-screen').querySelector('h3').textContent} ${state.balance} Flex Credits available. Step ${state.step+1} of 4.`;
-  transitionContent($('demo-screen'),keyboard);
-  if(!initial){
-    if(keyboard)$('demo-screen').focus({preventScroll:true});
-    const panel=document.querySelector('.demo-panel');
-    if(panel.getBoundingClientRect().top<document.querySelector('.site-header').offsetHeight+18)panel.scrollIntoView({block:'start',behavior:reduced.matches||keyboard?'instant':'smooth'});
-  }
-}
-$('demo-next').addEventListener('click',e=>{state=nextJourney(state.step);renderJourney(e.detail===0)});
-$('demo-back').addEventListener('click',e=>{state=previousJourney(state.step);renderJourney(e.detail===0)});
-renderJourney(true,true);
-
 function tabs(selector,attribute,render){
   const buttons=[...document.querySelectorAll(selector)];
   function select(button,keyboard=false){buttons.forEach(b=>{const active=b===button;b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1});render(button.dataset[attribute],keyboard)}
@@ -65,35 +36,56 @@ function tabs(selector,attribute,render){
     });
   });
   select(buttons[0],true);
+  return index=>select(buttons[index],false);
 }
+const processSteps=[
+  {title:'Describe the travel change you need',body:'Tell Flex what you want to change and the conditions that matter to you. Review the request and its credit price before it enters the marketplace.',left:'Your request',right:'Available changes',leftArrow:'→',rightArrow:'←'},
+  {title:'Flex connects requests with people and services that can help',body:'Flex considers what passengers need, which changes others can accept and the services Cathay has available. It finds arrangements that fit those conditions.',left:'Passenger needs',right:'Willingness to change',leftArrow:'→',rightArrow:'←'},
+  {title:'The helping passenger chooses whether to accept',body:'They see the proposed change to their journey and the credits they would earn. Accepting makes the requested travel arrangement possible.',left:'Match found',right:'Change accepted',leftArrow:'←',rightArrow:'←'},
+  {title:'Cathay confirms the booking changes',body:'Flex coordinates the passengers involved and sends the agreed changes to Cathay. Each traveller receives confirmation when the booking or service is updated.',left:'Booking confirmed',right:'Booking confirmed',leftArrow:'←',rightArrow:'→'},
+  {title:'The passenger who helped receives the credits',body:'Once Cathay confirms the changes, Flex completes the agreed credit payment. Those credits can be used for another travel benefit on this journey or a later one.',left:'Request fulfilled',right:'Credits received',leftArrow:'←',rightArrow:'→'}
+];
+const selectProcess=tabs('[data-step]','step',(key,keyboard)=>{
+  const i=Number(key),step=processSteps[i];
+  $('process-explanation').innerHTML=`<p class="step-label">STEP ${i+1} OF 5</p><h3>${step.title}</h3><p>${step.body}</p><button class="step-next" type="button" data-next="${(i+1)%5}">${i===4?'Start again':'Next step'} <span aria-hidden="true">${i===4?'↺':'→'}</span></button>`;
+  document.querySelector('.process-map').dataset.stage=key;
+  document.querySelector('.requester-path span').textContent=step.left;
+  document.querySelector('.helper-path span').textContent=step.right;
+  document.querySelector('.requester-path i').textContent=step.leftArrow;
+  document.querySelector('.helper-path i').textContent=step.rightArrow;
+  $('process-panel').setAttribute('aria-labelledby',`step-${key}`);
+  transitionContent($('process-explanation'),keyboard);
+});
+$('process-explanation').addEventListener('click',e=>{const button=e.target.closest('[data-next]');if(button){const next=Number(button.dataset.next);selectProcess(next);document.querySelector(`[data-step="${next}"]`).focus({preventScroll:true})}});
+
 tabs('[data-resource]','resource',(key,keyboard)=>{
   const r=resources[key];
-  $('resource-content').innerHTML=`<img class="resource-hero-icon" src="assets/resources/${r.icon}.svg" alt=""><h3>${r.title}</h3><p class="resource-intro">${r.intro}</p><div class="resource-actions ${r.earn&&r.use?'':'single'}">${r.earn?`<div><h4>How you earn credits</h4><p>${r.earn}</p></div>`:''}${r.use?`<div><h4>How you use credits</h4><p>${r.use}</p></div>`:''}</div><p class="allocation-note">${r.allocation}</p>`;
+  $('resource-content').innerHTML=`<img class="resource-hero-icon" src="assets/resources/${r.icon}.svg" alt=""><h3>${r.title}</h3><p class="resource-intro">${r.intro}</p><div class="resource-actions ${r.earn&&r.use?'':'single'}">${r.earn?`<div><h4>Earn credits</h4><p>${r.earn}</p></div>`:''}${r.use?`<div><h4>Use credits</h4><p>${r.use}</p></div>`:''}</div><p class="allocation-note">${r.allocation}</p>`;
   $('resource-detail').setAttribute('aria-labelledby',`resource-${key}`);transitionContent($('resource-content'),keyboard);
 });
+const mark='<img src="assets/flex-credits.svg" width="28" height="28" alt="Flex Credits">';
 const technology={
-  intent:{title:'Turn passenger language into matching conditions',body:'Passengers describe what they need in their own words. AI combines that description with their booking and the services available, then prepares specific conditions for the passenger to review.',method:'Booking context, available options and structured outputs',visual:`<p class="visual-label">Passenger request</p><p class="request-words">“I can change seats if I stay beside my companion.”</p><div class="down-arrow" aria-hidden="true">↓</div><div class="condition-fields"><div><span>Change allowed</span><strong>Seat assignment</strong></div><div><span>Keep together</span><strong>Both travellers</strong></div><div><span>Apply to</span><strong>Current flight</strong></div></div>`},
-  matching:{title:'Find combinations that meet passenger needs',body:'The optimisation engine searches across requests, acceptable changes and available services. It selects compatible arrangements within passenger conditions, capacity and credit limits.',method:'Graph search and branch-and-bound selection',visual:`<div class="matching-inputs"><span>Passenger requests</span><span>Acceptable changes</span><span>Available services</span></div><div class="down-arrow" aria-hidden="true">↓</div><div class="matching-output">Compatible arrangements across the marketplace</div><p class="visual-label">Each selected arrangement respects the conditions of the passengers involved.</p>`},
-  settlement:{title:'Keep booking changes and credits in step',body:'The transaction engine records agreed terms, reserves the resources and coordinates passenger agreement with airline updates. Credits are settled once fulfilment is confirmed.',method:'Conditional order book, coordinated updates and a credit ledger',visual:`<div class="settlement-steps"><div><span>1</span>Reserve the agreed arrangement</div><b aria-hidden="true">→</b><div><span>2</span>Confirm the airline updates</div><b aria-hidden="true">→</b><div><span>${credit}</span>Settle the agreed credits</div></div>`}
+  intent:{title:'Your own words become a clear travel request',body:'AI reads your description alongside your booking and available travel options. It identifies the change you need and the conditions to keep in place.',visual:'<p class="visual-label">Your request</p><p class="request-words">“I can change seats if I stay beside my companion.”</p><div class="down-arrow" aria-hidden="true">↓</div><div class="condition-fields"><div><span>Change allowed</span><strong>Seat assignment</strong></div><div><span>Keep together</span><strong>Both travellers</strong></div><div><span>Journey</span><strong>Current flight</strong></div></div>'},
+  matching:{title:'Passenger flexibility creates more ways to meet a need',body:'Flex searches across the marketplace for compatible requests and available services. It checks that the proposed arrangements fit passenger conditions, capacity and credit balances.',visual:'<div class="matching-inputs"><span>Passenger requests</span><span>Changes people can accept</span><span>Available services</span></div><div class="down-arrow" aria-hidden="true">↓</div><div class="matching-output">Travel arrangements that work for the passengers involved</div>'},
+  settlement:{title:'Booking changes and credit payments stay connected',body:'Flex coordinates the agreed changes with Cathay and completes the credit payment after the booking or service is confirmed.',visual:`<div class="settlement-steps"><div><span>1</span>Agree the change</div><b aria-hidden="true">→</b><div><span>2</span>Confirm the booking</div><b aria-hidden="true">→</b><div><span>${mark}</span>Pay the credits</div></div>`}
 };
-tabs('[data-tech]','tech',(key,keyboard)=>{const t=technology[key];$('tech-panel').innerHTML=`<div><h3>${t.title}</h3><p>${t.body}</p><p class="tech-method">${t.method}</p></div><div class="tech-visual">${t.visual}</div>`;$('tech-panel').setAttribute('aria-labelledby',`tech-${key}`);transitionContent($('tech-panel'),keyboard)});
-// Load the actual exported matching engine only when the visitor opens the example.
-let labModule,labEpoch=0;
-async function runMatching(){
-  const epoch=++labEpoch;
-  try{
-    labModule??=import('./technology/lab.mjs');
-    const {prepareExample}=await labModule;
-    const example=prepareExample($('bag-available').checked?'ready':'bag-full');
-    if(epoch!==labEpoch)return;
-    const matched=Boolean(example.chosen);
-    $('lab-result').innerHTML=`<div class="lab-result-card ${matched?'':'waiting'}"><h4>${matched?'Both parts can be fulfilled':'The request is waiting for baggage capacity'}</h4><p>${matched?'Flex has found a seating arrangement and the baggage capacity needed for the complete request.':'A seating arrangement alone does not fulfil this passenger’s request. Flex keeps looking for an arrangement that includes the extra bag.'}</p><ul><li>Adjacent seats ${matched?'matched':'can be matched'}</li><li>Extra bag ${matched?'available':'unavailable'}</li><li>Agreed request price remains 360 credits</li></ul></div>`;
-  }catch(error){console.error('Matching example could not load',error);$('lab-result').innerHTML='<div class="lab-result-card"><h4>The matching example could not load.</h4><p>Please reload the page to try again.</p></div>'}
-}
-document.querySelector('.matching-lab').addEventListener('toggle',e=>{if(e.target.open)runMatching()});
-$('bag-available').addEventListener('change',runMatching);
+tabs('[data-tech]','tech',(key,keyboard)=>{const t=technology[key];$('tech-panel').innerHTML=`<div><h3>${t.title}</h3><p>${t.body}</p></div><div class="tech-visual">${t.visual}</div>`;$('tech-panel').setAttribute('aria-labelledby',`tech-${key}`);transitionContent($('tech-panel'),keyboard)});
 
-const appDescriptions={journeys:['Cathay Flex Journey screen showing a Paris trip, credit balance and lounge suggestions','Journey overview'],requests:['Cathay Flex Request changes screen with a request form and existing requests','Request changes'],earn:['Cathay Flex Earn credits screen listing suitable changes and credit rewards','Earn credits'],credits:['Cathay Flex View balance screen with available credits and account activity','View balance']};
 tabs('[data-app]','app',(key,keyboard)=>{
-  $('app-image').src=`assets/deck/ui-${key}.jpg`;$('app-image').alt=appDescriptions[key][0];$('app-caption').textContent=appDescriptions[key][1];$('app-screen').setAttribute('aria-labelledby',`app-${key}`);transitionContent($('app-image'),keyboard);
+  $('native-app').innerHTML=renderInterface(key);
+  $('app-screen').setAttribute('aria-labelledby',`app-${key}`);
+  transitionContent($('native-app'),keyboard);
 });
+function fitInterface(){
+  const display=$('app-screen'),space=document.querySelector('.device-space'),frame=document.querySelector('.device-frame');
+  const scale=Math.min((display.clientWidth-40)/390,(display.clientHeight-40)/820,1);
+  space.style.width=`${390*scale}px`;space.style.height=`${820*scale}px`;frame.style.transform=`scale(${scale})`;
+}
+new ResizeObserver(fitInterface).observe($('app-screen'));fitInterface();
+const film=$('flex-film'),dialog=$('film-dialog');
+$('watch-film').addEventListener('click',()=>{dialog.showModal();document.body.style.overflow='hidden';film.play().catch(()=>{})});
+document.querySelector('.film-close').addEventListener('click',()=>dialog.close());
+dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close()}});
+dialog.addEventListener('close',()=>{film.pause();document.body.style.overflow='';$('watch-film').focus({preventScroll:true})});
+tabs('[data-evidence]','evidence',key=>{document.querySelector('.evidence-grid').dataset.selected=key});
+tabs('[data-sustain]','sustain',key=>{document.querySelector('.sustainability-grid').dataset.selected=key});

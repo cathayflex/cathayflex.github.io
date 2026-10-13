@@ -14,15 +14,16 @@
   <link rel="icon" href="assets/cathay-brushwing.png" type="image/png">
   <link rel="preconnect" href="https://assets.cathaypacific.com" crossorigin>
   <link rel="stylesheet" href="fonts.css">
-  <link rel="stylesheet" href="homepage.css?v=20261013">
-  <script type="module" src="homepage.mjs?v=20261013"></script>
+  <link rel="stylesheet" href="homepage.css?v=20261014">
+  <link rel="stylesheet" href="interface-preview.css?v=20261014">
+  <script type="module" src="homepage.mjs?v=20261014"></script>
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header">
   <a class="brand" href="#top" aria-label="Cathay Flex home"><img src="assets/cathay-flex-logo.svg" width="1164" height="200" alt="Cathay Flex"></a>
   <button class="menu-toggle" aria-expanded="false" aria-controls="site-nav" type="button">Menu <span aria-hidden="true">+</span></button>
-  <nav id="site-nav" aria-label="Main navigation"><a href="#opportunity">The opportunity</a><a href="#experience">The experience</a><a href="#resources">Travel resources</a><a href="#technology">How it works</a><a href="#value">Value for Cathay</a></nav>
+  <nav id="site-nav" aria-label="Main navigation"><a href="#opportunity">The opportunity</a><a href="#experience">How it works</a><a href="#app-preview">The app</a><a href="#resources">Travel benefits</a><a href="#value">The value</a></nav>
 </header>
 <main id="main">
   <section class="hero shell" id="top" aria-labelledby="hero-title">
@@ -30,7 +31,7 @@
       <p class="eyebrow">A marketplace for passenger flexibility</p>
       <h1 id="hero-title">Your flexibility has value to other travellers.</h1>
       <p class="lead">Cathay Flex connects passengers who need a travel change with people willing to make one. Those who help earn Flex Credits for benefits on this journey or the next.</p>
-      <a class="button" href="#experience">See an exchange <span aria-hidden="true">↗</span></a>
+      <button class="button" id="watch-film" type="button"><span class="play-mark" aria-hidden="true">▷</span> Watch the film <span class="button-note">2 min</span></button>
       <p class="hero-context">Team Globe at Cathay Hackathon 2026</p>
     </div>
     <div class="market-visual" aria-label="Cathay Flex connects passenger requests, willing passengers, available Cathay services and Flex Credits">
@@ -41,52 +42,58 @@
         <div class="market-hub"><span class="horizontal-link" aria-hidden="true"></span><img src="assets/cathay-flex-logo.svg" width="1164" height="200" alt="Cathay Flex"><span>Finds compatible<br>arrangements</span><span class="horizontal-link" aria-hidden="true"></span></div>
         <div class="person-role"><img src="assets/deck/helping-passenger.png" alt="" width="200" height="200"><strong>Another can make it possible</strong></div>
       </div>
-      <div class="vertical-link" aria-hidden="true"></div>
+      <div class="vertical-link points-up" aria-hidden="true"></div>
       <div class="credit-strip"><img src="assets/flex-credits.svg" width="48" height="48" alt=""><div><strong>Flex Credits</strong><p>Earned through flexibility. Available for future travel needs.</p></div></div>
     </div>
   </section>
 
   <section class="opportunity section shell" id="opportunity" aria-labelledby="opportunity-title">
     <div class="section-heading"><p class="eyebrow">The opportunity</p><h2 id="opportunity-title">Different passenger needs create opportunities for useful exchanges.</h2><p>One traveller may need a particular seat or flight. Another may be happy with a different arrangement. Research shows that this flexibility exists.</p></div>
-    <div class="evidence-grid">
-      <article class="evidence"><img src="assets/deck/seat-flexibility.png" alt="Illustrated aircraft seats" loading="lazy" width="240" height="180"><div><span class="stat">64<span>%</span></span><h3>would accept an equally good seat to help someone sit with companions</h3><p>Among 1,000 US adults surveyed by YouGov.</p><a class="source" href="https://docs.cdn.yougov.com/a17jg5yq7s/toplines_Flight%20Etiquette.pdf" target="_blank" rel="noopener">YouGov, November 2022, question 6 ↗</a></div></article>
-      <article class="evidence"><img src="assets/deck/flight-flexibility.png" alt="Illustrated flight and reward voucher" loading="lazy" width="240" height="180"><div><span class="stat">30<span>%</span></span><h3>accepted a different flight when a reward voucher was offered</h3><p>Among customers contacted in two LATAM flight-change trials.</p><a class="source" href="https://www.caravelo.com/wp-content/uploads/2021/09/Post-Sale-Flight-Optimization.pdf" target="_blank" rel="noopener">Reported by Caravelo, 2019, pages 6–9 ↗</a></div></article>
+    <div class="compact-tabs evidence-tabs" role="tablist" aria-label="Passenger flexibility research"><button role="tab" id="evidence-tab-seat" aria-controls="evidence-seat" aria-selected="true" data-evidence="seat">Seat changes</button><button role="tab" id="evidence-tab-flight" aria-controls="evidence-flight" aria-selected="false" tabindex="-1" data-evidence="flight">Flight changes</button></div>
+    <div class="evidence-grid" data-selected="seat">
+      <article class="evidence" id="evidence-seat"><img src="assets/deck/seat-flexibility.png" alt="Illustrated aircraft seats" loading="lazy" width="240" height="180"><div><span class="stat">64<span>%</span></span><h3>would accept an equally good seat to help someone sit with companions</h3><p>Among 1,000 US adults surveyed by YouGov.</p><a class="source" href="https://docs.cdn.yougov.com/a17jg5yq7s/toplines_Flight%20Etiquette.pdf" target="_blank" rel="noopener">YouGov, November 2022, question 6 ↗</a></div></article>
+      <article class="evidence" id="evidence-flight"><img src="assets/deck/flight-flexibility.png" alt="Illustrated flight and reward voucher" loading="lazy" width="240" height="180"><div><span class="stat">30<span>%</span></span><h3>accepted a different flight when a reward voucher was offered</h3><p>Among customers contacted in two LATAM flight-change trials.</p><a class="source" href="https://www.caravelo.com/wp-content/uploads/2021/09/Post-Sale-Flight-Optimization.pdf" target="_blank" rel="noopener">Reported by Caravelo, 2019, pages 6–9 ↗</a></div></article>
     </div>
     <p class="takeaway">Cathay Flex makes that willingness useful by connecting it with other passengers’ requests and rewarding the people who help.</p>
   </section>
 
   <section class="experience-section section" id="experience" aria-labelledby="experience-title">
     <div class="shell">
-      <div class="section-heading"><p class="eyebrow">The passenger experience</p><h2 id="experience-title">A useful change today can pay for a different need tomorrow.</h2><p>Follow one passenger through an exchange, then see how the credits can help on a later journey.</p></div>
-      <div class="exchange-demo" id="exchange-demo">
-        <div class="demo-story">
-          <ol class="story-steps" aria-label="Example journey"><li data-story="0" aria-current="step"><span>01</span><div><strong>Help another traveller</strong><p>Choose a seat change that works for you.</p></div></li><li data-story="1"><span>02</span><div><strong>Receive Flex Credits</strong><p>The completed change earns a reward.</p></div></li><li data-story="2"><span>03</span><div><strong>Request something you need</strong><p>Use your balance on a later journey.</p></div></li><li data-story="3"><span>04</span><div><strong>Travel with the changes in place</strong><p>Flex coordinates the people and services involved.</p></div></li></ol>
-          <div class="story-note"><img src="assets/flex-credits.svg" width="40" height="40" alt=""><p>Credits connect separate exchanges, so the value you earn can support a different travel need.</p></div>
-        </div>
-        <div class="demo-panel">
-          <div class="demo-top"><span>Illustrated journey</span><span class="balance"><img src="assets/flex-credits.svg" width="28" height="28" alt="Flex Credits"><strong id="demo-balance">600</strong><span>available</span></span></div>
-          <div id="demo-screen" tabindex="-1"></div>
-          <div class="demo-actions"><button class="text-button" id="demo-back" type="button" disabled>← Back</button><span id="demo-count">1 of 4</span><button class="button" id="demo-next" type="button">Accept this seat change <span aria-hidden="true">→</span></button></div>
-          <p id="demo-announcement" class="sr-only" role="status" aria-live="polite"></p>
-        </div>
+      <div class="section-heading"><p class="eyebrow">How it works</p><h2 id="experience-title">How passenger exchanges work</h2><p>Flex connects travellers who need a change with those willing to help.</p></div>
+      <div class="process-tabs" role="tablist" aria-label="Steps in a passenger exchange">
+        <button id="step-0" role="tab" aria-controls="process-panel" aria-selected="true" data-step="0"><span>1</span>Your request</button>
+        <button id="step-1" role="tab" aria-controls="process-panel" aria-selected="false" tabindex="-1" data-step="1"><span>2</span>Matching</button>
+        <button id="step-2" role="tab" aria-controls="process-panel" aria-selected="false" tabindex="-1" data-step="2"><span>3</span>Acceptance</button>
+        <button id="step-3" role="tab" aria-controls="process-panel" aria-selected="false" tabindex="-1" data-step="3"><span>4</span>Booking</button>
+        <button id="step-4" role="tab" aria-controls="process-panel" aria-selected="false" tabindex="-1" data-step="4"><span>5</span>Credits</button>
       </div>
-      <div class="app-preview" id="app-preview">
-        <div class="app-copy"><p class="eyebrow">Inside Cathay Flex</p><h3>Your journey, requests and credits in one place.</h3><p>Each part of the passenger interface supports a different task, with suggestions informed by the journey and available credit balance.</p>
-          <div class="app-tabs" role="tablist" aria-label="Passenger interface screens" aria-orientation="vertical">
-            <button id="app-journeys" role="tab" aria-controls="app-screen" aria-selected="true" data-app="journeys"><strong>Journey</strong><span>See upcoming travel and relevant service suggestions.</span></button>
-            <button id="app-requests" role="tab" aria-controls="app-screen" aria-selected="false" tabindex="-1" data-app="requests"><strong>Request changes</strong><span>Describe what you need and follow your existing requests.</span></button>
-            <button id="app-earn" role="tab" aria-controls="app-screen" aria-selected="false" tabindex="-1" data-app="earn"><strong>Earn credits</strong><span>Browse changes you could accept and the credits you would earn.</span></button>
-            <button id="app-credits" role="tab" aria-controls="app-screen" aria-selected="false" tabindex="-1" data-app="credits"><strong>View balance</strong><span>See available credits, reservations and account activity.</span></button>
-          </div>
+      <div class="process-layout" id="process-panel" role="tabpanel" aria-labelledby="step-0" tabindex="0">
+        <div class="process-map" data-stage="0">
+          <div class="process-airline"><img src="assets/cathay-logo.svg" alt="Cathay"><span>Available services and booking updates</span></div>
+          <div class="process-vertical" aria-hidden="true"></div>
+          <div class="process-actors"><div class="process-person requester"><img src="assets/deck/requesting-passenger.png" alt=""><strong>Passenger who<br>needs a change</strong></div><div class="process-path requester-path"><span>Travel request</span><i aria-hidden="true">→</i></div><div class="process-flex"><img src="assets/cathay-flex-logo.svg" alt="Cathay Flex"><span>Matching and coordination</span></div><div class="process-path helper-path"><span>Change and reward</span><i aria-hidden="true">→</i></div><div class="process-person helper"><img src="assets/deck/helping-passenger.png" alt=""><strong>Passenger<br>willing to help</strong></div></div>
+          <div class="process-vertical credit-path" aria-hidden="true"></div>
+          <div class="process-credits"><img src="assets/flex-credits.svg" alt=""><span>Flex Credits</span><small>Passenger balances and payments</small></div>
         </div>
-        <div class="app-screen" id="app-screen" role="tabpanel" aria-labelledby="app-journeys" tabindex="0"><img id="app-image" src="assets/deck/ui-journeys.jpg" alt="Cathay Flex Journey screen showing a Paris trip, credit balance and lounge suggestions" width="390" height="844" loading="lazy"><p id="app-caption">Journey overview</p></div>
+        <div class="process-explanation" id="process-explanation"></div>
       </div>
-      <noscript><p>A completed seat change earns 160 credits. The passenger can later use 360 credits for family seating and extra baggage, with Flex coordinating both changes.</p></noscript>
     </div>
   </section>
 
+  <section class="section shell app-preview" id="app-preview" aria-labelledby="app-title">
+    <div class="app-copy"><p class="eyebrow">The passenger app</p><h2 id="app-title">Your journey, travel requests and credits in one place.</h2>
+      <div class="app-tabs" role="tablist" aria-label="Passenger interface screens" aria-orientation="vertical">
+        <button id="app-journeys" role="tab" aria-controls="app-screen" aria-selected="true" data-app="journeys"><strong>Journey</strong><span>See upcoming travel and relevant service suggestions.</span></button>
+        <button id="app-requests" role="tab" aria-controls="app-screen" aria-selected="false" tabindex="-1" data-app="requests"><strong>Request changes</strong><span>Describe what you need and follow your requests.</span></button>
+        <button id="app-earn" role="tab" aria-controls="app-screen" aria-selected="false" tabindex="-1" data-app="earn"><strong>Earn credits</strong><span>Find changes you can accept and see the credit reward.</span></button>
+        <button id="app-credits" role="tab" aria-controls="app-screen" aria-selected="false" tabindex="-1" data-app="credits"><strong>View balance</strong><span>See your available credits and account activity.</span></button>
+      </div>
+    </div>
+    <div class="app-display" id="app-screen" role="tabpanel" aria-labelledby="app-journeys" tabindex="0"><div class="device-space"><div class="device-frame"><div id="native-app" class="native-app"></div></div></div></div>
+  </section>
+
   <section class="section shell resources-section" id="resources" aria-labelledby="resources-title">
-    <div class="section-heading"><p class="eyebrow">Eight travel resources</p><h2 id="resources-title">Flex Credits connect eight travel resources.</h2><p>Seat and flight changes, released services and available airline capacity all participate in one marketplace. The way each resource is allocated determines how passengers can earn or use credits.</p></div>
+    <div class="section-heading"><p class="eyebrow">Eight travel resources</p><h2 id="resources-title">Earn and use credits across eight travel benefits.</h2><p>Accept a travel change or release a service you do not need, then use the credits for something that matters to you.</p></div>
     <div class="resource-explorer">
       <div class="resource-list" role="tablist" aria-label="Travel resources" aria-orientation="vertical">
         <span class="resource-group">Travel changes</span>
@@ -95,7 +102,7 @@
         <span class="resource-group">Booking options</span>
         <button id="resource-baggage" role="tab" aria-selected="false" aria-controls="resource-detail" tabindex="-1" data-resource="baggage"><img src="assets/resources/checked-baggage.svg" alt="">Baggage allowance<span aria-hidden="true">↗</span></button>
         <button id="resource-meal" role="tab" aria-selected="false" aria-controls="resource-detail" tabindex="-1" data-resource="meal"><img src="assets/resources/meal-choice.svg" alt="">Meal choice<span aria-hidden="true">↗</span></button>
-        <span class="resource-group">Later confirmation</span>
+        <span class="resource-group">Cabin comfort</span>
         <button id="resource-upgrade" role="tab" aria-selected="false" aria-controls="resource-detail" tabindex="-1" data-resource="upgrade"><img src="assets/resources/cabin-upgrade.svg" alt="">Cabin upgrades<span aria-hidden="true">↗</span></button>
         <button id="resource-neighbour" role="tab" aria-selected="false" aria-controls="resource-detail" tabindex="-1" data-resource="neighbour"><img src="assets/resources/neighbour-free-seat.svg" alt="">Neighbour-free seat<span aria-hidden="true">↗</span></button>
         <span class="resource-group">Service access</span>
@@ -119,40 +126,33 @@
   </section>
 
   <section class="section shell technology-section" id="technology" aria-labelledby="technology-title">
-    <div class="section-heading"><p class="eyebrow">Service design and technology</p><h2 id="technology-title">AI and optimisation coordinate passenger exchanges.</h2><p>AI interprets passenger needs, optimisation finds compatible arrangements, and transaction services coordinate booking updates and credit settlement. Cathay supplies booking and capacity information, with operating controls across the service.</p></div>
-    <div class="tech-selector" role="tablist" aria-label="How Cathay Flex works">
-      <button id="tech-intent" role="tab" aria-controls="tech-panel" aria-selected="true" data-tech="intent"><span>01</span>Understand passenger needs</button>
-      <button id="tech-matching" role="tab" aria-controls="tech-panel" aria-selected="false" tabindex="-1" data-tech="matching"><span>02</span>Match compatible exchanges</button>
-      <button id="tech-settlement" role="tab" aria-controls="tech-panel" aria-selected="false" tabindex="-1" data-tech="settlement"><span>03</span>Complete the agreed changes</button>
+    <div class="section-heading"><p class="eyebrow">How Flex finds a match</p><h2 id="technology-title">Flex brings your needs, other passengers and available services together.</h2></div>
+    <div class="tech-selector" role="tablist" aria-label="How matching works">
+      <button id="tech-intent" role="tab" aria-controls="tech-panel" aria-selected="true" data-tech="intent">Understand your request</button>
+      <button id="tech-matching" role="tab" aria-controls="tech-panel" aria-selected="false" tabindex="-1" data-tech="matching">Find a suitable arrangement</button>
+      <button id="tech-settlement" role="tab" aria-controls="tech-panel" aria-selected="false" tabindex="-1" data-tech="settlement">Coordinate the changes</button>
     </div>
     <div class="tech-panel" id="tech-panel" role="tabpanel" aria-labelledby="tech-intent" tabindex="0"></div>
-    <div class="integration-strip"><img src="assets/cathay-logo.svg" alt="Cathay" width="120" height="24"><p>Booking data and available capacity inform the AI and matching services. Confirmed changes update airline records, while the operations console tracks products, reward budgets and exchanges.</p></div>
-    <details class="matching-lab"><summary><span>Try the matching logic</span><span class="summary-hint">See why a complete arrangement matters</span><span class="plus" aria-hidden="true">+</span></summary><div class="lab-body"><div><h3>Three adjacent seats and an extra bag</h3><p>This request needs both passenger cooperation and airline capacity. Change the baggage availability to see how the matching result responds.</p><label class="switch-label"><input type="checkbox" id="bag-available" checked><span>Extra baggage capacity is available</span></label></div><div id="lab-result" role="status" aria-live="polite"><p>Open this example to calculate a match.</p></div></div></details>
-    <div class="tech-precedents"><p class="micro">Established foundations, tailored to passenger exchanges</p><div><a href="https://ai.google.dev/gemini-api/docs/structured-output" target="_blank" rel="noopener"><strong>Gemini API</strong><span>Structured request fields ↗</span></a><a href="https://developers.google.com/optimization/introduction" target="_blank" rel="noopener"><strong>Google OR-Tools</strong><span>Constrained allocation methods ↗</span></a><a href="https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/saga-orchestration.html" target="_blank" rel="noopener"><strong>AWS saga orchestration</strong><span>Coordinated system updates ↗</span></a></div></div>
   </section>
 
   <section class="value-section section" id="value" aria-labelledby="value-title"><div class="shell">
-    <div class="section-heading"><p class="eyebrow">Business value</p><h2 id="value-title">Better journeys today give passengers more reasons to choose Cathay again.</h2><p>Passenger exchanges improve the travel experience, while targeted airline incentives create opportunities for additional revenue and lower operating costs.</p></div>
+    <div class="section-heading"><p class="eyebrow">Value for passengers and Cathay</p><h2 id="value-title">Better journeys today give passengers more reasons to choose Cathay again.</h2><p>Passengers gain travel choices that fit their needs. Cathay can fulfil more requests using its existing seats and services.</p></div>
     <div class="value-columns"><article><p class="value-period">On the current journey</p><img src="assets/deck/current-arrangements.svg" alt="Illustration of a more suitable seating arrangement" loading="lazy" width="260" height="150"><h3>More needs met with less coordination</h3><p>Compatible seat and flight changes fulfil needs that the original bookings could not meet. Automated matching and booking coordination reduce repeated staff follow-up.</p></article><article><p class="value-period">At the next booking</p><img src="assets/deck/credits-for-later.svg" alt="Flex Credits saved for a later journey" loading="lazy" width="260" height="150"><h3>Earned value and a better experience</h3><p>Saved credits give passengers benefits to return for. Travel arrangements that fit their needs give them another reason to choose Cathay.</p></article></div>
-    <div class="commercial"><div class="commercial-heading"><p class="eyebrow">Commercial model</p><h3>Exchanges support ticket revenue and reduce avoidable costs.</h3></div><div class="commercial-routes">
-      <article><img src="assets/deck/passenger-marketplace.png" width="180" height="120" alt="" loading="lazy"><div><h4>Passenger-funded exchanges</h4><p>Passengers compensate one another with existing credits. Future redemption and a better travel experience support repeat bookings.</p></div></article>
-      <article><img src="assets/deck/cathay-incentives.png" width="180" height="120" alt="" loading="lazy"><div><h4>Cathay-funded incentives</h4><p>Cathay rewards qualifying changes that release seats for resale or reduce costs through timely meal declines and verified lighter packing.</p></div></article>
-    </div><p class="commercial-result"><strong>Cathay retains the value after delivery costs.</strong> Credit prices, reward budgets and available benefits are set against additional ticket revenue and avoided operating costs.</p></div>
   </div></section>
 
   <section class="section shell sustainability" id="sustainability" aria-labelledby="sustainability-title">
-    <div class="section-heading"><p class="eyebrow">Resource efficiency and sustainability</p><h2 id="sustainability-title">Passenger choices can change what an aircraft needs to carry.</h2><p>Flex rewards actions that reduce unnecessary preparation, lower baggage weight and make better use of scheduled flights.</p></div>
-    <div class="sustainability-grid">
-      <article><div class="sustain-art"><img src="assets/deck/meal-physical.png" width="300" height="180" alt="Fewer meal trays prepared" loading="lazy"></div><h3>Prepare fewer unwanted meals</h3><p>A meal declined before the catering deadline can be removed from production and loading, reducing food waste.</p><div class="research-note"><strong>18%</strong><span>of cabin waste was untouched meals in IATA and ASF’s preliminary audit of 25 flights.</span></div><a class="source" href="https://www.iata.org/en/pressroom/2024-releases/2024-07-04-01/" target="_blank" rel="noopener">IATA and ASF, 2024 ↗</a></article>
-      <article><div class="sustain-art"><img src="assets/deck/baggage-physical.png" width="300" height="180" alt="A lighter suitcase" loading="lazy"></div><h3>Encourage lighter travel</h3><p>Passengers earn credits for released baggage allowance or verified lighter packing under Cathay’s rules. Lower carried weight can reduce fuel use and emissions.</p><p class="research-copy">JAL and Sumitomo’s clothing-rental programme illustrates the link between travelling with less baggage and lower emissions.</p><a class="source" href="https://press.jal.co.jp/en/items/uploads/2b9c55519d022438dc98f316b0c25e188351d7cb.pdf" target="_blank" rel="noopener">JAL and Sumitomo, 2024 ↗</a></article>
-      <article><div class="sustain-art"><img src="assets/deck/occupied-flight.png" width="300" height="180" alt="Occupied seats on a scheduled flight" loading="lazy"></div><h3>Use scheduled capacity more fully</h3><p>Voluntary flight changes can free seats where demand is higher. Filling those seats spreads a flight’s emissions across more passengers.</p><p class="research-copy">IATA’s methodology accounts for load factor when calculating emissions allocated to each passenger.</p><a class="source" href="https://www.iata.org/en/services/data/environment-sustainability/co2-connect/" target="_blank" rel="noopener">IATA CO₂ Connect methodology ↗</a></article>
+    <div class="section-heading"><p class="eyebrow">Less waste and lighter travel</p><h2 id="sustainability-title">Passenger choices can change what an aircraft needs to carry.</h2><p>Flex rewards actions that reduce unnecessary preparation, lower baggage weight and make better use of scheduled flights.</p></div>
+    <div class="compact-tabs sustainability-tabs" role="tablist" aria-label="Resource efficiency"><button role="tab" id="sustain-tab-meal" aria-controls="sustain-meal" aria-selected="true" data-sustain="meal">Meals</button><button role="tab" id="sustain-tab-baggage" aria-controls="sustain-baggage" aria-selected="false" tabindex="-1" data-sustain="baggage">Baggage</button><button role="tab" id="sustain-tab-capacity" aria-controls="sustain-capacity" aria-selected="false" tabindex="-1" data-sustain="capacity">Flight capacity</button></div>
+    <div class="sustainability-grid" data-selected="meal">
+      <article id="sustain-meal"><div class="sustain-art"><img src="assets/deck/meal-physical.png" width="300" height="180" alt="Fewer meal trays prepared" loading="lazy"></div><h3>Prepare fewer unwanted meals</h3><p>A meal declined before the catering deadline can be removed from production and loading, reducing food waste.</p><a class="source" href="https://www.iata.org/en/pressroom/2024-releases/2024-07-04-01/" target="_blank" rel="noopener">IATA and ASF, 2024 ↗</a></article>
+      <article id="sustain-baggage"><div class="sustain-art"><img src="assets/deck/baggage-physical.png" width="300" height="180" alt="A lighter suitcase" loading="lazy"></div><h3>Encourage lighter travel</h3><p>Passengers earn credits for released baggage allowance or verified lighter packing under Cathay’s rules. Lower carried weight can reduce fuel use and emissions.</p><a class="source" href="https://press.jal.co.jp/en/items/uploads/2b9c55519d022438dc98f316b0c25e188351d7cb.pdf" target="_blank" rel="noopener">JAL and Sumitomo, 2024 ↗</a></article>
+      <article id="sustain-capacity"><div class="sustain-art"><img src="assets/deck/occupied-flight.png" width="300" height="180" alt="Occupied seats on a scheduled flight" loading="lazy"></div><h3>Use scheduled capacity more fully</h3><p>Voluntary flight changes can free seats where demand is higher. Filling those seats spreads a flight’s emissions across more passengers.</p><a class="source" href="https://www.iata.org/en/services/data/environment-sustainability/co2-connect/" target="_blank" rel="noopener">IATA CO₂ Connect methodology ↗</a></article>
     </div>
   </section>
 
-  <section class="future-section section" id="day-two" aria-labelledby="future-title"><div class="shell future-layout"><div class="section-heading"><p class="eyebrow">Day Two</p><h2 id="future-title">A wider marketplace can make flexibility useful in more situations.</h2><p>As the service expands, more rewards and more participants create new reasons to contribute. Passenger requests also show where the travel offer could improve.</p></div><div class="future-points"><article><span>01</span><div><h3>Broader redemption</h3><p>Approved partner benefits and merchandise extend the ways passengers can use their credits.</p></div></article><article><span>02</span><div><h3>Wider participation</h3><p>More passengers across more routes give Flex more opportunities to connect compatible requests.</p></div></article><article><span>03</span><div><h3>Better demand insight</h3><p>Unmet requests, accepted alternatives and release timing help Cathay shape service availability and reward programmes.</p></div></article></div></div></section>
-
-  <section class="closing shell" aria-labelledby="closing-title"><div><img src="assets/cathay-flex-logo.svg" width="1164" height="200" alt="Cathay Flex"><h2 id="closing-title">Let your flexibility<br>take you further.</h2><p>Passengers earn value by helping other travellers.<br>Cathay meets more needs with existing resources.</p><a class="text-link" href="#experience">Try the passenger exchange <span aria-hidden="true">↗</span></a></div><img class="closing-mark" src="assets/flex-credits.svg" width="320" height="320" alt=""></section>
+  <section class="closing shell" aria-labelledby="closing-title"><img src="assets/cathay-flex-logo.svg" width="1164" height="200" alt="Cathay Flex"><h2 id="closing-title">Let your flexibility<br>take you further.</h2></section>
 </main>
 <footer class="site-footer shell"><p>Team Globe <span aria-hidden="true">/</span> Cathay Hackathon 2026</p><p>An independent hackathon proposal for Cathay Pacific.</p><a href="#top">Back to top ↑</a></footer>
+<dialog id="film-dialog" aria-label="Cathay Flex film"><button class="film-close" type="button" aria-label="Close video">×</button><video id="flex-film" controls playsinline preload="none" src="assets/video/cathay-flex.mp4"></video><p class="film-attribution">Music “Clear Skies” by <a href="https://www.scottbuckley.com.au/library/clear-skies/" target="_blank" rel="noopener">Scott Buckley</a>, adapted under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.</p></dialog>
 </body>
 </html>
