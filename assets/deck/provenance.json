@@ -1,0 +1,21 @@
+{
+  "source": "Accepted Cathay Flex deck, 13 October 2026",
+  "assets": {
+    "requesting-passenger.png": "cathay-first-section-20261013/slides/s01-opportunity/work/assets/requesting-portrait.png",
+    "helping-passenger.png": "cathay-first-section-20261013/slides/s01-opportunity/work/assets/willing-portrait.png",
+    "cathay-services.png": "cathay-first-section-20261013/slides/s01-opportunity/work/services-visual/cathay-cabin-services-illustrated.png",
+    "seat-flexibility.png": "cathay-first-section-20261013/slides/s01a-opportunity-evidence/work/flat-illustration-revision/registered/seat-change-3bab845a777b.png",
+    "flight-flexibility.png": "cathay-first-section-20261013/slides/s01a-opportunity-evidence/work/flat-illustration-revision/registered/flight-change-fc08bf8d8510.png",
+    "passenger-marketplace.png": "cathay-first-section-20261013/slides/s04-credit-model/work/assets/generated-commercial/illustrated/passenger-marketplace.png",
+    "cathay-incentives.png": "cathay-first-section-20261013/slides/s04-credit-model/work/assets/generated-commercial/illustrated/cathay-incentives.png",
+    "current-arrangements.svg": "cathay-flex-pitch/slides/s04-value/work/assets/current-next/current-arrangements.svg",
+    "credits-for-later.svg": "cathay-flex-pitch/slides/s04-value/work/assets/current-next/credits-for-later.svg",
+    "meal-physical.png": "cathay-flex-pitch/slides/s05-sustainability/work/reconstruction/measurement/crops/meal-physical.png",
+    "baggage-physical.png": "cathay-flex-pitch/slides/s05-sustainability/work/reconstruction/measurement/crops/baggage-physical.png",
+    "occupied-flight.png": "cathay-flex-pitch/slides/s05-sustainability/work/reconstruction/measurement/crops/occupied-flight.png",
+    "ui-journeys.jpg": "cathay-first-section-20261013/slides/s07-experience/work/assets/tab-journeys-fit.jpg",
+    "ui-requests.jpg": "cathay-first-section-20261013/slides/s07-experience/work/assets/tab-requests-fit.jpg",
+    "ui-earn.jpg": "cathay-first-section-20261013/slides/s07-experience/work/assets/tab-earn-fit.jpg",
+    "ui-credits.jpg": "cathay-first-section-20261013/slides/s07-experience/work/assets/tab-credits-fit.jpg"
+  }
+}
