@@ -35,3 +35,8 @@
 .ui-preferences>svg,.ui-activity-heading svg {fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .ui-preferences>svg {width:22px;height:22px;color:#698c76}
 .ui-activity-heading svg {display:inline-block;width:12px;height:12px;vertical-align:-2px}
+
+.ui-view-journeys .ui-suggestions {padding-block:10px}
+.ui-view-journeys .ui-suggestions h4 {margin-bottom:9px}
+
+.ui-view-journeys .ui-photo {height:140px}
