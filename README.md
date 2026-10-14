@@ -19,7 +19,7 @@ npm test --prefix website
 - `homepage-model.mjs` holds the eight resource participation rules and the earlier illustrated-journey fixtures.
 - `interface-preview.mjs` and `interface-preview.css` construct the four frozen interface views with native text, shapes and the platform’s original photos.
 - `assets/interface` contains the Paris and lounge photographs copied from the platform.
-- `assets/video/cathay-flex.mp4` is the latest supplied film, copied from `video/Cathay_Flex_Pitch (new video).mp4`.
+- `assets/video/cathay-flex.mp4` is the latest supplied film, copied from `video/Cathay Flex Pitch (new vid v2).mp4`.
 - `assets/deck` contains accepted project illustrations. Their origins are recorded in `provenance.json`.
 
 ## Interaction design
